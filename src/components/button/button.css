@@ -1,0 +1,15 @@
+* {
+    transition: all .3s;
+}
+
+.test-btn {
+    background-color: darkgreen;
+    transition: all .8s;
+}
+
+.test-btn:hover {
+    transform: scale(1.1);
+    background: lightcoral;
+    transition: all .8s;
+    color: darkblue;
+}
