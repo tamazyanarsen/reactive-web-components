@@ -12,7 +12,6 @@
     "typescript": "^5.5.3",
     "vite": "^5.4.1",
     "vite-plugin-checker": "^0.8.0",
-    "@types/node": "^22.7.5",
-    "@fluentui/web-components": "^2.6.1"
+    "@types/node": "^22.7.5"
   }
 }
