@@ -3,7 +3,7 @@ import { component, property } from "@shared/utils/decorators/html-property";
 import { BaseElement, createElement } from "@shared/utils/html-elements/element";
 import { effect, signal } from "@shared/utils/html-elements/signal";
 
-@component('t1-button')
+@component('rx-button')
 export class ButtonComponent extends BaseElement {
   @property()
   buttonName = signal('init name')
