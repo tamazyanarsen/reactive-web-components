@@ -7,6 +7,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <p>веб-компоненты</p>
     <div class="component-wrapper">
       <rx-input></rx-input>
+      <rx-input></rx-input>
       <rx-button></rx-button>
     </div>
   </div>

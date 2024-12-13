@@ -1,0 +1,20 @@
+.container {
+  display: flex;
+  position: relative;
+
+  .input-field {
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    transition: all ease-in-out .25s;
+
+    &:focus {
+      outline: none;
+      border-color: lightseagreen;
+    }
+
+    &:hover {
+      background-color: lightyellow;
+    }
+  }
+
+}

@@ -6,10 +6,14 @@ export class InputElement extends BaseElement {
   @property()
   placeholder = signal('')
 
-  rootStyle?: Promise<typeof import("*?raw")> | undefined = import('./input.css?raw');
+  rootStyle?: Promise<typeof import("*?raw")> | undefined = import('./input.scss?raw');
 
   render(): ComponentConfig {
-    const wrapper = createElement('input').addClass('container')
-    return wrapper
+    return createElement('div')
+      .addClass('container')
+      .append(
+        createElement('input')
+          .addClass('input-field')
+      )
   }
 }
