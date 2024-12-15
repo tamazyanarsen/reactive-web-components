@@ -1,0 +1,17 @@
+* {
+  transition: all .3s;
+}
+
+.container {
+  display: flex;
+
+  .btn-el {
+    &.primary {
+      background: dodgerblue;
+    }
+
+    &.warning {
+      background-color: lightcoral;
+    }
+  }
+}

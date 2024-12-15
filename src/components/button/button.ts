@@ -1,28 +1,23 @@
 import { ComponentConfig } from "@shared/types/element";
 import { component, property } from "@shared/utils/decorators/html-property";
 import { BaseElement, createElement } from "@shared/utils/html-elements/element";
-import { effect, signal } from "@shared/utils/html-elements/signal";
+import { signal } from "@shared/utils/html-elements/signal";
 
 @component('rx-button')
 export class ButtonComponent extends BaseElement {
   @property()
-  buttonName = signal('init name')
+  type = signal('Primary')
 
-  observedAttributes = ['testsdklfjlsdfjljsdfljklsf']
-
-  rootStyle = import('./button.css?raw');
+  rootStyle = import('./button.scss?raw');
 
   render(): ComponentConfig {
-    const wrapper = createElement('button')
+    const wrapper = createElement('div').addClass('container')
+    const btnEl = createElement('button')
+      .addClass('btn-el', this.type())
+      .append(createElement('slot'))
 
-    wrapper.addClass('test-btn')
-    wrapper.addStyle({
-      width: '8em',
-      height: '4em',
-      borderRadius: '2em'
-    })
-    effect(() => { wrapper.setContent(this.buttonName()) })
-    return wrapper
+    // effect(() => { wrapper.setContent(this.content()) })
+    return wrapper.append(btnEl)
   }
 }
 

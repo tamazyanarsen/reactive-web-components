@@ -7,20 +7,25 @@ export class InputElement extends BaseElement {
   placeholder = signal('')
 
   @property()
-  test = signal('')
+  disabled = signal(true)
 
-  constructor() {
-    super()
-    console.log('signal created', this.placeholder)
-  }
+  @property()
+  value = signal('')
 
   rootStyle?: Promise<typeof import("*?raw")> | undefined = import('./input.scss?raw');
 
   render(): ComponentConfig {
     const inputEl = createElement('input')
     effect(() => {
+      const isDisabled = this.disabled()
       inputEl.setAttribute('placeholder', this.placeholder())
-      inputEl.setAttribute('value', this.test())
+      inputEl.setAttribute('value', this.value())
+      if (isDisabled) {
+        inputEl.setAttribute('disabled', this.disabled())
+      }
+      else {
+        inputEl.hostElement.removeAttribute('disabled')
+      }
     })
     return createElement('div')
       .addClass('container')

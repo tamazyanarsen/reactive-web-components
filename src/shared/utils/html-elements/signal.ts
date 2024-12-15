@@ -11,7 +11,9 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
     }))
     return initValue
   }
+  // result.oldValue = initValue
   result.set = function (value: T) {
+    // result.oldValue = initValue
     initValue = value
   }
   return result
@@ -26,7 +28,7 @@ export function effect(cb: () => void) {
       const oldSetfunction = event.detail.signalFunction.set
       event.detail.signalFunction.set = (...args) => {
         oldSetfunction(...args)
-        console.log('изменился сигнал для', cb)
+        // console.log('изменился сигнал для', cb)
         cb()
       }
     }

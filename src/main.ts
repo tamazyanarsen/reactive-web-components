@@ -9,7 +9,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-input id="inp1"></rx-input>
       <rx-input></rx-input>
       <rx-input></rx-input>
-      <rx-button></rx-button>
+      <rx-button type="primary">sdlflkjsdlfjslfkjlj</rx-button>
+      <rx-button type="warning">sdlflkjsdlfjslfkjlj</rx-button>
     </div>
   </div>
 `
