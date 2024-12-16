@@ -16,12 +16,16 @@ export class InputElement extends BaseElement {
 
   render(): ComponentConfig {
     const inputEl = createElement('input')
+    setTimeout(() => {
+      this.placeholder.update(v => v + 'test')
+    }, 7000);
     effect(() => {
       const isDisabled = this.disabled()
+      console.log(`disabled, old value: ${this.disabled.oldValue}, new value: ${this.disabled()}`)
       inputEl.setAttribute('placeholder', this.placeholder())
       inputEl.setAttribute('value', this.value())
       if (isDisabled) {
-        inputEl.setAttribute('disabled', this.disabled())
+        inputEl.setAttribute('disabled', isDisabled)
       }
       else {
         inputEl.hostElement.removeAttribute('disabled')

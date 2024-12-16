@@ -1,4 +1,4 @@
-import { SignalValueEventName, ReactiveSignal, SignalValueEventDetail } from "../../types/signal";
+import { SignalValueEventName, ReactiveSignal, SignalValueEventDetail, SignalUpdateFunc } from "../../types/signal";
 
 const isCustomEvent = <T = unknown>(event: Event | CustomEvent<T>): event is CustomEvent<T> => 'detail' in event;
 
@@ -11,10 +11,13 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
     }))
     return initValue
   }
-  // result.oldValue = initValue
+  result.oldValue = initValue
   result.set = function (value: T) {
-    // result.oldValue = initValue
+    result.oldValue = initValue
     initValue = value
+  }
+  result.update = function (cb: SignalUpdateFunc<T>) {
+    result.set(cb(initValue))
   }
   return result
 }
@@ -28,7 +31,6 @@ export function effect(cb: () => void) {
       const oldSetfunction = event.detail.signalFunction.set
       event.detail.signalFunction.set = (...args) => {
         oldSetfunction(...args)
-        // console.log('изменился сигнал для', cb)
         cb()
       }
     }
