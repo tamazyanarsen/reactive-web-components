@@ -1,17 +1,32 @@
-* {
-  transition: all .3s;
-}
-
 .container {
   display: flex;
 
   .btn-el {
-    &.primary {
-      background: dodgerblue;
+    border-radius: 5px;
+    color: white;
+    min-height: 3em;
+    border: none;
+
+
+    &:hover {
+      outline: 2px solid forestgreen;
+      cursor: pointer;
     }
 
-    &.warning {
+    &[btn-type=primary] {
+      background-color: dodgerblue;
+    }
+
+    &[btn-type=warning] {
       background-color: lightcoral;
+    }
+
+    &[btn-type=info] {
+      background-color: grey;
+    }
+
+    &:active {
+      background-color: forestgreen;
     }
   }
 }

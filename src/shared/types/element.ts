@@ -8,8 +8,10 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   addContent(content: string, wrapperElement?: HtmlTagName): ComponentConfig;
   setContent(content: string): ComponentConfig;
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig;
+  addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: EventListener): ComponentConfig;
   addEventlistener(eventName: string, cb: EventListener): ComponentConfig;
   setAttribute<AttrName extends keyof T & string, AttrValue = unknown>(attrName: AttrName, value: AttrValue): ComponentConfig;
+  setAttribute<AttrValue = unknown>(attrName: string, value: AttrValue): ComponentConfig;
   handleSlotContext<SlotValue = unknown>(cb: (value: SlotValue) => void): ComponentConfig;
   addClass(...className: string[]): ComponentConfig;
   removeClass(...className: string[]): ComponentConfig;

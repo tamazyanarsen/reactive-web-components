@@ -30,11 +30,11 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       setHtmlContent(wrapper, content)
       return this
     },
-    addEventlistener(eventName, cb) {
+    addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K | string, cb: EventListener) {
       wrapper.addEventListener(eventName, cb)
       return this
     },
-    setAttribute(attrName, value) {
+    setAttribute<AttrName extends keyof T & string, AttrValue = unknown>(attrName: AttrName | string, value: AttrValue) {
       let newValue
       if (typeof value !== 'string') newValue = JSON.stringify(value)
       else newValue = value

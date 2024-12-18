@@ -23,6 +23,8 @@ export const event = (): <T extends HTMLElement, K extends keyof T>(target: T, p
   (Reflect.get(target, eventFieldName) as string[]).push(propName as string)
 }
 
+export const newEventEmitter: <T = unknown>() => EventEmitter<T> = () => _ => { }
+
 export const component = (selector: string): <T extends BaseElementConstructor>(target: T) => T => {
   return target => {
     console.log(target.name, 'start register static attr', target.prototype[observedAttrFieldName])
