@@ -23,19 +23,23 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
 }
 
 export function effect(cb: () => void) {
-  // console.log('from effect', cb.toString().match(/(\w+)\(\)/gm))
-
-  const signalCallback = (event: Event | CustomEvent<SignalValueEventDetail>) => {
-    if (isCustomEvent<SignalValueEventDetail>(event)) {
-      console.log('register effect for', cb)
-      const oldSetfunction = event.detail.signalFunction.set
-      event.detail.signalFunction.set = (...args) => {
-        oldSetfunction(...args)
-        cb()
+  const signalList = new Set<ReactiveSignal<unknown>>();
+  (function () {
+    const signalCallback = (event: Event | CustomEvent<SignalValueEventDetail>) => {
+      if (isCustomEvent<SignalValueEventDetail>(event)) {
+        console.log('is cb registered', signalList.has(event.detail.signalFunction))
+        if (signalList.has(event.detail.signalFunction)) return;
+        const oldSetfunction = event.detail.signalFunction.set
+        console.log('register effect for', cb)
+        event.detail.signalFunction.set = (...args) => {
+          oldSetfunction(...args)
+          cb()
+        }
+        signalList.add(event.detail.signalFunction)
       }
     }
-  }
-  window.addEventListener(SignalValueEventName, signalCallback)
-  cb()
-  window.removeEventListener(SignalValueEventName, signalCallback)
+    window.addEventListener(SignalValueEventName, signalCallback)
+    cb()
+    window.removeEventListener(SignalValueEventName, signalCallback)
+  })()
 }
