@@ -8,7 +8,7 @@ export class TestWrapper extends BaseElement {
   render(): ComponentConfig {
     return createElement('div')
       .append(
-        createElement('div').setContent('проверка слота, это wrapper!!!'),
+        createElement('div').setHtmlContent('проверка слота, это wrapper!!!'),
         createElement('slot').setAttribute('name', 'test-slot')
       )
   }

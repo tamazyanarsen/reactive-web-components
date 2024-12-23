@@ -6,7 +6,7 @@ export class Test extends BaseElement {
   render(): ComponentConfig {
     return createCustomElement('rx-wrapper').append(
       createCustomElement('rx-button')
-        .setContent('test button')
+        .setHtmlContent('test button')
         .setAttribute('slot', 'test-slot')
         .handleSlotContext(e => console.log('MY CONTEXT', e))
     )

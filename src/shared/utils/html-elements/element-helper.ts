@@ -1,18 +1,28 @@
+import { ReactiveSignal } from "@shared/types"
 import { ComponentConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { effect } from "./signal"
 
 export const eventEmitter = <EventValue = unknown>() => (_value: EventValue) => { }
-export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string, wrapperElement: HtmlTagName = 'div') => {
+export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
   const divWrapper = document.createElement(wrapperElement)
-  divWrapper.innerHTML = content
+  setHtmlContent(divWrapper, content)
   htmlElement.appendChild(divWrapper)
   return htmlElement
 }
 
-export const setHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string) => {
-  htmlElement.innerHTML = content
+export const setHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown) => {
+  htmlElement.innerHTML = typeof content === 'string' ? content : JSON.stringify(content)
   return htmlElement
+}
+
+export const htmlEffectWrapper = (content: ReactiveSignal<unknown>): HTMLDivElement => {
+  const htmlDiv = document.createElement('div')
+  effect(() => {
+    const data = content()
+    htmlDiv.innerHTML = typeof data === 'string' ? data : JSON.stringify(data)
+  })
+  return htmlDiv
 }
 
 export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): ComponentConfig<T> => {
@@ -23,11 +33,11 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       });
       return this
     },
-    addContent(content, wrapperElement = 'div') {
+    addHtmlContent(content, wrapperElement = 'div') {
       addHtmlContent(wrapper, content, wrapperElement)
       return this
     },
-    setContent(content) {
+    setHtmlContent(content) {
       setHtmlContent(wrapper, content)
       return this
     },
@@ -72,6 +82,15 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
     },
     addEffect(cb) {
       effect(() => cb(this, this.hostElement))
+      return this
+    },
+    addReactiveContent(content) {
+      wrapper.appendChild(htmlEffectWrapper(content))
+      return this;
+    },
+    setReactiveContent(content) {
+      wrapper.innerHTML = ''
+      wrapper.appendChild(htmlEffectWrapper(content))
       return this
     },
     hostElement: wrapper

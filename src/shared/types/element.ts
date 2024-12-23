@@ -1,3 +1,4 @@
+import { ReactiveSignal } from "./signal";
 
 export type HtmlTagName = keyof HTMLElementTagNameMap
 
@@ -5,8 +6,8 @@ export type ExtraHTMLElement = HTMLElement & { handleSlotContext?: <SlotValue = 
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   append(...args: ComponentConfig[]): ComponentConfig
-  addContent(content: string, wrapperElement?: HtmlTagName): ComponentConfig;
-  setContent(content: string): ComponentConfig;
+  addHtmlContent(content: string, wrapperElement?: HtmlTagName): ComponentConfig;
+  setHtmlContent(content: string): ComponentConfig;
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig;
   addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: EventListener): ComponentConfig;
   addEventlistener(eventName: string, cb: EventListener): ComponentConfig;
@@ -17,6 +18,8 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   removeClass(...className: string[]): ComponentConfig;
   replaceClass(oldClass: string, newClass: string): ComponentConfig;
   addEffect(cb: (self: ComponentConfig, host: T) => void): ComponentConfig;
+  addReactiveContent(content: ReactiveSignal<unknown>): ComponentConfig;
+  setReactiveContent(content: ReactiveSignal<unknown>): ComponentConfig;
   hostElement: T;
 }
 
