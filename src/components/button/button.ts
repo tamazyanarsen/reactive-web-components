@@ -28,3 +28,4 @@ export class ButtonComponent extends BaseElement {
 }
 
 export const initButton = () => { }
+

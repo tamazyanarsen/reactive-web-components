@@ -50,7 +50,12 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       })
       return this
     },
-    handleSlotContext(_cb) {
+    handleSlotContext(cb) {
+      Reflect.defineProperty(wrapper, 'handleSlotContext', {
+        get() {
+          return cb
+        },
+      })
       return this
     },
     addClass(...className) {

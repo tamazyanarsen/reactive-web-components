@@ -12,6 +12,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-button type="primary">sdlflkjsdlfjslfkjlj</rx-button>
       <rx-button type="warning">sdlflkjsdlfjslfkjlj</rx-button>
       <rx-button type="info">sdlflkjsdlfjslfkjlj</rx-button>
+      <rx-test></rx-test>
     </div>
   </div>
 `;
