@@ -1,7 +1,7 @@
 import { ComponentConfig } from "@shared/types/element";
 import { component, event, newEventEmitter, property } from "@shared/utils/decorators/html-property";
 import { BaseElement, createElement } from "@shared/utils/html-elements/element";
-import { effect, signal } from "@shared/utils/html-elements/signal";
+import { signal } from "@shared/utils/html-elements/signal";
 
 @component('rx-button')
 export class ButtonComponent extends BaseElement {
@@ -19,9 +19,10 @@ export class ButtonComponent extends BaseElement {
       .addClass('btn-el')
       .addEventlistener('click', (_ev) => this.change())
       .append(createElement('slot'))
-    effect(() => {
-      btnEl.setAttribute('btn-type', this.type())
-    })
+      .addEffect((self) => { self.setAttribute('btn-type', this.type()) })
+    // effect(() => {
+    //   btnEl.setAttribute('btn-type', this.type())
+    // })
     return wrapper.append(btnEl)
   }
 }

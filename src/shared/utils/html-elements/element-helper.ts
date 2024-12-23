@@ -1,5 +1,6 @@
 import { ComponentConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
+import { effect } from "./signal"
 
 export const eventEmitter = <EventValue = unknown>() => (_value: EventValue) => { }
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string, wrapperElement: HtmlTagName = 'div') => {
@@ -62,6 +63,10 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
     },
     replaceClass(oldClass, newClass) {
       wrapper.classList.replace(oldClass, newClass)
+      return this
+    },
+    addEffect(cb) {
+      effect(() => cb(this, this.hostElement))
       return this
     },
     hostElement: wrapper

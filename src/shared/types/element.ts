@@ -16,6 +16,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   addClass(...className: string[]): ComponentConfig;
   removeClass(...className: string[]): ComponentConfig;
   replaceClass(oldClass: string, newClass: string): ComponentConfig;
+  addEffect(cb: (self: ComponentConfig, host: T) => void): ComponentConfig;
   hostElement: T;
 }
 
