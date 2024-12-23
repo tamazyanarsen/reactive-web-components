@@ -7,6 +7,10 @@
     min-height: 3em;
     border: none;
 
+    &:focus {
+      outline: 2px solid forestgreen;
+    }
+
 
     &:hover {
       outline: 2px solid forestgreen;

@@ -9,7 +9,7 @@ export class ButtonComponent extends BaseElement {
   type = signal('Primary')
 
   @event()
-  change = newEventEmitter()
+  change = newEventEmitter<number>()
 
   rootStyle = import('./button.scss?raw');
 
@@ -17,7 +17,7 @@ export class ButtonComponent extends BaseElement {
     const wrapper = createElement('div').addClass('container')
     const btnEl = createElement('button')
       .addClass('btn-el')
-      .addEventlistener('', (ev) => this.change(ev))
+      .addEventlistener('click', (_ev) => this.change())
       .append(createElement('slot'))
     effect(() => {
       btnEl.setAttribute('btn-type', this.type())

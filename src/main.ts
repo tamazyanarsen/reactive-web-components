@@ -14,4 +14,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-button type="info">sdlflkjsdlfjslfkjlj</rx-button>
     </div>
   </div>
-`
+`;
+
+document.querySelector('rx-button')?.addEventListener('change', console.log)
