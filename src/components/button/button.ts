@@ -9,7 +9,7 @@ export class ButtonComponent extends BaseElement {
   type = signal('Primary')
 
   @event()
-  change = newEventEmitter<number>()
+  change = newEventEmitter()
 
   rootStyle = import('./button.scss?raw');
 
