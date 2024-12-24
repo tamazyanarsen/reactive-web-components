@@ -17,15 +17,15 @@
       cursor: pointer;
     }
 
-    &[btn-type=primary] {
+    &.primary {
       background-color: dodgerblue;
     }
 
-    &[btn-type=warning] {
+    &.warning {
       background-color: lightcoral;
     }
 
-    &[btn-type=info] {
+    &.info {
       background-color: grey;
     }
 
@@ -34,3 +34,9 @@
     }
   }
 }
+
+// :host(rx-button) {
+// &[type=primary] {
+//   background-color: red;
+// }
+// }

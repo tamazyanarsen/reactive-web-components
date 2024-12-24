@@ -6,7 +6,7 @@ import { signal } from "@shared/utils/html-elements/signal";
 @component('rx-button')
 export class ButtonComponent extends BaseElement {
   @property()
-  type = signal('Primary')
+  type = signal('primary')
 
   @event()
   change = newEventEmitter()
@@ -19,13 +19,11 @@ export class ButtonComponent extends BaseElement {
       .addClass('btn-el')
       .addEventlistener('click', (_ev) => this.change())
       .append(createElement('slot'))
-      .addEffect((self) => { self.setAttribute('btn-type', this.type()) })
-    // effect(() => {
-    //   btnEl.setAttribute('btn-type', this.type())
-    // })
+      .addEffect(self => {
+        self.removeClass('primary', 'warning', 'info')
+        self.addClass(this.type())
+      })
     return wrapper.append(btnEl)
   }
 }
-
-export const initButton = () => { }
 
