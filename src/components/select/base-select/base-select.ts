@@ -20,6 +20,7 @@ export class SelectComponent extends BaseElement {
       .addHtmlContent('select element')
       .append(
         createElement('select')
+          .addClass('select-container', 'base-border')
           .addEventlistener('change', () => this.change())
           .addEffect(self => self.append(
             ...this.options()

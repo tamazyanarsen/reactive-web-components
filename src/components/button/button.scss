@@ -2,35 +2,35 @@
   display: flex;
 
   .btn-el {
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     color: white;
     min-height: 3em;
     border: none;
 
     &:focus {
-      outline: 2px solid forestgreen;
+      outline: 2px solid var(--border-color);
     }
 
 
     &:hover {
-      outline: 2px solid forestgreen;
+      outline: 2px solid var(--border-color);
       cursor: pointer;
     }
 
     &.primary {
-      background-color: dodgerblue;
+      background-color: var(--primary-color);
     }
 
     &.warning {
-      background-color: lightcoral;
+      background-color: var(--warning-color);
     }
 
     &.info {
-      background-color: grey;
+      background-color: var(--info-color);
     }
 
     &:active {
-      background-color: forestgreen;
+      background-color: var(--active-color);
     }
   }
 }
