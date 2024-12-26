@@ -13,7 +13,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig<T>;
   addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: EventListener): ComponentConfig<T>;
   addEventlistener(eventName: string, cb: EventListener): ComponentConfig<T>;
-  setAttribute<AttrName extends keyof T & string, AttrValue = SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setAttribute<AttrName extends keyof T & string, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   removeAttribute<AttrName extends keyof T & string>(attrName: AttrName): ComponentConfig<T>;
   handleSlotContext<SlotValue = unknown>(cb: (value: SlotValue) => void): ComponentConfig<T>;
   addClass(...className: string[]): ComponentConfig<T>;

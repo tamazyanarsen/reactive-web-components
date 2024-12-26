@@ -14,16 +14,18 @@ export class ButtonComponent extends BaseElement {
   rootStyle = import('./button.scss?raw');
 
   render(): ComponentConfig {
-    const wrapper = createElement('div').addClass('container')
-    const btnEl = createElement('button')
-      .addClass('btn-el')
-      .addEventlistener('click', (_ev) => this.change())
-      .append(createElement('slot'))
-      .addEffect(self => {
-        self.removeClass('primary', 'warning', 'info')
-        self.addClass(this.type())
-      })
-    return wrapper.append(btnEl)
+    return createElement('div').addClass('container')
+      .append(
+        createElement('button')
+          .addClass('btn-el')
+          .addEventlistener('click', (_ev) => this.change())
+          .append(
+            createElement('slot')
+          )
+          .addEffect(self => {
+            self.removeClass('primary', 'warning', 'info')
+            self.addClass(this.type())
+          })
+      )
   }
 }
-

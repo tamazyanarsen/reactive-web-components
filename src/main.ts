@@ -1,6 +1,11 @@
+import { webLightTheme } from '@fluentui/tokens';
+import { setTheme } from '@fluentui/web-components';
+setTheme(webLightTheme);
+
 import './style.css';
 
 export * from './components';
+export * from './fluent-components';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
@@ -15,6 +20,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-test></rx-test>
       <rx-select></rx-select>
       <rx-select is-multi="true"></rx-select>
+
+      <fluent-select></fluent-select>
     </div>
   </div>
 `;
@@ -32,3 +39,10 @@ setTimeout(() => {
   })
 }, 2000);
 
+document.querySelectorAll('fluent-select').forEach(elem => {
+  elem.setAttribute('items', JSON.stringify([
+    { label: 'first item', value: 1 },
+    { label: 'second item', value: 2 },
+    { label: 'third item', value: 3 },
+  ]))
+})

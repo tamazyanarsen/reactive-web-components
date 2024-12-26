@@ -1,4 +1,4 @@
-export interface Option<ValueType = unknown> {
+export interface Option<ValueType = string> {
   label: string;
   value: ValueType
 }
