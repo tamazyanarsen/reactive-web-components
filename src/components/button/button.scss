@@ -7,30 +7,44 @@
     min-height: 3em;
     border: none;
 
-    &:focus {
-      outline: 2px solid var(--border-color);
-    }
-
-
     &:hover {
-      outline: 2px solid var(--border-color);
       cursor: pointer;
     }
 
     &.primary {
       background-color: var(--primary-color);
+
+      &:hover {
+        background-color: var(--button-primary-hover-color);
+      }
+
+      &:active {
+        background-color: var(--primary-color);
+      }
     }
 
     &.warning {
       background-color: var(--warning-color);
+
+      &:hover {
+        background-color: var(--button-warning-hover-color);
+      }
+
+      &:active {
+        background-color: var(--warning-color);
+      }
     }
 
     &.info {
       background-color: var(--info-color);
-    }
 
-    &:active {
-      background-color: var(--active-color);
+      &:hover {
+        background-color: var(--button-info-hover-color);
+      }
+
+      &:active {
+        background-color: var(--info-color);
+      }
     }
   }
 }

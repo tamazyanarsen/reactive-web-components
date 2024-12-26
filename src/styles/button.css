@@ -1,0 +1,10 @@
+:root {
+  --border-color: lightblue;
+  --border-radius: 5px;
+  --primary-color: dodgerblue;
+  --warning-color: lightcoral;
+  --info-color: grey;
+  --button-primary-hover-color: lightblue;
+  --button-warning-hover-color: lightsalmon;
+  --button-info-hover-color: lightgrey;
+}

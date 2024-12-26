@@ -1,3 +1,6 @@
+@import './styles/button.css';
+
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -31,13 +34,4 @@ body {
     color: #213547;
     background-color: #ffffff;
   }
-}
-
-:root {
-  --border-color: forestgreen;
-  --border-radius: 5px;
-  --primary-color: dodgerblue;
-  --warning-color: lightcoral;
-  --info-color: grey;
-  --active-color: forestgreen;
 }
