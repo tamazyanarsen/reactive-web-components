@@ -1,6 +1,10 @@
 import { webLightTheme } from '@fluentui/tokens';
-import { setTheme } from '@fluentui/web-components';
+import { FluentDesignSystem, MenuItemDefinition, MenuListDefinition, setTheme } from '@fluentui/web-components';
 setTheme(webLightTheme);
+// start register fluent component
+MenuItemDefinition.define(FluentDesignSystem.registry)
+MenuListDefinition.define(FluentDesignSystem.registry)
+// stop register fluent components
 
 import './style.css';
 
@@ -21,6 +25,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-select></rx-select>
       <rx-select is-multi="true"></rx-select>
 
+      <fluent-select></fluent-select>
       <fluent-select></fluent-select>
     </div>
   </div>

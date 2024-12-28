@@ -1,0 +1,37 @@
+.wrapper {
+  transition: background-color .15s ease-in-out;
+
+  .items-container {
+    position: absolute;
+    padding: 0;
+    max-height: 12em;
+    overflow: auto;
+
+    .selected {
+      background-color: lightseagreen;
+    }
+  }
+
+  .selected-container {
+    display: flex;
+    gap: .5em;
+    border: 1px solid;
+    border-radius: var(--border-radius);
+    border-color: lightslategrey;
+    min-width: 3em;
+    min-height: 2em;
+    width: 15em;
+
+    &:hover {
+      cursor: pointer;
+    }
+
+    .selected-item {
+      max-width: 5em;
+      text-overflow: ellipsis;
+      text-wrap-mode: nowrap;
+      overflow: hidden;
+    }
+  }
+
+}

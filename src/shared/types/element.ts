@@ -8,6 +8,8 @@ export type SignalValue<T> = T extends ReactiveSignal<infer V> ? V : T
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   append(...args: ComponentConfig[]): ComponentConfig<T>;
+  set(...args: ComponentConfig[]): ComponentConfig<T>;
+  removeChild(...args: ComponentConfig[]): ComponentConfig<T>;
   addHtmlContent(content: string, wrapperElement?: HtmlTagName): ComponentConfig<T>;
   setHtmlContent(content: string): ComponentConfig<T>;
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig<T>;
@@ -22,6 +24,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   addEffect(cb: (self: ComponentConfig<T>, host: T) => void): ComponentConfig<T>;
   addReactiveContent(content: ReactiveSignal<unknown>): ComponentConfig<T>;
   setReactiveContent(content: ReactiveSignal<unknown>): ComponentConfig<T>;
+  clear(): ComponentConfig<T>;
   hostElement: T;
 }
 

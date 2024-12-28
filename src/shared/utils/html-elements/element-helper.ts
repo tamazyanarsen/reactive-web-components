@@ -33,6 +33,20 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       });
       return this
     },
+    set(...args) {
+      this.clear();
+      args.forEach(element => {
+        wrapper.appendChild(element.hostElement)
+      });
+      return this
+    },
+    removeChild(...args) {
+      args.forEach(node => {
+        if (Array.from(wrapper.childNodes.values()).some(child => child === node.hostElement))
+          wrapper.removeChild(node.hostElement)
+      })
+      return this
+    },
     addHtmlContent(content, wrapperElement = 'div') {
       addHtmlContent(wrapper, content, wrapperElement)
       return this
@@ -93,9 +107,13 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       return this;
     },
     setReactiveContent(content) {
-      wrapper.innerHTML = ''
+      this.clear();
       wrapper.appendChild(htmlEffectWrapper(content))
       return this
+    },
+    clear() {
+      wrapper.innerHTML = '';
+      return this;
     },
     hostElement: wrapper
   }
