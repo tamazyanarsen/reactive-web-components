@@ -1,15 +1,11 @@
-import { ComponentConfig } from "@shared/types";
+import { ComponentConfig, ListItem, SelectedItem } from "@shared/types";
 import { BaseElement, component, createCustomElement, createElement, property, signal } from "@shared/utils";
-
-import { MenuItem, MenuList } from "@fluentui/web-components";
-
-interface MenuItemValue { label: string; value: string }
-interface SelectedItem { [value: string]: string }
+import { DropdownComponent } from "components/dropdown/dropdown";
 
 @component('fluent-select')
 export class SelectFluentComponent extends BaseElement {
   @property()
-  items = signal<MenuItemValue[]>([])
+  items = signal<ListItem[]>([])
 
   selectedItems = signal<SelectedItem>({})
 
@@ -19,39 +15,9 @@ export class SelectFluentComponent extends BaseElement {
 
   render(): ComponentConfig {
     document.body.addEventListener('click', () => this.isDropdownVisible.set(false))
-    const dropdownEl = createCustomElement<MenuList>('fluent-menu-list')
-      .addClass('items-container')
-      .addEffect(self =>
-        self.set(
-          ...this.items()
-            .map(e => {
-              return createCustomElement<MenuItem>('fluent-menu-item')
-                .addEffect(self => {
-                  const selectedItems = this.selectedItems()
-                  if (e.value in selectedItems) self.addClass('selected')
-                  else self.removeClass('selected')
-                })
-                .setHtmlContent(e.label)
-                .addEventlistener('click', ev => {
-                  ev.stopPropagation();
-                  this.selectedItems.update(v => {
-                    if (e.value in v) delete v[e.value]
-                    else v[e.value] = e.label
-                    if (this.items().length < 10) return v
-                    this.items.update(v => {
-                      const selected = this.selectedItems()
-                      v.sort(
-                        (a, b) =>
-                          +!!selected[b.value] - +!!selected[a.value]
-                      );
-                      return v
-                    })
-                    return v
-                  })
-                })
-            })
-        )
-      )
+    const dropdownEl = createCustomElement<DropdownComponent>('rx-dropdown')
+      .addEffect(self => { self.setAttribute('items', this.items()) })
+      .addEventlistener('selected', e => this.selectedItems.set(e.detail))
     const inputEl = createElement('div')
       .addClass('selected-container')
       .addEffect(self => {
@@ -70,7 +36,6 @@ export class SelectFluentComponent extends BaseElement {
     return createElement('div')
       .addClass('wrapper')
       .append(inputEl)
-      //   TODO дописать появление dropdown
       .addEffect(self => {
         if (this.isDropdownVisible()) {
           dropdownEl.hostElement.style.width = inputEl.hostElement.clientWidth + 'px';

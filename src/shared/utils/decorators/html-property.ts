@@ -72,6 +72,8 @@ export const component = (selector: string): <T extends BaseElementConstructor>(
           })
         }
 
+        if (this.shadowRoot)
+          this.shadowRoot.innerHTML = ''
         // @ts-ignore
         this.shadowRoot?.appendChild((this.render() as ComponentConfig).hostElement)
         checkCall(this, target.prototype.connectedCallback)

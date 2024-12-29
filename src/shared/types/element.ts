@@ -6,6 +6,14 @@ export type ExtraHTMLElement = HTMLElement & { handleSlotContext?: <SlotValue = 
 
 export type SignalValue<T> = T extends ReactiveSignal<infer V> ? V : T
 
+export type EventKeys<T> = {
+  [k in keyof T]: T[k] extends EventEmitter<any> ? k : never
+}[keyof T];
+
+export type CustomEventListener<DetailValue = unknown> = (e: CustomEvent<DetailValue>) => void
+
+export type CustomEventValue<T> = T extends EventEmitter<infer V> ? V : T;
+
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   append(...args: ComponentConfig[]): ComponentConfig<T>;
   set(...args: ComponentConfig[]): ComponentConfig<T>;
@@ -14,7 +22,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   setHtmlContent(content: string): ComponentConfig<T>;
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig<T>;
   addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: EventListener): ComponentConfig<T>;
-  addEventlistener(eventName: string, cb: EventListener): ComponentConfig<T>;
+  addEventlistener<K extends EventKeys<T>>(eventName: K, cb: CustomEventListener<CustomEventValue<T[K]>>): ComponentConfig<T>;
   setAttribute<AttrName extends keyof T & string, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   removeAttribute<AttrName extends keyof T & string>(attrName: AttrName): ComponentConfig<T>;
   handleSlotContext<SlotValue = unknown>(cb: (value: SlotValue) => void): ComponentConfig<T>;

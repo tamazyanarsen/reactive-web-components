@@ -11,6 +11,11 @@ export class ButtonComponent extends BaseElement {
   @event()
   change = newEventEmitter()
 
+  @event()
+  testEvent = newEventEmitter<string>()
+
+  testEvent2 = 12
+
   rootStyle = import('./button.scss?raw');
 
   render(): ComponentConfig {

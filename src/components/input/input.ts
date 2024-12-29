@@ -7,7 +7,7 @@ export class InputElement extends BaseElement {
   placeholder = signal('')
 
   @property()
-  disabled = signal(true)
+  disabled = signal(false)
 
   @property()
   value = signal('')
