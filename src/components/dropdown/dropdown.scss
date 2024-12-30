@@ -2,6 +2,10 @@
   display: flex;
   flex-direction: column;
 
+  .item:not(:last-child) {
+    border-bottom: 1px solid lightskyblue;
+  }
+
   .selected {
     background-color: lightseagreen;
   }

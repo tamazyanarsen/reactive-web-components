@@ -2,8 +2,8 @@ import { ComponentConfig } from "@shared/types";
 import { BaseElement, component, createElement, event, newEventEmitter, property, signal } from "@shared/utils";
 import { Option } from "../types/select";
 
-@component('rx-select')
-export class SelectComponent extends BaseElement {
+@component('rx-base-select')
+export class SelectBaseComponent extends BaseElement {
   rootStyle?: Promise<typeof import("*?raw")> | undefined = import('./base-select.scss?raw');
 
   @property()

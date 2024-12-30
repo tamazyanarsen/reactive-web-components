@@ -17,11 +17,11 @@ export class DropdownComponent extends BaseElement {
     return createElement('div')
       .addClass('items-container')
       .addEffect(self => {
-        console.log('get items', this.items())
         self.set(
           ...this.items()
             .map(e => {
               return createElement('div')
+                .addClass('item')
                 .addEffect(self => {
                   const selectedItems = this.selectedItems()
                   if (e.value in selectedItems) self.addClass('selected')
@@ -48,7 +48,6 @@ export class DropdownComponent extends BaseElement {
                 })
             })
         )
-      }
-      )
+      })
   }
 }

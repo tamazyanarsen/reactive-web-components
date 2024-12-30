@@ -1,9 +1,9 @@
 import { ComponentConfig, ListItem, SelectedItem } from "@shared/types";
 import { BaseElement, component, createCustomElement, createElement, property, signal } from "@shared/utils";
-import { DropdownComponent } from "components/dropdown/dropdown";
+import { DropdownComponent } from "../../dropdown/dropdown";
 
-@component('fluent-select')
-export class SelectFluentComponent extends BaseElement {
+@component('rx-select')
+export class SelectComponent extends BaseElement {
   @property()
   items = signal<ListItem[]>([])
 
@@ -16,6 +16,7 @@ export class SelectFluentComponent extends BaseElement {
   render(): ComponentConfig {
     document.body.addEventListener('click', () => this.isDropdownVisible.set(false))
     const dropdownEl = createCustomElement<DropdownComponent>('rx-dropdown')
+      .addClass('dropdown')
       .addEffect(self => { self.setAttribute('items', this.items()) })
       .addEventlistener('selected', e => this.selectedItems.set(e.detail))
     const inputEl = createElement('div')
@@ -38,7 +39,7 @@ export class SelectFluentComponent extends BaseElement {
       .append(inputEl)
       .addEffect(self => {
         if (this.isDropdownVisible()) {
-          dropdownEl.hostElement.style.width = inputEl.hostElement.clientWidth + 'px';
+          dropdownEl.hostElement.style.width = inputEl.hostElement.getClientRects().item(0)?.width + 'px';
           self.append(dropdownEl)
         } else {
           self.removeChild(dropdownEl)

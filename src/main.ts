@@ -1,15 +1,14 @@
-import { webLightTheme } from '@fluentui/tokens';
-import { FluentDesignSystem, MenuItemDefinition, MenuListDefinition, setTheme } from '@fluentui/web-components';
-setTheme(webLightTheme);
-// start register fluent component
-MenuItemDefinition.define(FluentDesignSystem.registry)
-MenuListDefinition.define(FluentDesignSystem.registry)
-// stop register fluent components
+// import { webLightTheme } from '@fluentui/tokens';
+// import { FluentDesignSystem, MenuItemDefinition, MenuListDefinition, setTheme } from '@fluentui/web-components';
+// setTheme(webLightTheme);
+// // start register fluent component
+// MenuItemDefinition.define(FluentDesignSystem.registry)
+// MenuListDefinition.define(FluentDesignSystem.registry)
+// // stop register fluent components
 
 import './style.css';
 
 export * from './components';
-export * from './fluent-components';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
@@ -22,17 +21,18 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-button type="warning">sdlflkjsdlfjslfkjlj</rx-button>
       <rx-button type="info">sdlflkjsdlfjslfkjlj</rx-button>
       <rx-test></rx-test>
-      <rx-select></rx-select>
-      <rx-select is-multi="true"></rx-select>
 
-      <fluent-select></fluent-select>
-      <fluent-select></fluent-select>
+      <rx-base-select></rx-base-select>
+      <rx-base-select is-multi="true"></rx-base-select>
+
+      <rx-select></rx-select>
+      <rx-select></rx-select>
     </div>
   </div>
 `;
 
 document.querySelector('rx-button')?.addEventListener('change', console.log)
-const selectEl = document.querySelectorAll('rx-select')
+const selectEl = document.querySelectorAll('rx-base-select')
 setTimeout(() => {
   selectEl.forEach(el => {
     el.setAttribute('options', JSON.stringify([
@@ -42,9 +42,9 @@ setTimeout(() => {
     ]))
     el.addEventListener('change', console.log)
   })
-}, 2000);
+}, 200);
 
-document.querySelectorAll('fluent-select').forEach(elem => {
+document.querySelectorAll('rx-select').forEach(elem => {
   elem.setAttribute('items', JSON.stringify([
     { label: 'first item', value: 1 },
     { label: 'second item', value: 2 },

@@ -1,15 +1,15 @@
 .wrapper {
   transition: background-color .15s ease-in-out;
+  position: relative;
 
-  .items-container {
+  .dropdown {
     position: absolute;
     padding: 0;
     max-height: 12em;
     overflow: auto;
-
-    .selected {
-      background-color: lightseagreen;
-    }
+    background-color: whitesmoke;
+    z-index: 1000;
+    box-shadow: 0 5px 10px lightslategrey;
   }
 
   .selected-container {
