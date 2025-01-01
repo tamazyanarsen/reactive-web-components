@@ -23,9 +23,17 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
 }
 
 export function effect(cb: () => void) {
+  const effectId = Date.now().toString();
+  let currentEffectId = localStorage.getItem('effectId');
+  localStorage.setItem('effectId', effectId);
+
   const signalList = new Set<ReactiveSignal<unknown>>();
   (function () {
     const signalCallback = (event: Event | CustomEvent<SignalValueEventDetail>) => {
+      if (effectId !== localStorage.getItem('effectId')) {
+        console.log('another effect running');
+        return;
+      };
       if (isCustomEvent<SignalValueEventDetail>(event)) {
         console.log('is cb registered', signalList.has(event.detail.signalFunction))
         if (signalList.has(event.detail.signalFunction)) return;
@@ -40,6 +48,8 @@ export function effect(cb: () => void) {
     }
     window.addEventListener(SignalValueEventName, signalCallback)
     cb()
-    window.removeEventListener(SignalValueEventName, signalCallback)
+    window.removeEventListener(SignalValueEventName, signalCallback);
+    if (currentEffectId) localStorage.setItem('effectId', currentEffectId);
+    else localStorage.removeItem('effectId');
   })()
 }
