@@ -69,7 +69,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: resolve(__dirname, './src/utils/index.ts'),
+      entry: resolve(__dirname, './src/shared/utils/index.ts'),
       name: 'ReactiveComponent',
       fileName: 'reactive-web-component.[hash]',
       // formats: ['es']

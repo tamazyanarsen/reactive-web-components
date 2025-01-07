@@ -17,12 +17,14 @@ export class DropdownComponent extends BaseElement {
     return createElement('div')
       .addClass('items-container')
       .addEffect(self => {
+        console.log('DROPDOWN FIRST EFFECT');
         self.set(
           ...this.items()
             .map(e => {
               return createElement('div')
                 .addClass('item')
                 .addEffect(self => {
+                  console.log('DROPDOWN SECOND EFFECT');
                   const selectedItems = this.selectedItems()
                   if (e.value in selectedItems) self.addClass('selected')
                   else self.removeClass('selected')

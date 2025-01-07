@@ -23,7 +23,8 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
 }
 
 export function effect(cb: () => void) {
-  const effectId = Date.now().toString();
+  // TODO: заменить на uuid
+  const effectId = Math.random().toString();
   let currentEffectId = localStorage.getItem('effectId');
   localStorage.setItem('effectId', effectId);
 
@@ -31,11 +32,11 @@ export function effect(cb: () => void) {
   (function () {
     const signalCallback = (event: Event | CustomEvent<SignalValueEventDetail>) => {
       if (effectId !== localStorage.getItem('effectId')) {
-        console.log('another effect running');
+        console.log({ effectId }, 'another effect running');
         return;
       };
       if (isCustomEvent<SignalValueEventDetail>(event)) {
-        console.log('is cb registered', signalList.has(event.detail.signalFunction))
+        console.log({ effectId }, 'is cb registered', signalList.has(event.detail.signalFunction))
         if (signalList.has(event.detail.signalFunction)) return;
         const oldSetfunction = event.detail.signalFunction.set
         console.log('register effect for', cb)
