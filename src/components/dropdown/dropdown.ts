@@ -18,6 +18,7 @@ export class DropdownComponent extends BaseElement {
       .addClass('items-container')
       .addEffect(self => {
         console.log('DROPDOWN FIRST EFFECT');
+        this.selectedItems = signal<SelectedItem>({})
         self.set(
           ...this.items()
             .map(e => {
