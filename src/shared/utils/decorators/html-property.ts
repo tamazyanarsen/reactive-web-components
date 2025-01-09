@@ -47,6 +47,7 @@ export const component = (selector: string): <T extends BaseElementConstructor>(
           newValue = JSON.parse(newValue)
         } catch {
         }
+        // TODO добавить проверку на то, является ли свойство сигналом; все property должны быть сигналами
         // @ts-ignore
         this[kebabToCamel(attrName)].set(newValue);
         checkCall(this, target.prototype.attributeChangedCallback)

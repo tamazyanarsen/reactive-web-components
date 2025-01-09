@@ -13,6 +13,9 @@ export class DropdownComponent extends BaseElement {
 
   selectedItems = signal<SelectedItem>({})
 
+  @property()
+  isMultiSelect = signal(true)
+
   render(): ComponentConfig {
     return createElement('div')
       .addClass('items-container')
@@ -33,19 +36,22 @@ export class DropdownComponent extends BaseElement {
                 .setHtmlContent(e.label)
                 .addEventlistener('click', ev => {
                   ev.stopPropagation();
-                  this.selectedItems.update(v => {
-                    if (e.value in v) delete v[e.value]
-                    else v[e.value] = e.label
-                    if (this.items().length < 10) return v
-                    this.items.update(v => {
+                  this.selectedItems.update(oldSelected => {
+                    if (e.value in oldSelected) delete oldSelected[e.value]
+                    else {
+                      if (!this.isMultiSelect()) oldSelected = {}
+                      oldSelected[e.value] = e.label
+                    }
+                    if (this.items().length < 10) return oldSelected
+                    this.items.update(oldItems => {
                       const selected = this.selectedItems()
-                      v.sort(
+                      oldItems.sort(
                         (a, b) =>
                           +!!selected[b.value] - +!!selected[a.value]
                       );
-                      return v
+                      return oldItems
                     })
-                    return v
+                    return oldSelected
                   });
                   this.selected(this.selectedItems())
                 })
