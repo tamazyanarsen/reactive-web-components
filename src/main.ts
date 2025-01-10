@@ -26,7 +26,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-base-select is-multi="true"></rx-base-select>
 
       <rx-select></rx-select>
-      <rx-select></rx-select>
+      <rx-select is-multi="false"></rx-select>
     </div>
   </div>
 `;
