@@ -66,6 +66,10 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       wrapper.setAttribute(camelToKebab(attrName), newValue)
       return this
     },
+    setReactiveAttribute(attrName, valueSignal) {
+      effect(() => this.setAttribute(attrName, valueSignal()))
+      return this
+    },
     removeAttribute(attrName) {
       wrapper.removeAttribute(camelToKebab(attrName))
       return this
