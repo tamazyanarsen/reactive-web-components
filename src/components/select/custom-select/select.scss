@@ -27,10 +27,13 @@
     }
 
     .selected-item {
-      max-width: 5em;
       text-overflow: ellipsis;
       text-wrap-mode: nowrap;
       overflow: hidden;
+    }
+
+    .selected-item-max-width {
+      max-width: 5em;
     }
   }
 
