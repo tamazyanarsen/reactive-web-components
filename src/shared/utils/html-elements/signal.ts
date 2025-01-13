@@ -27,6 +27,7 @@ export function effect(cb: () => void) {
   const effectId = Math.random().toString();
   let currentEffectId = localStorage.getItem('effectId');
   localStorage.setItem('effectId', effectId);
+  console.log('create effect', effectId, cb);
 
   const signalList = new Set<ReactiveSignal<unknown>>();
   (function () {
@@ -39,7 +40,7 @@ export function effect(cb: () => void) {
         console.log({ effectId }, 'is cb registered', signalList.has(event.detail.signalFunction))
         if (signalList.has(event.detail.signalFunction)) return;
         const oldSetfunction = event.detail.signalFunction.set
-        console.log('register effect for', cb)
+        console.log('call effect', effectId);
         event.detail.signalFunction.set = (...args) => {
           oldSetfunction(...args)
           cb()

@@ -28,6 +28,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   removeAttribute<AttrName extends keyof T & string>(attrName: AttrName): ComponentConfig<T>;
   handleSlotContext<SlotValue = unknown>(cb: (value: SlotValue) => void): ComponentConfig<T>;
   addClass(...className: string[]): ComponentConfig<T>;
+  addReactiveClass(classConfig: { [className: string]: ReactiveSignal<boolean> }): ComponentConfig<T>;
   removeClass(...className: string[]): ComponentConfig<T>;
   replaceClass(oldClass: string, newClass: string): ComponentConfig<T>;
   addEffect(cb: (self: ComponentConfig<T>, host: T) => void): ComponentConfig<T>;

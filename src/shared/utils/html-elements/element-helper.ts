@@ -94,6 +94,19 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       wrapper.classList.add(...className)
       return this
     },
+    addReactiveClass(classConfig) {
+      Object.keys(classConfig).forEach(className => {
+        effect(() => {
+          const classSignal = classConfig[className]();
+          if (classSignal) {
+            this.addClass(className)
+          } else {
+            this.removeClass(className)
+          }
+        })
+      });
+      return this;
+    },
     removeClass(...className) {
       wrapper.classList.remove(...className)
       return this

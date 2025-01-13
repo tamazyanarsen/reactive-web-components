@@ -30,11 +30,7 @@ export class SelectComponent extends BaseElement {
           ...Object.keys(this.selectedItems()).map(
             itemValue => createElement('div')
               .addClass('selected-item')
-              .addEffect(self => {
-                if (this.isMulti()) {
-                  self.addClass('selected-item-max-width')
-                }
-              })
+              .addReactiveClass({ 'selected-item-max-width': this.isMulti })
               .setHtmlContent(this.selectedItems()[itemValue])
           )
         )
