@@ -1,5 +1,5 @@
 import { ReactiveSignal } from "@shared/types"
-import { ComponentConfig, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { ComponentConfig, ComponentEventListener, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { effect } from "./signal"
 
@@ -55,8 +55,12 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       setHtmlContent(wrapper, content)
       return this
     },
-    addEventlistener<K extends keyof HTMLElementEventMap, Keys extends EventKeys<T>>(eventName: K | Keys, cb: EventListener | CustomEventListener<T[Keys]>) {
-      wrapper.addEventListener(eventName as string, cb as EventListener)
+    addEventlistener<K extends keyof HTMLElementEventMap & string, Keys extends EventKeys<T> & string>(
+      eventName: K | Keys,
+      cb: ComponentEventListener<T> | CustomEventListener<T[Keys], T>
+    ) {
+      //@ts-ignore
+      wrapper.addEventListener(eventName, e => cb(e, this, wrapper))
       return this
     },
     setAttribute(attrName, value) {

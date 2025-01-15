@@ -5,7 +5,7 @@
   .input-field {
     border: 1px solid lightgray;
     border-radius: 5px;
-    transition: all ease-in-out .25s;
+    transition: all var(--base-animation);
 
     &:focus {
       outline: none;

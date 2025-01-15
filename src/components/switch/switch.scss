@@ -1,0 +1,32 @@
+.container {
+  display: flex;
+  gap: 1em;
+
+  .switch-container {
+    background-color: grey;
+    width: 2.5em;
+    border-radius: 2em;
+    display: flex;
+    align-items: center;
+    transition: background-color var(--base-animation);
+
+    &::after {
+      display: block;
+      content: '';
+      background-color: white;
+      border-radius: 50%;
+      height: 1em;
+      width: 1em;
+      margin: 4px;
+      transition: translate var(--base-animation);
+    }
+
+    &.selected {
+      background-color: blue;
+
+      &::after {
+        translate: 100%;
+      }
+    }
+  }
+}

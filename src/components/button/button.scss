@@ -1,6 +1,10 @@
 .container {
   display: flex;
 
+  * {
+    transition: all var(--base-animation);
+  }
+
   .btn-el {
     border-radius: var(--border-radius);
     color: white;
