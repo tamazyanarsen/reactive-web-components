@@ -1,4 +1,4 @@
-import { ComponentConfig } from "@shared/types";
+import { ComponentConfig, ReactiveSignal } from "@shared/types";
 import { BaseElement, component, createElement, event, newEventEmitter, property, signal } from "@shared/utils";
 
 @component('rx-switch')
@@ -19,10 +19,11 @@ export class SwitchComponent extends BaseElement {
       .addClass('container')
       .set(
         createElement('div').addClass('switch-container')
-          .addReactiveClass({ selected: this.isSelected })
+          .addReactiveClass({ selected: this.modelValue as ReactiveSignal<boolean> ?? this.isSelected })
           .addEventlistener('click', () => {
             this.isSelected.set(!this.isSelected());
             this.changeSelected(this.isSelected());
+            if (this.modelValue) this.modelValue.set(!this.modelValue());
           }),
         createElement('div').addClass('label').setReactiveContent(this.label)
       )

@@ -1,3 +1,4 @@
+import { ReactiveSignal } from "@shared/types";
 import { ComponentConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
 import { elementHelpers } from "./element-helper";
 
@@ -12,7 +13,9 @@ export abstract class BaseElement extends HTMLElement {
 
   slotContext?: SlotContext
 
-  rootStyle?: Promise<typeof import("*?raw")>
+  protected rootStyle?: Promise<typeof import("*?raw")>
+
+  protected modelValue?: ReactiveSignal<unknown>
 
   constructor() {
     super()
@@ -20,6 +23,10 @@ export abstract class BaseElement extends HTMLElement {
   }
 
   abstract render(): ComponentConfig
+
+  setReactiveValue<ModelType = unknown>(value: ReactiveSignal<ModelType>) {
+    this.modelValue = value
+  }
 }
 
 export interface BaseElementConstructor {

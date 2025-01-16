@@ -1,6 +1,5 @@
-@import './styles/button.css';
-@import './styles/base.css';
-
+@import "./styles/button.css";
+@import "./styles/base.css";
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -18,10 +17,9 @@
 }
 
 body {
-  margin: 0;
+  margin: 2em;
   place-items: center;
   min-width: 320px;
-  min-height: 100vh;
   display: grid;
 }
 

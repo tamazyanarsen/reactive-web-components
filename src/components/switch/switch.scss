@@ -8,7 +8,8 @@
     border-radius: 2em;
     display: flex;
     align-items: center;
-    transition: background-color var(--base-animation);
+    justify-content: left;
+    transition: background-color var(--base-animation), justify-content var(--base-animation);
 
     &::after {
       display: block;
@@ -18,15 +19,20 @@
       height: 1em;
       width: 1em;
       margin: 4px;
-      transition: translate var(--base-animation);
+      --animation-duration: .01s;
+      --base-animation: var(--animation-duration) var(--animation-type);
+      transition: width var(--base-animation);
+    }
+
+    &:active {
+      &::after {
+        width: 1.5em;
+      }
     }
 
     &.selected {
       background-color: blue;
-
-      &::after {
-        translate: 100%;
-      }
+      justify-content: right;
     }
   }
 }

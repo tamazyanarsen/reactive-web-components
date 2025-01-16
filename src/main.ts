@@ -29,6 +29,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-select is-multi="false"></rx-select>
 
       <rx-switch label="Видно всем"></rx-switch>
+      <rx-switch label="Видно всем" is-selected="true"></rx-switch>
     </div>
   </div>
 `;
