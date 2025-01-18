@@ -1,5 +1,5 @@
 import { ComponentConfig } from "@shared/types";
-import { BaseElement, component, createElement, effect, property, signal } from "@shared/utils";
+import { BaseElement, component, createElement, effect, event, newEventEmitter, property, signal } from "@shared/utils";
 
 @component('rx-input')
 export class InputElement extends BaseElement {
@@ -12,9 +12,13 @@ export class InputElement extends BaseElement {
   @property()
   value = signal('')
 
+  @event()
+  changeValue = newEventEmitter<string | number>()
+
   rootStyle?: Promise<typeof import("*?raw")> | undefined = import('./input.scss?raw');
 
   render(): ComponentConfig {
+    // TODO: refactor with addEffect
     const inputEl = createElement('input')
     effect(() => {
       console.log(`disabled, old value: ${this.disabled.oldValue}, new value: ${this.disabled()}`)
