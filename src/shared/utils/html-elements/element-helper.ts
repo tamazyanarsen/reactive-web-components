@@ -67,7 +67,7 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       let newValue
       if (typeof value !== 'string') newValue = JSON.stringify(value)
       else newValue = value
-      wrapper.setAttribute(camelToKebab(attrName), newValue)
+      wrapper.setAttribute(camelToKebab(attrName as string), newValue)
       return this
     },
     setReactiveAttribute(attrName, valueSignal) {

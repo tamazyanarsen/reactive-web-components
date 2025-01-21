@@ -1,3 +1,4 @@
+import { BaseElement } from "@shared/utils";
 import { ReactiveSignal } from "./signal";
 
 export type HtmlTagName = keyof HTMLElementTagNameMap
@@ -18,6 +19,8 @@ export type CustomEventValue<T> = T extends EventEmitter<infer V> ? V : T;
 
 export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
+export type AttrSignal<T> = T extends BaseElement ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T] : keyof T & string
+
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   append(...args: ComponentConfig[]): ComponentConfig<T>;
   set(...args: ComponentConfig[]): ComponentConfig<T>;
@@ -27,8 +30,8 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig<T>;
   addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: ComponentEventListener<T>): ComponentConfig<T>;
   addEventlistener<K extends EventKeys<T>>(eventName: K, cb: CustomEventListener<CustomEventValue<T[K]>, T>): ComponentConfig<T>;
-  setAttribute<AttrName extends keyof T & string, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
-  setReactiveAttribute<AttrName extends keyof T & string, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setAttribute<AttrName extends AttrSignal<T>, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setReactiveAttribute<AttrName extends AttrSignal<T>, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   removeAttribute<AttrName extends keyof T & string>(attrName: AttrName): ComponentConfig<T>;
   handleSlotContext<SlotValue = unknown>(cb: (value: SlotValue) => void): ComponentConfig<T>;
   addClass(...className: string[]): ComponentConfig<T>;

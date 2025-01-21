@@ -11,10 +11,8 @@ export class ButtonComponent extends BaseElement {
   @event()
   change = newEventEmitter()
 
-  @event()
-  testEvent = newEventEmitter<string>()
-
-  testEvent2 = 12
+  @property()
+  label = signal('')
 
   rootStyle = import('./button.scss?raw');
 
@@ -25,7 +23,7 @@ export class ButtonComponent extends BaseElement {
           .addClass('btn-el')
           .addEventlistener('click', (_ev) => this.change())
           .append(
-            createElement('slot')
+            createElement('slot').setReactiveContent(this.label)
           )
           .addEffect(self => {
             self.removeClass('primary', 'warning', 'info')

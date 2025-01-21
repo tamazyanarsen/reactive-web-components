@@ -1,0 +1,10 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+
+  .text-block {
+    display: flex;
+    gap: 1em;
+  }
+}

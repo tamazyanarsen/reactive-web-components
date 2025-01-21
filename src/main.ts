@@ -10,6 +10,8 @@ import './style.css';
 
 export * from './components';
 
+export * from './views/comment/comment'
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
     <p>веб-компоненты</p>
@@ -30,6 +32,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
       <rx-switch label="Видно всем"></rx-switch>
       <rx-switch label="Видно всем" is-selected="true"></rx-switch>
+
+      <comment-widget></comment-widget>
     </div>
   </div>
 `;
