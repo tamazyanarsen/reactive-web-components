@@ -23,7 +23,7 @@ export const event = (): <T extends HTMLElement, K extends keyof T>(target: T, p
   (Reflect.get(target, eventFieldName) as string[]).push(propName as string)
 }
 
-export const newEventEmitter: <T = void>() => EventEmitter<T> = () => _ => { }
+export const newEventEmitter: <T = void>() => EventEmitter<T> = () => () => { }
 
 export const component = (selector: string): <T extends BaseElementConstructor>(target: T) => T => {
   return target => {
@@ -33,7 +33,7 @@ export const component = (selector: string): <T extends BaseElementConstructor>(
 
       constructor(...params: any[]) {
         super(...params)
-        // @ts-ignore
+        // @ts-expect-error index string
         console.log('observedAttrFieldName', this[observedAttrFieldName], target.prototype[observedAttrFieldName])
       }
 
@@ -46,18 +46,17 @@ export const component = (selector: string): <T extends BaseElementConstructor>(
         try {
           newValue = JSON.parse(newValue)
         } catch {
+          console.warn('json parse error')
         }
         // TODO добавить проверку на то, является ли свойство сигналом; все property должны быть сигналами
-        // @ts-ignore
+        // @ts-expect-error index string
         this[kebabToCamel(attrName)].set(newValue);
         checkCall(this, target.prototype.attributeChangedCallback)
       }
 
       connectedCallback() {
         (target.prototype[eventFieldName] as string[] | undefined)?.forEach(fieldName => {
-          // @ts-ignore
-          const oldEventObj = this[fieldName] as EventEmitter
-          // @ts-ignore
+          // @ts-expect-error index string
           this[fieldName] = (value: unknown) => {
             console.log('start emit value', value)
             this.dispatchEvent(new CustomEvent(fieldName, { detail: value }))
@@ -75,7 +74,6 @@ export const component = (selector: string): <T extends BaseElementConstructor>(
 
         if (this.shadowRoot)
           this.shadowRoot.innerHTML = ''
-        // @ts-ignore
         this.shadowRoot?.appendChild((this.render() as ComponentConfig).hostElement)
         checkCall(this, target.prototype.connectedCallback)
 

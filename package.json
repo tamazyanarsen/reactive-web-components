@@ -6,12 +6,19 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && cp -rf out-tsc dist",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docs": "npx typedoc --exclude \"**/index.ts\" --entryPointStrategy Expand ./src/shared/",
+    "lint": "npx eslint ./src/"
   },
   "devDependencies": {
+    "@eslint/js": "^9.19.0",
     "@types/node": "^22.7.5",
+    "eslint": "^9.19.0",
+    "globals": "^15.14.0",
     "sass-embedded": "^1.83.0",
+    "typedoc": "^0.27.6",
     "typescript": "^5.5.3",
+    "typescript-eslint": "^8.22.0",
     "vite": "^5.4.1",
     "vite-plugin-checker": "^0.8.0"
   }

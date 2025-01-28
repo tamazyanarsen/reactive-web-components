@@ -21,7 +21,7 @@ export class ButtonComponent extends BaseElement {
       .append(
         createElement('button')
           .addClass('btn-el')
-          .addEventlistener('click', (_ev) => this.change())
+          .addEventlistener('click', () => this.change())
           .append(
             createElement('slot').setReactiveContent(this.label)
           )

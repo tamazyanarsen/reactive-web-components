@@ -25,7 +25,7 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
 export function effect(cb: () => void) {
   // TODO: заменить на uuid
   const effectId = Math.random().toString();
-  let currentEffectId = localStorage.getItem('effectId');
+  const currentEffectId = localStorage.getItem('effectId');
   localStorage.setItem('effectId', effectId);
   console.log('create effect', effectId, cb);
 

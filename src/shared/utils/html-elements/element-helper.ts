@@ -3,7 +3,7 @@ import { ComponentConfig, ComponentEventListener, CustomEventListener, EventKeys
 import { camelToKebab } from "../helpers"
 import { effect } from "./signal"
 
-export const eventEmitter = <EventValue = unknown>() => (_value: EventValue) => { }
+export const eventEmitter = () => () => { }
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
   const divWrapper = document.createElement(wrapperElement)
   setHtmlContent(divWrapper, content)
@@ -59,7 +59,7 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       eventName: K | Keys,
       cb: ComponentEventListener<T> | CustomEventListener<T[Keys], T>
     ) {
-      //@ts-ignore
+      //@ts-expect-error index string
       wrapper.addEventListener(eventName, e => cb(e, this, wrapper))
       return this
     },
@@ -79,9 +79,9 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       return this
     },
     addStyle(style) {
-      // @ts-ignore
+      // @ts-expect-error index string
       Object.keys(style).forEach((cssKey: CssKey) => {
-        // @ts-ignore
+        // @ts-expect-error index string
         wrapper.style[cssKey] = style[cssKey]
       })
       return this

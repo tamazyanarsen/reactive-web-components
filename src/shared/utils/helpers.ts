@@ -1,4 +1,4 @@
-export const checkCall = (ctx: HTMLElement, fn?: Function) => { if (fn) fn.call(ctx) }
+export const checkCall = (ctx: HTMLElement, fn?: (...args: any[]) => any) => { if (fn) fn.call(ctx) }
 
 export const log = (...values: string[]) => console.log(
   values.join(' | '),
