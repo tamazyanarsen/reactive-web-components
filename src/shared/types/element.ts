@@ -22,25 +22,85 @@ export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConf
 export type AttrSignal<T> = T extends BaseElement ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T] : keyof T & string
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
+  /**
+   * append child components
+   */
   append(...args: ComponentConfig[]): ComponentConfig<T>;
+  /**
+   * clear and append child components
+   */
   set(...args: ComponentConfig[]): ComponentConfig<T>;
+  /**
+   * remove child components
+   */
   removeChild(...args: ComponentConfig[]): ComponentConfig<T>;
+  /**
+   * add html (string) content to host element
+   */
   addHtmlContent(content: string, wrapperElement?: HtmlTagName): ComponentConfig<T>;
+  /**
+   * clear and add html (string) content to host element
+   */
   setHtmlContent(content: string): ComponentConfig<T>;
+  /**
+   * add css style to host element
+   */
   addStyle(style: Partial<CSSStyleDeclaration>): ComponentConfig<T>;
+  /**
+   * add event listener to component
+   */
   addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: ComponentEventListener<T>): ComponentConfig<T>;
+  /**
+   * add event listener to component
+   */
   addEventlistener<K extends EventKeys<T>>(eventName: K, cb: CustomEventListener<CustomEventValue<T[K]>, T>): ComponentConfig<T>;
+  /**
+   * set attribute value to component
+   */
   setAttribute<AttrName extends AttrSignal<T>, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  /**
+   * bind reactive signal with attribute
+   */
   setReactiveAttribute<AttrName extends AttrSignal<T>, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  /**
+   * remove attribute from component
+   */
   removeAttribute<AttrName extends keyof T & string>(attrName: AttrName): ComponentConfig<T>;
+  /**
+   * callback function for handling components slot context
+   */
   handleSlotContext<SlotValue = unknown>(cb: (value: SlotValue) => void): ComponentConfig<T>;
+  /**
+  * add css-class to component
+  */
   addClass(...className: string[]): ComponentConfig<T>;
+  /**
+  * bind reactive signal with component css-class
+  */
   addReactiveClass(classConfig: { [className: string]: ReactiveSignal<boolean> }): ComponentConfig<T>;
+  /**
+  * remove css-class from component
+  */
   removeClass(...className: string[]): ComponentConfig<T>;
+  /**
+  * replace css-class from component
+  */
   replaceClass(oldClass: string, newClass: string): ComponentConfig<T>;
+  /**
+  * add reactive effect for component instance
+  */
   addEffect(cb: (self: ComponentConfig<T>, host: T) => void): ComponentConfig<T>;
+  /**
+  * bind reactive signal with component innerHtml
+  */
   addReactiveContent(content: ReactiveSignal<unknown>): ComponentConfig<T>;
+  /**
+  * clear content and bind reactive signal with component innerHtml
+  */
   setReactiveContent(content: ReactiveSignal<unknown>): ComponentConfig<T>;
+  /**
+  * clear component content
+  */
   clear(): ComponentConfig<T>;
   hostElement: T;
 }
