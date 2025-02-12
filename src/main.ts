@@ -6,13 +6,13 @@
 // MenuListDefinition.define(FluentDesignSystem.registry)
 // // stop register fluent components
 
-import './style.css';
+import "./style.css";
 
-export * from './components';
+export * from "./components";
 
-export * from './views/comment/comment'
+export * from "./views/comment/comment";
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
     <p>веб-компоненты</p>
     <div class="component-wrapper">
@@ -33,28 +33,36 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <rx-switch label="Видно всем"></rx-switch>
       <rx-switch label="Видно всем" is-selected="true"></rx-switch>
 
+      <rx-icon svg-path="typescript"></rx-icon>
+
       <comment-widget></comment-widget>
     </div>
   </div>
 `;
 
-document.querySelector('rx-button')?.addEventListener('change', console.log)
-const selectEl = document.querySelectorAll('rx-base-select')
+document.querySelector("rx-button")?.addEventListener("change", console.log);
+const selectEl = document.querySelectorAll("rx-base-select");
 setTimeout(() => {
-  selectEl.forEach(el => {
-    el.setAttribute('options', JSON.stringify([
-      { label: 'first item', value: 1 },
-      { label: 'second item', value: 2 },
-      { label: 'third item', value: 3 },
-    ]))
-    el.addEventListener('change', console.log)
-  })
+  selectEl.forEach((el) => {
+    el.setAttribute(
+      "options",
+      JSON.stringify([
+        { label: "first item", value: 1 },
+        { label: "second item", value: 2 },
+        { label: "third item", value: 3 },
+      ]),
+    );
+    el.addEventListener("change", console.log);
+  });
 }, 200);
 
-document.querySelectorAll('rx-select').forEach(elem => {
-  elem.setAttribute('items', JSON.stringify([
-    { label: 'first item', value: 1 },
-    { label: 'second item', value: 2 },
-    { label: 'third item', value: 3 },
-  ]))
-})
+document.querySelectorAll("rx-select").forEach((elem) => {
+  elem.setAttribute(
+    "items",
+    JSON.stringify([
+      { label: "first item", value: 1 },
+      { label: "second item", value: 2 },
+      { label: "third item", value: 3 },
+    ]),
+  );
+});
