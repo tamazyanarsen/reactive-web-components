@@ -7,6 +7,8 @@ import {
   signal,
 } from "@shared/utils";
 
+let iconRootPath = "/public/";
+
 @component("rx-icon")
 export class IconComponent extends BaseElement {
   protected rootStyle?: Promise<typeof import("*?raw")> | undefined = import(
@@ -22,9 +24,15 @@ export class IconComponent extends BaseElement {
       return createElement("div");
     }
     const svgComp = createElement("div");
-    import(`../../${this.svgPath()}.svg?raw`).then(({ default: svgString }) => {
-      svgComp.setHtmlContent(svgString);
-    });
+    import(`${iconRootPath}${this.svgPath()}.svg?raw`).then(
+      ({ default: svgString }) => {
+        svgComp.setHtmlContent(svgString);
+      },
+    );
     return svgComp;
   }
 }
+
+export const setIconRootPath = (iconPath: string) => {
+  iconRootPath = iconPath;
+};

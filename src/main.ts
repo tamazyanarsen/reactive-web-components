@@ -6,11 +6,14 @@
 // MenuListDefinition.define(FluentDesignSystem.registry)
 // // stop register fluent components
 
+import { setIconRootPath } from "./components";
 import "./style.css";
 
 export * from "./components";
 
 export * from "./views/comment/comment";
+
+setIconRootPath("/public/");
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
@@ -33,7 +36,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <rx-switch label="Видно всем"></rx-switch>
       <rx-switch label="Видно всем" is-selected="true"></rx-switch>
 
-      <rx-icon svg-path="typescript"></rx-icon>
+      <rx-icon svg-path="vite"></rx-icon>
 
       <comment-widget></comment-widget>
     </div>
