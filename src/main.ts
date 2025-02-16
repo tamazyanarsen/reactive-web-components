@@ -13,7 +13,7 @@ export * from "./components";
 
 export * from "./views/comment/comment";
 
-setIconRootPath("/public/");
+setIconRootPath("/src/assets/");
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
