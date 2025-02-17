@@ -1,10 +1,5 @@
 import {ComponentConfig} from "@shared/types";
-import {
-    BaseElement,
-    component,
-    createCustomElement,
-    createElement,
-} from "@shared/utils";
+import {BaseElement, component, createCustomElement, createElement,} from "@shared/utils";
 import {ButtonComponent, IconComponent, SwitchComponent} from "components";
 
 @component("comment-widget")
@@ -28,9 +23,11 @@ export class CommentWidget extends BaseElement {
                             "placeholder",
                             "какая-то подсказка",
                         ),
-                        createCustomElement<ButtonComponent>("rx-button").set(
-                            createCustomElement<IconComponent>('rx-icon').setAttribute('svgPath', 'button-send')
-                        )
+                        createCustomElement<ButtonComponent>("rx-button")
+                            .setAttribute('type', 'secondary')
+                            .set(
+                                createCustomElement<IconComponent>('rx-icon').setAttribute('svgPath', 'button-send')
+                            )
                     ),
             );
     }

@@ -1,34 +1,38 @@
-import { ComponentConfig } from "@shared/types/element";
-import { component, event, newEventEmitter, property } from "@shared/utils/decorators/html-property";
-import { BaseElement, createElement } from "@shared/utils/html-elements/element";
-import { signal } from "@shared/utils/html-elements/signal";
+import {ComponentConfig} from "@shared/types/element";
+import {component, event, newEventEmitter, property} from "@shared/utils/decorators/html-property";
+import {BaseElement, createElement} from "@shared/utils/html-elements/element";
+import {signal} from "@shared/utils/html-elements/signal";
+
+type ButtonType = "primary" | "secondary" | "info" | "warning";
 
 @component('rx-button')
 export class ButtonComponent extends BaseElement {
-  @property()
-  type = signal('primary')
+    @property()
+    type = signal<ButtonType>('primary')
 
-  @event()
-  change = newEventEmitter()
+    classListNames: ButtonType[] = ['primary', 'warning', 'info', 'secondary']
 
-  @property()
-  label = signal('')
+    @event()
+    change = newEventEmitter()
 
-  rootStyle = import('./button.scss?raw');
+    @property()
+    label = signal('')
 
-  render(): ComponentConfig {
-    return createElement('div').addClass('container')
-      .append(
-        createElement('button')
-          .addClass('btn-el')
-          .addEventlistener('click', () => this.change())
-          .append(
-            createElement('slot').setReactiveContent(this.label)
-          )
-          .addEffect(self => {
-            self.removeClass('primary', 'warning', 'info')
-            self.addClass(this.type())
-          })
-      )
-  }
+    rootStyle = import('./button.scss?raw');
+
+    render(): ComponentConfig {
+        return createElement('div').addClass('container')
+            .append(
+                createElement('button')
+                    .addClass('btn-el')
+                    .addEventlistener('click', () => this.change())
+                    .append(
+                        createElement('slot').setReactiveContent(this.label)
+                    )
+                    .addEffect(self => {
+                        self.removeClass(...this.classListNames)
+                        self.addClass(this.type())
+                    })
+            )
+    }
 }

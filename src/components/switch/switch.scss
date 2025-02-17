@@ -3,13 +3,13 @@
   gap: 1em;
 
   .switch-container {
+    cursor: pointer;
     background-color: grey;
     width: 2.5em;
     border-radius: 2em;
     display: flex;
     align-items: center;
-    justify-content: left;
-    transition: background-color var(--base-animation), justify-content var(--base-animation);
+    transition: background var(--base-animation);
 
     &::after {
       display: block;
@@ -19,20 +19,16 @@
       height: 1em;
       width: 1em;
       margin: 4px;
-      --animation-duration: .01s;
-      --base-animation: var(--animation-duration) var(--animation-type);
-      transition: width var(--base-animation);
-    }
-
-    &:active {
-      &::after {
-        width: 1.5em;
-      }
+      --animation-duration: .3s;
+      transition: transform var(--base-animation);
     }
 
     &.selected {
       background-color: blue;
-      justify-content: right;
+
+      &::after {
+        transform: translateX(100%);
+      }
     }
   }
 }

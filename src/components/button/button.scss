@@ -27,6 +27,20 @@
       }
     }
 
+    &.secondary {
+      background-color: var(--secondary-color);
+
+      &:hover {
+        background-color: var(--button-secondary-hover-color);
+        transition: all var(--base-animation);
+      }
+
+      &:active {
+        background-color: var(--secondary-color);
+        transition: all var(--base-animation);
+      }
+    }
+
     &.warning {
       background-color: var(--warning-color);
 

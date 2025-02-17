@@ -1,5 +1,5 @@
 :root {
-  --animation-duration: .25s;
-  --animation-type: ease-out;
-  --base-animation: var(--animation-duration) var(--animation-type);
+    --animation-duration: .5s;
+    --animation-type: ease-in-out;
+    --base-animation: var(--animation-duration) var(--animation-type);
 }
