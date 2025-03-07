@@ -1,4 +1,3 @@
-import { BaseElement } from "@shared/utils";
 import { ReactiveSignal } from "./signal";
 
 export type HtmlTagName = keyof HTMLElementTagNameMap
@@ -19,7 +18,7 @@ export type CustomEventValue<T> = T extends EventEmitter<infer V> ? V : T;
 
 export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
-export type AttrSignal<T> = T extends BaseElement ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T] : keyof T & string
+export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig }> = T['render'] extends () => ComponentConfig ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T] : keyof T & string
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   /**
@@ -57,11 +56,12 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   /**
    * set attribute value to component
    */
-  setAttribute<AttrName extends AttrSignal<T>, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setAttribute<AttrName extends AttrSignal<T>, AttrValue extends SignalValue<unknown>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setAttribute<AttrName extends string, AttrValue extends SignalValue<unknown>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   /**
    * bind reactive signal with attribute
    */
-  setReactiveAttribute<AttrName extends AttrSignal<T>, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setReactiveAttribute<AttrName extends AttrSignal<T>, AttrValue extends ReactiveSignal<SignalValue<unknown>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   /**
    * bind reactive signal with attribute
    */

@@ -63,14 +63,14 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       wrapper.addEventListener(eventName, e => cb(e, this, wrapper))
       return this
     },
-    setAttribute(attrName, value) {
+    setAttribute<AttrName extends AttrSignal<T> & string, AttrValue extends SignalValue<unknown>>(attrName: AttrName, value: AttrValue) {
       let newValue
       if (typeof value !== 'string') newValue = JSON.stringify(value)
       else newValue = value
       wrapper.setAttribute(camelToKebab(attrName as string), newValue)
       return this
     },
-    setReactiveAttribute<AttrName extends AttrSignal<T> & string, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]> & unknown>>(attrName: AttrName, valueSignal: AttrValue) {
+    setReactiveAttribute<AttrName extends AttrSignal<T> & string, AttrValue extends ReactiveSignal<SignalValue<unknown> & unknown>>(attrName: AttrName, valueSignal: AttrValue) {
       effect(() => this.setAttribute(attrName, valueSignal()))
       return this
     },
