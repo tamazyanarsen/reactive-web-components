@@ -12,7 +12,7 @@ type PackageFormat = {
   types: string,
   main?: string,
   module?: string,
-  exports: Record<string, { import?: string, require?: string }>,
+  exports: Record<string, { import?: string, require?: string, types?: string }>,
 }
 
 const generatePackageJSON = () => ({
@@ -32,9 +32,10 @@ const generatePackageJSON = () => ({
         files: ["./"],
         // main: "./dist/my-lib.umd.cjs",
         // module: fileName,
-        types: './out-tsc/utils/index.d.ts',
+        types: './out-tsc/shared/utils/index.d.ts',
         exports: {
           ".": {
+            types: './out-tsc/shared/utils/index.d.ts',
             // import: fileName,
             // require: "./dist/my-lib.umd.cjs"
           }
