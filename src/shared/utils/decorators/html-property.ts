@@ -88,6 +88,8 @@ export const component = (
       }
 
       connectedCallback() {
+        this.innerHTML = this.innerHTML.trim();
+
         (target.prototype[eventFieldName] as string[] | undefined)?.forEach(
           (fieldName) => {
             // @ts-expect-error index string
