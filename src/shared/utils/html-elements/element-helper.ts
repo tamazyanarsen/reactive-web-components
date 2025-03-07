@@ -1,4 +1,4 @@
-import { AttrSignal, ReactiveSignal, SignalValue } from "@shared/types"
+import { ReactiveSignal } from "@shared/types"
 import { ComponentConfig, ComponentEventListener, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { effect } from "./signal"
@@ -63,14 +63,14 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       wrapper.addEventListener(eventName, e => cb(e, this, wrapper))
       return this
     },
-    setAttribute<AttrName extends AttrSignal<T> & string, AttrValue extends SignalValue<unknown>>(attrName: AttrName, value: AttrValue) {
+    setAttribute(attrName, value) {
       let newValue
       if (typeof value !== 'string') newValue = JSON.stringify(value)
       else newValue = value
       wrapper.setAttribute(camelToKebab(attrName as string), newValue)
       return this
     },
-    setReactiveAttribute<AttrName extends AttrSignal<T> & string, AttrValue extends ReactiveSignal<SignalValue<unknown> & unknown>>(attrName: AttrName, valueSignal: AttrValue) {
+    setReactiveAttribute(attrName, valueSignal) {
       effect(() => this.setAttribute(attrName, valueSignal()))
       return this
     },
