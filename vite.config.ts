@@ -32,10 +32,10 @@ const generatePackageJSON = () => ({
         files: ["./"],
         // main: "./dist/my-lib.umd.cjs",
         // module: fileName,
-        types: './out-tsc/shared/utils/index.d.ts',
+        types: './out-tsc/shared/index.d.ts',
         exports: {
           ".": {
-            types: './out-tsc/shared/utils/index.d.ts',
+            types: './out-tsc/shared/index.d.ts',
             // import: fileName,
             // require: "./dist/my-lib.umd.cjs"
           }
