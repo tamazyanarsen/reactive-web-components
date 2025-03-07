@@ -63,6 +63,10 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
    */
   setReactiveAttribute<AttrName extends AttrSignal<T>, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   /**
+   * bind reactive signal with attribute
+   */
+  setReactiveAttribute<AttrName extends string, AttrValue extends ReactiveSignal<unknown>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  /**
    * remove attribute from component
    */
   removeAttribute<AttrName extends keyof T & string>(attrName: AttrName): ComponentConfig<T>;
