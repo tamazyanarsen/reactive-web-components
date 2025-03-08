@@ -108,6 +108,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   * clear component content
   */
   clear(): ComponentConfig<T>;
+
   hostElement: T;
 }
 
