@@ -1,50 +1,20 @@
 import { ReactiveSignal } from "@shared/types";
-import { ComponentConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
-import { elementHelpers } from "./element-helper";
+import { ComponentConfig, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
+import { elementHelpers, initComponent } from "./element-helper";
 
-export const createElement = <K extends HtmlTagName>(
-  tagName: K,
-  classes?:
-    | (string | { [className: string]: ReactiveSignal<boolean> })[]
-    | { [className: string]: ReactiveSignal<boolean> }
-    | string
-    | null,
-  attributes?: Record<string, string | number | ReactiveSignal<any>>
-): ComponentConfig<HTMLElementTagNameMap[K]> => {
-  const wrapper = document.createElement<K>(tagName);
-
-  const componentConfig = {
-    ...elementHelpers(wrapper),
-  };
-
-  if (classes) {
-    [classes].flat().forEach((className) => {
-      if (className instanceof Object) {
-        componentConfig.addReactiveClass(className);
-        return;
-      }
-      componentConfig.addClass(className);
-    });
+export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
+  const wrapper = document.createElement<K>(tagName)
+  const component = {
+    ...elementHelpers(wrapper)
   }
-
-  if (attributes) {
-    Object.entries(attributes).forEach(([key, value]) => {
-      if (typeof value === 'string' || typeof value === 'number') {
-        componentConfig.setAttribute<string, string>(key, String(value));
-        return;
-      }
-      componentConfig.setReactiveAttribute(key, value);
-    });
-  }
-
-  return componentConfig;
-};
+  return initComponent(component, config)
+}
 
 export abstract class BaseElement extends HTMLElement {
 
   slotContext?: SlotContext
 
-  protected rootStyle?: Promise<typeof import("*?raw")>
+  protected rootStyle?: Promise<typeof import("*?inline")> | Array<Promise<typeof import("*?inline")>>
 
   protected modelValue?: ReactiveSignal<unknown>
 

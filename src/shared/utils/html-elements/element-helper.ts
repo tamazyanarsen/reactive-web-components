@@ -1,7 +1,8 @@
 import { ReactiveSignal } from "@shared/types"
-import { ComponentConfig, ComponentEventListener, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { ComponentConfig, ComponentEventListener, ComponentInitConfig, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
-import { effect } from "./signal"
+import { effect, isReactiveSignal } from "./signal"
+import { CustomComponentConfig } from "./custom-element"
 
 export const eventEmitter = () => () => { }
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
@@ -70,8 +71,19 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       wrapper.setAttribute(camelToKebab(attrName as string), newValue)
       return this
     },
+    setCustomAttribute(attrName, value) {
+      let newValue
+      if (typeof value !== 'string') newValue = JSON.stringify(value)
+      else newValue = value
+      wrapper.setAttribute(camelToKebab(attrName as string), newValue)
+      return this
+    },
     setReactiveAttribute(attrName, valueSignal) {
       effect(() => this.setAttribute(attrName, valueSignal()))
+      return this
+    },
+    setReactiveCustomAttribute(attrName, valueSignal) {
+      effect(() => this.setCustomAttribute(attrName, valueSignal()))
       return this
     },
     removeAttribute(attrName) {
@@ -137,5 +149,32 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       return this;
     },
     hostElement: wrapper
+  }
+}
+
+export const initComponent = <T extends ExtraHTMLElement, K extends ComponentConfig<T> | (ComponentConfig<T> & CustomComponentConfig<T>)>(
+  component: K, config?: ComponentInitConfig<T>) => {
+  addClassList(component, config?.classList || [])
+  addAttributeList(component, config?.attributes)
+  return component
+}
+
+
+export const addClassList = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, classList: ComponentInitConfig<T>['classList']) => comp.addClass(...(classList || []))
+
+export const addAttributeList = <T extends ExtraHTMLElement>
+  (comp: ComponentConfig<T>, attributeList: ComponentInitConfig<T>['attributes']) => {
+  const attrObject = attributeList
+  if (attrObject) {
+    Object.keys(attrObject).forEach(attrName => {
+      // @ts-expect-error string index
+      if (isReactiveSignal(attrObject[attrName])) {
+        // @ts-expect-error string index
+        comp.setReactiveAttribute(attrName, attrObject[attrName])
+      } else {
+        // @ts-expect-error string index
+        comp.setAttribute(attrName, attrObject[attrName])
+      }
+    })
   }
 }

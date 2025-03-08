@@ -13,32 +13,32 @@ export const property =
     target: T,
     propName: K,
   ) => void) =>
-  (target, propName) => {
-    if (!Reflect.get(target, observedAttrFieldName)) {
-      Reflect.defineProperty(target, observedAttrFieldName, {
-        value: [],
-      });
-    }
-    (Reflect.get(target, observedAttrFieldName) as string[]).push(
-      camelToKebab(propName as string),
-    );
-  };
+    (target, propName) => {
+      if (!Reflect.get(target, observedAttrFieldName)) {
+        Reflect.defineProperty(target, observedAttrFieldName, {
+          value: [],
+        });
+      }
+      (Reflect.get(target, observedAttrFieldName) as string[]).push(
+        camelToKebab(propName as string),
+      );
+    };
 
 export const event =
   (): (<T extends HTMLElement, K extends keyof T>(
     target: T,
     propName: K,
   ) => void) =>
-  (target, propName) => {
-    if (!Reflect.get(target, eventFieldName)) {
-      Reflect.defineProperty(target, eventFieldName, {
-        value: [],
-      });
-    }
-    (Reflect.get(target, eventFieldName) as string[]).push(propName as string);
-  };
+    (target, propName) => {
+      if (!Reflect.get(target, eventFieldName)) {
+        Reflect.defineProperty(target, eventFieldName, {
+          value: [],
+        });
+      }
+      (Reflect.get(target, eventFieldName) as string[]).push(propName as string);
+    };
 
-export const newEventEmitter: <T = void>() => EventEmitter<T> = () => () => {};
+export const newEventEmitter: <T = void>() => EventEmitter<T> = () => () => { };
 
 export const component = (
   selector: string,
@@ -102,11 +102,19 @@ export const component = (
         console.log("start render", target.name, selector);
 
         if (this.rootStyle) {
-          this.rootStyle.then((v) => {
+          const appendStyle = (css: string) => {
             const sheet = new CSSStyleSheet();
-            sheet.replaceSync(v.default);
+            sheet.replaceSync(css);
             this.shadowRoot?.adoptedStyleSheets.push(sheet);
-          });
+          }
+          if (!Array.isArray(this.rootStyle)) {
+            this.rootStyle.then((v) => appendStyle(v.default));
+          }
+          else {
+            Promise.all(this.rootStyle).then(styleList => {
+              styleList.forEach(v => appendStyle(v.default))
+            })
+          }
         }
 
         if (this.shadowRoot) this.shadowRoot.innerHTML = "";

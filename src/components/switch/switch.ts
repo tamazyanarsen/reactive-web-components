@@ -6,7 +6,7 @@ import {
   event,
   newEventEmitter,
   property,
-  signal,
+  signal
 } from "@shared/utils";
 
 @component("rx-switch")
