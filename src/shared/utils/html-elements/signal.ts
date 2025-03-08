@@ -57,7 +57,7 @@ export function effect(cb: () => void) {
 }
 
 
-export const isReactiveSignal = (v: ReactiveSignal<unknown> | any): v is ReactiveSignal<unknown> => ['object', 'function'].includes(typeof v) && 'set' in v
+export const isReactiveSignal = <T>(v: ReactiveSignal<T> | any): v is ReactiveSignal<T> => ['object', 'function'].includes(typeof v) && 'set' in v
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.
@@ -71,16 +71,15 @@ export const isReactiveSignal = (v: ReactiveSignal<unknown> | any): v is Reactiv
  * console.log(dependent())
  * // log: "abc-test"
  */
-export function rs<T extends (ReactiveSignal<string> | string)>(strings: TemplateStringsArray, ...values: T[]): ReactiveSignal<string> {
+export function rs<T extends (ReactiveSignal<string> | any)>(strings: TemplateStringsArray, ...values: T[]): ReactiveSignal<string> {
   const newSignal = signal('');
 
   effect(() => {
     const newValues = values.map(value => {
-      if (typeof value === 'string') {
-        return value;
-      } else {
-        return value()
+      if (value instanceof Function) {
+        return value();
       }
+      return String(value);
     });
     const result = [strings[0]];
     newValues.forEach((value, i) => {
