@@ -71,13 +71,13 @@ export const isReactiveSignal = <T>(v: ReactiveSignal<T> | any): v is ReactiveSi
  * console.log(dependent())
  * // log: "abc-test"
  */
-export function rs<T extends (ReactiveSignal<string> | any)>(strings: TemplateStringsArray, ...values: T[]): ReactiveSignal<string> {
+export function rs<T extends (ReactiveSignal<any> | any)>(strings: TemplateStringsArray, ...values: T[]): ReactiveSignal<string> {
   const newSignal = signal('');
 
   effect(() => {
     const newValues = values.map(value => {
       if (value instanceof Function) {
-        return value();
+        return String(value());
       }
       return String(value);
     });
