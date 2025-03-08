@@ -55,3 +55,6 @@ export function effect(cb: () => void) {
     else localStorage.removeItem('effectId');
   })()
 }
+
+
+export const isReactiveSignal = (v: ReactiveSignal<unknown> | any): v is ReactiveSignal<unknown> => ['object', 'function'].includes(typeof v) && 'set' in v

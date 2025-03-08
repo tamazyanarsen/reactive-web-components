@@ -18,7 +18,7 @@ export type CustomEventValue<T> = T extends EventEmitter<infer V> ? V : T;
 
 export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
-export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig }> = T['render'] extends () => ComponentConfig ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T] : keyof T & string
+export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig }> = T['render'] extends () => ComponentConfig ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T & string] : keyof T & string
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   /**
@@ -56,11 +56,15 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   /**
    * set attribute value to component
    */
-  setAttribute<AttrName extends AttrSignal<T> | string, AttrValue extends SignalValue<AttrName extends AttrSignal<T> ? T[AttrName] : unknown>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  // setAttribute<AttrName extends AttrSignal<T> | string, AttrValue extends SignalValue<AttrName extends AttrSignal<T> ? T[AttrName] : unknown>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setAttribute<AttrName extends AttrSignal<T>, AttrValue extends SignalValue<T[AttrName]>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setCustomAttribute(attrName: string, value: unknown): ComponentConfig<T>;
   /**
    * bind reactive signal with attribute
    */
-  setReactiveAttribute<AttrName extends AttrSignal<T> | string, AttrValue extends ReactiveSignal<SignalValue<AttrName extends AttrSignal<T> ? T[AttrName] : unknown>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  // setReactiveAttribute<AttrName extends AttrSignal<T> | string, AttrValue extends ReactiveSignal<SignalValue<AttrName extends AttrSignal<T> ? T[AttrName] : unknown>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setReactiveAttribute<AttrName extends AttrSignal<T>, AttrValue extends ReactiveSignal<SignalValue<T[AttrName]>>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setReactiveCustomAttribute(attrName: string, value: ReactiveSignal<unknown>): ComponentConfig<T>;
   /**
    * bind reactive signal with attribute
    */
@@ -118,3 +122,10 @@ export interface EventEmitter<EventValue = unknown> {
 }
 
 export type SlotContext = { [slotName: string]: unknown }
+
+export type ComponentInitConfig<T extends ExtraHTMLElement> =
+  Partial<{
+    classList: string[],
+    attributes: { [key in AttrSignal<T>]?: ReactiveSignal<SignalValue<T[key]>> | SignalValue<T[key]> },
+    customAttributes: Record<string, unknown>
+  }>

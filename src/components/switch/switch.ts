@@ -2,12 +2,14 @@ import { ComponentConfig, ReactiveSignal } from "@shared/types";
 import {
   BaseElement,
   component,
+  createCustomElement,
   createElement,
   event,
   newEventEmitter,
   property,
-  signal,
+  signal
 } from "@shared/utils";
+import { IconComponent } from "main";
 
 @component("rx-switch")
 export class SwitchComponent extends BaseElement {
@@ -25,6 +27,10 @@ export class SwitchComponent extends BaseElement {
   changeSelected = newEventEmitter<boolean>();
 
   render(): ComponentConfig {
+    // TODO: удалить!!!
+    createElement('div', { attributes: { slot: '12' } })
+    createCustomElement<IconComponent>('rx-icon')
+    // -------
     return createElement("div")
       .addClass("container")
       .set(

@@ -1,12 +1,13 @@
 import { ReactiveSignal } from "@shared/types";
-import { ComponentConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
-import { elementHelpers } from "./element-helper";
+import { ComponentConfig, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
+import { elementHelpers, initComponent } from "./element-helper";
 
-export const createElement = <K extends HtmlTagName>(tagName: K): ComponentConfig<HTMLElementTagNameMap[K]> => {
+export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName)
-  return {
+  const component = {
     ...elementHelpers(wrapper)
   }
+  return initComponent(component, config)
 }
 
 export abstract class BaseElement extends HTMLElement {
