@@ -55,3 +55,30 @@ export function effect(cb: () => void) {
     else localStorage.removeItem('effectId');
   })()
 }
+
+
+/**
+ * Reactive String (rs). Создаёт зависимый string сигнал от источника.
+ * @param strings 
+ * @param values 
+ * @returns 
+ * 
+ * @example
+ * const source: ReactiveSignal<string> = signal('test')
+ * const dependent: ReactiveSignal<string> = rs`abc-${source}`
+ * console.log(dependent())
+ * // log: "abc-test"
+ */
+export function rs<T extends ReactiveSignal<string>>(strings: TemplateStringsArray, ...values: T[]): ReactiveSignal<string> {
+  const newSignal = signal('');
+
+  effect(() => {
+    const newValues = values.map(value => value());
+    const result = [strings[0]];
+    newValues.forEach((value, i) => {
+      result.push(value, strings[i + 1]);
+    });
+    newSignal.set(result.join(""))
+  })
+  return newSignal;
+};
