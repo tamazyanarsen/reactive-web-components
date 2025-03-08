@@ -56,7 +56,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   /**
    * set attribute value to component
    */
-  setAttribute<AttrName extends AttrSignal<T> | string, AttrValue extends SignalValue<AttrName extends AttrSignal<T> ? T[AttrName] : unknown>>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
+  setAttribute<AttrName extends AttrSignal<T> | string, AttrValue extends (SignalValue<AttrName extends AttrSignal<T> ? T[AttrName] : unknown>) | string>(attrName: AttrName, value: AttrValue): ComponentConfig<T>;
   /**
    * bind reactive signal with attribute
    */
@@ -104,6 +104,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   * clear component content
   */
   clear(): ComponentConfig<T>;
+
   hostElement: T;
 }
 
