@@ -159,8 +159,8 @@ export const initComponent = <T extends ExtraHTMLElement, K extends ComponentCon
   return component
 }
 
-
 export const addClassList = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, classList: ComponentInitConfig<T>['classList']) => comp.addClass(...(classList || []))
+export const addReactiveClassList = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, classList: ComponentInitConfig<T>['reactiveClassList']) => comp.addReactiveClass(classList || {})
 
 export const addAttributeList = <T extends ExtraHTMLElement>
   (comp: ComponentConfig<T>, attributeList: ComponentInitConfig<T>['attributes']) => {

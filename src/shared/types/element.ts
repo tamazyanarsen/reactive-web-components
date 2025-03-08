@@ -127,5 +127,6 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> =
   Partial<{
     classList: string[],
     attributes: { [key in AttrSignal<T>]?: ReactiveSignal<SignalValue<T[key]>> | SignalValue<T[key]> },
-    customAttributes: Record<string, unknown>
+    customAttributes: Record<string, unknown>,
+    reactiveClassList: { [k: string]: ReactiveSignal<boolean> }
   }>
