@@ -14,7 +14,7 @@ export abstract class BaseElement extends HTMLElement {
 
   slotContext?: SlotContext
 
-  protected rootStyle?: Promise<typeof import("*?raw")>
+  protected rootStyle?: Promise<typeof import("*?inline")>
 
   protected modelValue?: ReactiveSignal<unknown>
 
