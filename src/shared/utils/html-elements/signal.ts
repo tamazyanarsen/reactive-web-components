@@ -57,7 +57,7 @@ export function effect(cb: () => void) {
 }
 
 
-export const isReactiveSignal = (v: ReactiveSignal<unknown> | any): v is ReactiveSignal<unknown> => ['object', 'function'].includes(typeof v) && 'set' in v
+export const isReactiveSignal = (v: ReactiveSignal<unknown> | any): v is ReactiveSignal<unknown> => ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v && 'update' in v
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.
