@@ -1,5 +1,17 @@
 import { ReactiveSignal } from "./signal";
 
+export type Split<S extends string, D extends string> =
+  string extends S ? string[] :
+  S extends '' ? [] :
+  S extends `${infer T}${D}${infer U}` ? [T, ...Split<U, D>] :
+  [S];
+
+export type Join<T extends unknown[], D extends string> =
+  T extends [] ? '' :
+  T extends [string | number | boolean | bigint] ? `${T[0]}` :
+  T extends [string | number | boolean | bigint, ...infer U] ? `${T[0]}${D}${Join<U, D>}` :
+  string;
+
 export type HtmlTagName = keyof HTMLElementTagNameMap
 
 export type ExtraHTMLElement = HTMLElement & { handleSlotContext?: <SlotValue = unknown>(value: SlotValue) => void }

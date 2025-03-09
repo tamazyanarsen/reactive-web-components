@@ -1,7 +1,7 @@
 import { ReactiveSignal } from "@shared/types";
 import { ComponentConfig, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
 import { elementHelpers, initComponent } from "./element-helper";
-import { isReactiveSignal, rs, signal } from "./signal";
+import { isReactiveSignal } from "./signal";
 
 export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName)
@@ -11,8 +11,10 @@ export const createElement = <K extends HtmlTagName>(tagName: K, config?: Compon
   return initComponent(component, config)
 }
 
-export const createEl = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
-  const comp = createElement(tagName, config)
+export const createEl = <K extends HtmlTagName, S extends `${K}.${string}` | K>(tagName: S, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
+  const classList = tagName.split('.').slice(1)
+  const comp = createElement(tagName.split('.')[0] as HtmlTagName, config)
+  comp.addClass(...classList)
   let result = (...content: (ComponentConfig | string | ReactiveSignal<unknown>)[]) => {
     content.forEach(item => {
       if (typeof item === 'string') comp.addHtmlContent(item)
@@ -23,12 +25,6 @@ export const createEl = <K extends HtmlTagName>(tagName: K, config?: ComponentIn
   }
   return result
 }
-
-// TODO: доработать пример!!!
-// createEl('div')(
-//   'test',
-//   createEl('span', { classList: ['flex', 'flex-col'] })('test string', rs`test ${signal('123')}`)
-// );
 
 export abstract class BaseElement extends HTMLElement {
 
