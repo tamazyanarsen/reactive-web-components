@@ -32,6 +32,10 @@ export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConf
 
 export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig }> = T['render'] extends () => ComponentConfig ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T & string] : keyof T & string
 
+export type EffectCallback<T extends HTMLElement> = (self: ComponentConfig<T>, host: T) => void
+
+export type ComponentContent = ComponentConfig | string
+
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   /**
    * append child components
@@ -107,7 +111,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   /**
   * add reactive effect for component instance
   */
-  addEffect(cb: (self: ComponentConfig<T>, host: T) => void): ComponentConfig<T>;
+  addEffect(cb: EffectCallback<T>): ComponentConfig<T>;
   /**
   * bind reactive signal with component innerHtml
   */
