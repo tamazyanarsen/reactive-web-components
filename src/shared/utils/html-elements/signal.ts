@@ -57,7 +57,7 @@ export function effect(cb: () => void) {
 }
 
 
-export const isReactiveSignal = <T>(v: ReactiveSignal<T> | any): v is ReactiveSignal<T> => ['object', 'function'].includes(typeof v) && 'set' in v
+export const isReactiveSignal = <T>(v: ReactiveSignal<T> | any): v is ReactiveSignal<T> => ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v && 'update' in v
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.
@@ -88,4 +88,4 @@ export function rs<T extends ReactiveSignal<any> | any>(
     newSignal.set(result.join(''));
   });
   return newSignal;
-}
+};

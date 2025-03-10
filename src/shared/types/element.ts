@@ -1,5 +1,17 @@
 import { ReactiveSignal } from "./signal";
 
+export type Split<S extends string, D extends string> =
+  string extends S ? string[] :
+  S extends '' ? [] :
+  S extends `${infer T}${D}${infer U}` ? [T, ...Split<U, D>] :
+  [S];
+
+export type Join<T extends unknown[], D extends string> =
+  T extends [] ? '' :
+  T extends [string | number | boolean | bigint] ? `${T[0]}` :
+  T extends [string | number | boolean | bigint, ...infer U] ? `${T[0]}${D}${Join<U, D>}` :
+  string;
+
 export type HtmlTagName = keyof HTMLElementTagNameMap
 
 export type ExtraHTMLElement = HTMLElement & { handleSlotContext?: <SlotValue = unknown>(value: SlotValue) => void }
@@ -19,6 +31,10 @@ export type CustomEventValue<T> = T extends EventEmitter<infer V> ? V : T;
 export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
 export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig }> = T['render'] extends () => ComponentConfig ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T & string] : keyof T & string
+
+export type EffectCallback<T extends HTMLElement> = (self: ComponentConfig<T>, host: T) => void
+
+export type ComponentContent = ComponentConfig | string
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   /**
@@ -95,7 +111,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   /**
   * add reactive effect for component instance
   */
-  addEffect(cb: (self: ComponentConfig<T>, host: T) => void): ComponentConfig<T>;
+  addEffect(cb: EffectCallback<T>): ComponentConfig<T>;
   /**
   * bind reactive signal with component innerHtml
   */
@@ -128,5 +144,6 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> =
   Partial<{
     classList: string[],
     attributes: { [key in AttrSignal<T>]?: ReactiveSignal<SignalValue<T[key]>> | SignalValue<T[key]> },
-    customAttributes: Record<string, unknown>
+    customAttributes: Record<string, unknown>,
+    reactiveClassList: { [k: string]: ReactiveSignal<boolean> }
   }>
