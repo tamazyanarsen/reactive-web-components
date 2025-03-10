@@ -75,7 +75,7 @@ export function rs<T extends (ReactiveSignal<any> | any)>(strings: TemplateStrin
   const newSignal = signal('');
 
   effect(() => {
-    const newValues = values.map(value => {
+    const newValues = values.map(v => isReactiveSignal(v) ? v() : v)
       if (value instanceof Function) {
         return String(value());
       }
