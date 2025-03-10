@@ -11,12 +11,11 @@ export const createElement = <K extends HtmlTagName>(tagName: K, config?: Compon
   return initComponent(component, config)
 }
 
-// TODO: попробовать через разделитель пробел < >; возможно, неудобно будет использовать из-за переноса большой строки, будут ошибки
-export const createEl = <K extends HtmlTagName, S extends `${K}.${string}` | K>(tagName: S, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
-  const classList = tagName.split('.').slice(1).map(e => e.trim())
-  const comp = createElement(tagName.split('.')[0] as HtmlTagName, config)
+export const createEl = <K extends HtmlTagName, S extends `${K} ${string}` | K>(tagName: S, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
+  const classList = tagName.split(' ').slice(1).map(e => e.trim())
+  const comp = createElement(tagName.split(' ')[0] as HtmlTagName, config)
   comp.addClass(...classList)
-  let result = (...content: (ComponentConfig | string | ReactiveSignal<unknown>)[]) => {
+  return (...content: (ComponentConfig | string | ReactiveSignal<unknown>)[]) => {
     content.forEach(item => {
       if (typeof item === 'string') comp.addHtmlContent(item)
       else if (isReactiveSignal(item)) comp.addReactiveContent(item)
@@ -24,7 +23,6 @@ export const createEl = <K extends HtmlTagName, S extends `${K}.${string}` | K>(
     });
     return comp
   }
-  return result
 }
 
 export abstract class BaseElement extends HTMLElement {
