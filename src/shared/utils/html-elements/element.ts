@@ -1,5 +1,5 @@
 import { ReactiveSignal } from "@shared/types";
-import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SlotContext } from "../../types/element";
+import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SignalValue, SlotContext } from "../../types/element";
 import { elementHelpers, initComponent } from "./element-helper";
 
 export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
@@ -30,8 +30,18 @@ export const createEl = <K extends HtmlTagName, S extends `${K} ${string}` | K>(
   }
 }
 
-export const getSignalContent = <T>(src: ReactiveSignal<T>,
-  cb: (item: T) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
+// export const getSignalContent = <T>(src: ReactiveSignal<T>,
+//   cb: (item: T) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
+//     .addEffect(self => {
+//       const signalContent = cb(src())
+//       const newContent: ComponentContent[] = []
+//       if (Array.isArray(signalContent)) { newContent.push(...signalContent) }
+//       else { newContent.push(signalContent) }
+//       appendContentItem(self, ...newContent)
+//     })
+
+export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
+  cb: (item: SignalValue<R>) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
     .addEffect(self => {
       const signalContent = cb(src())
       const newContent: ComponentContent[] = []
