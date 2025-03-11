@@ -10,6 +10,14 @@ export const createElement = <K extends HtmlTagName>(tagName: K, config?: Compon
   return initComponent(component, config)
 }
 
+export const appendContentItem = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, ...items: ComponentContent[]) => {
+  items.forEach(item => {
+    if (typeof item === 'string') comp.addHtmlContent(item)
+    else comp.append(item)
+  })
+  return comp
+}
+
 export const createEl = <K extends HtmlTagName, S extends `${K} ${string}` | K>(tagName: S, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
   const classList = tagName.split(' ').slice(1).map(e => e.trim())
   const comp = createElement(tagName.split(' ')[0] as HtmlTagName, config)
@@ -17,14 +25,20 @@ export const createEl = <K extends HtmlTagName, S extends `${K} ${string}` | K>(
   return (
     ...content: ComponentContent[]
   ) => {
-    const handleContentItem = (item: ComponentContent) => {
-      if (typeof item === 'string') comp.addHtmlContent(item)
-      else comp.append(item)
-    }
-    content.forEach(item => handleContentItem(item));
+    content.forEach(item => appendContentItem(comp, item));
     return comp
   }
 }
+
+export const getSignalContent = <T>(src: ReactiveSignal<T>,
+  cb: (item: T) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
+    .addEffect(self => {
+      const signalContent = cb(src())
+      const newContent: ComponentContent[] = []
+      if (Array.isArray(signalContent)) { newContent.push(...signalContent) }
+      else { newContent.push(signalContent) }
+      appendContentItem(self, ...newContent)
+    })
 
 export abstract class BaseElement extends HTMLElement {
 

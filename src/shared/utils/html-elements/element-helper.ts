@@ -1,10 +1,10 @@
 import { ReactiveSignal } from "@shared/types"
 import { ComponentConfig, ComponentEventListener, ComponentInitConfig, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
-import { effect, isReactiveSignal } from "./signal"
 import { CustomComponentConfig } from "./custom-element"
+import { effect, isReactiveSignal } from "./signal"
 
-export const eventEmitter = () => () => { }
+export const eventEmitter = () => () => {}
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
   const divWrapper = document.createElement(wrapperElement)
   setHtmlContent(divWrapper, content)
@@ -21,7 +21,8 @@ export const htmlEffectWrapper = (content: ReactiveSignal<unknown>): HTMLDivElem
   const htmlDiv = document.createElement('div')
   effect(() => {
     const data = content()
-    htmlDiv.innerHTML = typeof data === 'string' ? data : JSON.stringify(data)
+    setHtmlContent(htmlDiv, data)
+    // htmlDiv.innerHTML = typeof data === 'string' ? data : JSON.stringify(data)
   })
   return htmlDiv
 }
