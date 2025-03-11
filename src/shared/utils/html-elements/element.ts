@@ -23,24 +23,14 @@ export const appendContentItem = <T extends ExtraHTMLElement>(comp: ComponentCon
 export const createEl = <K extends HtmlTagName>(tagName: `${K} ${string}` | K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
   const classList = tagName.split(' ').slice(1).map(e => e.trim())
   const comp = createElement(tagName.split(' ')[0] as K, config)
-  comp.addClass(...classList)
+  if (Array.isArray(classList) && classList.length > 0) { comp.addClass(...classList) }
   return (
     ...content: ComponentContent[]
   ): ComponentConfig<HTMLElementTagNameMap[K]> => {
-    content.forEach(item => appendContentItem(comp, item));
+    content.filter(Boolean).forEach(item => appendContentItem(comp, item));
     return comp
   }
 }
-
-// export const getSignalContent = <T>(src: ReactiveSignal<T>,
-//   cb: (item: T) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
-//     .addEffect(self => {
-//       const signalContent = cb(src())
-//       const newContent: ComponentContent[] = []
-//       if (Array.isArray(signalContent)) { newContent.push(...signalContent) }
-//       else { newContent.push(signalContent) }
-//       appendContentItem(self, ...newContent)
-//     })
 
 export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
   cb: (item: SignalValue<R>) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
