@@ -34,7 +34,7 @@ export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig 
 
 export type EffectCallback<T extends HTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
-export type ComponentContent = ComponentConfig | string
+export type ComponentContent = ComponentConfig | string | ReactiveSignal<any>
 
 export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
   /**
