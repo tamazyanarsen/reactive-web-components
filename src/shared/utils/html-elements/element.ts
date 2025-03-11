@@ -18,13 +18,13 @@ export const appendContentItem = <T extends ExtraHTMLElement>(comp: ComponentCon
   return comp
 }
 
-export const createEl = <K extends HtmlTagName, S extends `${K} ${string}` | K>(tagName: S, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
+export const createEl = <K extends HtmlTagName>(tagName: `${K} ${string}` | K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
   const classList = tagName.split(' ').slice(1).map(e => e.trim())
-  const comp = createElement(tagName.split(' ')[0] as HtmlTagName, config)
+  const comp = createElement(tagName.split(' ')[0] as K, config)
   comp.addClass(...classList)
   return (
     ...content: ComponentContent[]
-  ) => {
+  ): ComponentConfig<HTMLElementTagNameMap[K]> => {
     content.forEach(item => appendContentItem(comp, item));
     return comp
   }
