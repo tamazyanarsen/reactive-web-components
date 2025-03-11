@@ -47,6 +47,7 @@ export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
       const newContent: ComponentContent[] = []
       if (Array.isArray(signalContent)) { newContent.push(...signalContent) }
       else { newContent.push(signalContent) }
+      self.clear()
       appendContentItem(self, ...newContent)
     })
 
