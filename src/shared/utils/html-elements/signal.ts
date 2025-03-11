@@ -22,12 +22,14 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
   return result
 }
 
-export function effect(cb: () => void) {
+export function effect(cb: () => void, context: Element | Window = window) {
   // TODO: заменить на uuid
   const effectId = Math.random().toString();
   const currentEffectId = localStorage.getItem('effectId');
   localStorage.setItem('effectId', effectId);
   console.log('create effect', effectId, cb);
+
+  const ref = new WeakRef(context);
 
   const signalList = new Set<ReactiveSignal<unknown>>();
   (function () {
@@ -42,8 +44,12 @@ export function effect(cb: () => void) {
         const oldSetfunction = event.detail.signalFunction.set
         console.log('call effect', effectId);
         event.detail.signalFunction.set = (...args) => {
-          oldSetfunction(...args)
-          cb()
+          if (ref.deref()) {
+            oldSetfunction(...args)
+            cb()
+          } else {
+            signalList.delete(event.detail.signalFunction)
+          }
         }
         signalList.add(event.detail.signalFunction)
       }

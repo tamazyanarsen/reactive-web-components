@@ -22,7 +22,7 @@ export const htmlEffectWrapper = (content: ReactiveSignal<unknown>): HTMLDivElem
   effect(() => {
     const data = content()
     htmlDiv.innerHTML = typeof data === 'string' ? data : JSON.stringify(data)
-  })
+  }, htmlDiv)
   return htmlDiv
 }
 
@@ -79,11 +79,11 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       return this
     },
     setReactiveAttribute(attrName, valueSignal) {
-      effect(() => this.setAttribute(attrName, valueSignal()))
+      effect(() => this.setAttribute(attrName, valueSignal()), wrapper)
       return this
     },
     setReactiveCustomAttribute(attrName, valueSignal) {
-      effect(() => this.setCustomAttribute(attrName, valueSignal()))
+      effect(() => this.setCustomAttribute(attrName, valueSignal()), wrapper)
       return this
     },
     removeAttribute(attrName) {
@@ -119,7 +119,7 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
           } else {
             this.removeClass(className)
           }
-        })
+        }, wrapper)
       });
       return this;
     },
@@ -132,7 +132,7 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       return this
     },
     addEffect(cb) {
-      effect(() => cb(this, this.hostElement))
+      effect(() => cb(this, this.hostElement), this.hostElement)
       return this
     },
     addReactiveContent(content) {
