@@ -70,13 +70,15 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: resolve(__dirname, './src/shared/utils/index.ts'),
+      // entry: resolve(__dirname, './src/shared/utils/index.ts'),
+      entry: resolve(__dirname, './src/components/index.ts'),
       name: 'ReactiveComponent',
       fileName: 'reactive-web-component.[hash]',
       // formats: ['es']
     }
   },
   resolve: {
-    alias: [{ find: '@shared', replacement: fileURLToPath(new URL('./src/shared/', import.meta.url)) }]
+    alias: [{ find: '@shared', replacement: fileURLToPath(new URL('./src/shared/', import.meta.url)) },
+    { find: '@', replacement: fileURLToPath(new URL('./src/', import.meta.url)) }]
   }
 })

@@ -1,6 +1,6 @@
-import { BaseElement, component, createElement, property, signal, } from "@shared/utils";
+import { BaseElement, component, createEl, property, signal } from "@shared/utils";
 
-let iconRootPath = "/src/assets/";
+let iconRootPath = "@/assets/";
 
 @component("rx-icon")
 export class IconComponent extends BaseElement {
@@ -11,18 +11,26 @@ export class IconComponent extends BaseElement {
   @property()
   svgPath = signal("");
 
+  @property()
+  url = signal('')
+
+  iconComp = signal('')
+
+
+  async getIconRaw(svgPath: string) { return import(`@/assets/${svgPath}.svg?raw`).then(({ default: svgString }: { default: string }) => svgString) }
+
   render() {
-    if (!this.svgPath() || this.svgPath() === '') {
-      console.error("require attribute", "svg-path");
-      return createElement("div");
+    if (this.svgPath()) {
+      this.getIconRaw(this.svgPath()).then(e => this.iconComp.set(e))
+      return createEl('div')(
+        this.iconComp
+      )
     }
-    // import(`${iconRootPath}${this.svgPath()}.svg?raw`).then(
-    //     ({default: svgString}) => {
-    //         svgComp.setHtmlContent(svgString).set(createElement('img').setAttribute('src', `${iconRootPath}${this.svgPath()}.svg`));
-    //     },
-    // ).catch(err => console.error('не смог загрузить иконку', this.svgPath(), err));
-    return createElement("div")
-      .set(createElement('img').setAttribute('src', `${iconRootPath}${this.svgPath()}.svg`));
+    return createEl('img', {
+      attributes: {
+        'src': this.url() ? this.url : `${iconRootPath}${this.svgPath()}.svg`
+      }
+    })().addEventlistener('click', () => { this.click() })
   }
 }
 

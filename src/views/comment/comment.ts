@@ -23,10 +23,11 @@ export class CommentWidget extends BaseElement {
               "какая-то подсказка",
             ),
             createCustomElement<ButtonComponent>("rx-button")
-              .addEventlistener('ttt', (e) => { console.log(e) })
+              .addEventlistener('change', (e) => { console.log(e) })
               .setAttribute('type', 'secondary')
               .set(
-                createCustomElement<IconComponent>('rx-icon').setAttribute('svgPath', 'button-send')
+                createCustomElement<IconComponent>('rx-icon')
+                  .setAttribute('svgPath', 'button-send')
               )
           ),
       );
