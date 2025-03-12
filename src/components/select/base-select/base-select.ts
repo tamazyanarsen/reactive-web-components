@@ -1,4 +1,3 @@
-import { ComponentConfig } from "@shared/types";
 import { BaseElement, component, createElement, event, newEventEmitter, property, signal } from "@shared/utils";
 import { Option } from "../types/select";
 
@@ -15,7 +14,7 @@ export class SelectBaseComponent extends BaseElement {
   @event()
   change = newEventEmitter()
 
-  render(): ComponentConfig {
+  render() {
     return createElement('div')
       .addHtmlContent('select element')
       .append(

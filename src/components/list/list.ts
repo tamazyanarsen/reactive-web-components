@@ -1,4 +1,3 @@
-import { ComponentConfig } from "@shared/types";
 import { BaseElement, component, createElement, property, signal } from "@shared/utils";
 
 @component('rx-list')
@@ -8,7 +7,7 @@ export class ListComponent extends BaseElement {
   @property()
   items = signal<string[]>([])
 
-  render(): ComponentConfig {
+  render() {
     return createElement('div')
       .addClass('list-container')
       .addEffect(self => {

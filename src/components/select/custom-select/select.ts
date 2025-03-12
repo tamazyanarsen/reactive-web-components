@@ -1,4 +1,4 @@
-import { ComponentConfig, ListItem, SelectedItem } from "@shared/types";
+import { ListItem, SelectedItem } from "@shared/types";
 import {
   BaseElement,
   component,
@@ -25,7 +25,7 @@ export class SelectComponent extends BaseElement {
     "./select.scss?raw"
   );
 
-  render(): ComponentConfig {
+  render() {
     document.body.addEventListener("click", () =>
       this.isDropdownVisible.set(false),
     );

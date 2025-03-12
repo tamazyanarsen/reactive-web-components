@@ -6,7 +6,7 @@ import { isReactiveSignal } from "./signal";
 export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName)
   const component = {
-    ...elementHelpers(wrapper)
+    ...elementHelpers(wrapper),
   }
   return initComponent(component, config)
 }
@@ -56,7 +56,7 @@ export abstract class BaseElement extends HTMLElement {
     this.attachShadow({ mode: 'open' })
   }
 
-  abstract render(): ComponentConfig
+  abstract render(): ComponentConfig<any>
 
   setReactiveValue<ModelType = unknown>(value: ReactiveSignal<ModelType>) {
     this.modelValue = value

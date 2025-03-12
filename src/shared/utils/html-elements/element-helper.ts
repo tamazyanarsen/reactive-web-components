@@ -1,10 +1,10 @@
 import { ReactiveSignal } from "@shared/types"
-import { ComponentConfig, ComponentEventListener, ComponentInitConfig, CustomEventListener, EventKeys, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { ComponentConfig, ComponentInitConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { CustomComponentConfig } from "./custom-element"
 import { effect, isReactiveSignal } from "./signal"
 
-export const eventEmitter = () => () => {}
+export const eventEmitter = () => () => { }
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
   const divWrapper = document.createElement(wrapperElement)
   setHtmlContent(divWrapper, content)
@@ -57,11 +57,10 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       setHtmlContent(wrapper, content)
       return this
     },
-    addEventlistener<K extends keyof HTMLElementEventMap & string, Keys extends EventKeys<T> & string>(
-      eventName: K | Keys,
-      cb: ComponentEventListener<T> | CustomEventListener<T[Keys], T>
+    addEventlistener(
+      eventName: string,
+      cb: any
     ) {
-      //@ts-expect-error index string
       wrapper.addEventListener(eventName, e => cb(e, this, wrapper))
       return this
     },

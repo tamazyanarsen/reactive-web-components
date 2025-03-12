@@ -16,7 +16,7 @@ export const createCustomElement = <T extends HTMLElement>(
     setReactiveValue(value) {
       if (wrapper instanceof BaseElement) wrapper.setReactiveValue(value);
       return this;
-    },
+    }
   };
   return initComponent(component, config)
 };

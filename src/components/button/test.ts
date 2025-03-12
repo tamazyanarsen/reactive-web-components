@@ -1,4 +1,4 @@
-import { ComponentConfig, SlotContext } from "@shared/types";
+import { SlotContext } from "@shared/types";
 import { BaseElement, component, createCustomElement, createElement, effect, signal } from "@shared/utils";
 import { SwitchComponent } from "main";
 
@@ -8,7 +8,7 @@ export class TestWrapper extends BaseElement {
 
   switchValue = signal(true)
 
-  render(): ComponentConfig {
+  render() {
     effect(() => console.log('NEW SWITCH VALUE', this.switchValue()))
     return createElement('div')
       .append(

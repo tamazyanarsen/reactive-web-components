@@ -14,7 +14,7 @@ export type Join<T extends unknown[], D extends string> =
 
 export type HtmlTagName = keyof HTMLElementTagNameMap
 
-export type ExtraHTMLElement = HTMLElement & { handleSlotContext?: <SlotValue = unknown>(value: SlotValue) => void }
+export type ExtraHTMLElement = HTMLElement & { handleSlotContext?: <SlotValue = unknown>(value: SlotValue) => void, render?: () => ComponentConfig<any> }
 
 export type SignalValue<T> = T extends ReactiveSignal<infer V> ? V : T
 
@@ -22,7 +22,7 @@ export type EventKeys<T> = {
   [k in keyof T]: T[k] extends EventEmitter<any> ? k : never
 }[keyof T];
 
-export type ComponentEventListener<T extends ExtraHTMLElement> = (e: Event, self: ComponentConfig<T>, host: T) => void
+export type ComponentEventListener<T extends ExtraHTMLElement, E extends Event> = (e: E, self: ComponentConfig<T>, host: T) => void
 
 export type CustomEventListener<DetailValue, T extends ExtraHTMLElement> = (e: CustomEvent<DetailValue>, self: ComponentConfig<T>, host: T) => void
 
@@ -30,25 +30,25 @@ export type CustomEventValue<T> = T extends EventEmitter<infer V> ? V : T;
 
 export type ComponentCallback<T extends ExtraHTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
-export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig }> = T['render'] extends () => ComponentConfig ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T & string] : keyof T & string
+export type AttrSignal<T extends HTMLElement & { render?: () => ComponentConfig<any> }> = T['render'] extends () => ComponentConfig<any> ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T & string] : keyof T & string
 
 export type EffectCallback<T extends HTMLElement> = (self: ComponentConfig<T>, host: T) => void
 
-export type ComponentContent = ComponentConfig | string | ReactiveSignal<any>
+export type ComponentContent = ComponentConfig<any> | string | ReactiveSignal<any>
 
-export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> {
+export interface ComponentConfig<T extends ExtraHTMLElement> {
   /**
    * append child components
    */
-  append(...args: ComponentConfig[]): ComponentConfig<T>;
+  append(...args: ComponentConfig<any>[]): ComponentConfig<T>;
   /**
    * clear and append child components
    */
-  set(...args: ComponentConfig[]): ComponentConfig<T>;
+  set(...args: ComponentConfig<any>[]): ComponentConfig<T>;
   /**
    * remove child components
    */
-  removeChild(...args: ComponentConfig[]): ComponentConfig<T>;
+  removeChild(...args: ComponentConfig<any>[]): ComponentConfig<T>;
   /**
    * add html (string) content to host element
    */
@@ -64,10 +64,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement = ExtraHTMLElement> 
   /**
    * add event listener to component
    */
-  addEventlistener<K extends keyof HTMLElementEventMap>(eventName: K, cb: ComponentEventListener<T>): ComponentConfig<T>;
-  /**
-   * add event listener to component
-   */
+  addEventlistener<K extends T['render'] extends () => ComponentConfig<any> ? never : keyof HTMLElementEventMap>(eventName: K, cb: ComponentEventListener<T, HTMLElementEventMap[K]>): ComponentConfig<T>;
   addEventlistener<K extends EventKeys<T>>(eventName: K, cb: CustomEventListener<CustomEventValue<T[K]>, T>): ComponentConfig<T>;
   /**
    * set attribute value to component
@@ -134,8 +131,9 @@ export interface EventEmitterWrapper {
   <EventValue = unknown>(): EventEmitter<EventValue>
 }
 
-export interface EventEmitter<EventValue = unknown> {
-  (_value: EventValue): void
+export interface EventEmitter<EventValue> {
+  (_value: EventValue): void,
+  oldValue: null
 }
 
 export type SlotContext = { [slotName: string]: unknown }

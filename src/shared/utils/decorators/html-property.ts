@@ -38,7 +38,11 @@ export const event =
       (Reflect.get(target, eventFieldName) as string[]).push(propName as string);
     };
 
-export const newEventEmitter: <T = void>() => EventEmitter<T> = () => () => { };
+export const newEventEmitter: <T = void>() => EventEmitter<T> = () => {
+  const resultFunc = () => { }
+  resultFunc.oldValue = null
+  return resultFunc
+};
 
 export const component = (
   selector: string,
@@ -62,7 +66,7 @@ export const component = (
         // );
       }
 
-      render(): ComponentConfig {
+      render(): ComponentConfig<any> {
         return target.prototype.render.call(this);
       }
 
@@ -119,7 +123,7 @@ export const component = (
 
         if (this.shadowRoot) this.shadowRoot.innerHTML = "";
         this.shadowRoot?.appendChild(
-          (this.render() as ComponentConfig).hostElement,
+          (this.render() as ComponentConfig<any>).hostElement,
         );
         checkCall(this, target.prototype.connectedCallback);
 

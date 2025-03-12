@@ -1,4 +1,3 @@
-import { ComponentConfig } from "@shared/types";
 import { BaseElement, component, createElement, effect, event, newEventEmitter, property, signal } from "@shared/utils";
 
 @component('rx-input')
@@ -17,7 +16,7 @@ export class InputElement extends BaseElement {
 
   rootStyle?: Promise<typeof import("*?raw")> | undefined = import('./input.scss?raw');
 
-  render(): ComponentConfig {
+  render() {
     // TODO: refactor with addEffect
     const inputEl = createElement('input')
     effect(() => {

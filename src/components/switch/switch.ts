@@ -1,4 +1,4 @@
-import { ComponentConfig, ReactiveSignal } from "@shared/types";
+import { ReactiveSignal } from "@shared/types";
 import {
   BaseElement,
   component,
@@ -24,7 +24,7 @@ export class SwitchComponent extends BaseElement {
   @event()
   changeSelected = newEventEmitter<boolean>();
 
-  render(): ComponentConfig {
+  render() {
     return createElement("div")
       .addClass("container")
       .set(

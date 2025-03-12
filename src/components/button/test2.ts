@@ -1,9 +1,8 @@
-import { ComponentConfig } from "@shared/types";
 import { BaseElement, component, createCustomElement } from "@shared/utils";
 
 @component("rx-test")
 export class Test extends BaseElement {
-  render(): ComponentConfig {
+  render() {
     return createCustomElement('rx-wrapper').append(
       createCustomElement('rx-button')
         .setHtmlContent('test button')
