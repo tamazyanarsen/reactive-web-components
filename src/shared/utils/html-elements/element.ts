@@ -67,4 +67,7 @@ export interface BaseElementConstructor {
   new(...params: any[]): BaseElement;
 }
 
-export const isSlotTemplate = (item: Element): item is ExtraHTMLElement => 'handleSlotContext' in item
+export const isSlotTemplate = (item: Element): item is ExtraHTMLElement => 'handleSlotContext' in item;
+
+export const isBaseElement = (item: any): item is BaseElement => 'render' in item && 'setReactiveValue' in item
+

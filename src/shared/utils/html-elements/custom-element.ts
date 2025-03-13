@@ -20,3 +20,4 @@ export const createCustomElement = <T extends HTMLElement>(
   };
   return initComponent(component, config)
 };
+

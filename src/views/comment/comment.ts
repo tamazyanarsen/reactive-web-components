@@ -1,5 +1,5 @@
-import { BaseElement, component, createCustomElement, createElement, } from "@shared/utils";
-import { ButtonComponent, IconComponent, SwitchComponent } from "components";
+import { BaseElement, component, createCustomElement, createElement, getElementFromTemplate } from "@shared/utils";
+import { ButtonComponent, IconComponent, SwitchComponent } from "../../components";
 
 @component("comment-widget")
 export class CommentWidget extends BaseElement {
@@ -8,6 +8,12 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
+    // const t = getElementFromTemplate`${ButtonComponent} flex flex-col`;
+    console.log(
+      getElementFromTemplate`div flex flex-col`,
+      getElementFromTemplate`${ButtonComponent} flex flex-col`,
+      getElementFromTemplate`${IconComponent} flex flex-col`,
+    )
     return createElement("div")
       .addClass("container")
       .set(

@@ -56,6 +56,8 @@ export const component = (
     class NewClass extends target {
       static observedAttributes = target.prototype[observedAttrFieldName] ?? [];
 
+      static tagName = selector;
+
       constructor(...params: any[]) {
         super(...params);
         // add!!! for string index @ts-expect-error index string
