@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs'
-import path, { resolve } from 'path'
+import { resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { defineConfig } from 'vite'
 import checker from 'vite-plugin-checker'
@@ -70,8 +70,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      // entry: resolve(__dirname, './src/shared/utils/index.ts'),
-      entry: resolve(__dirname, './src/components/index.ts'),
+      entry: resolve(__dirname, './src/shared/utils/index.ts'),
       name: 'ReactiveComponent',
       fileName: 'reactive-web-component.[hash]',
       // formats: ['es']
