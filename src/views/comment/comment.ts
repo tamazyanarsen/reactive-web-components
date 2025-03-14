@@ -8,7 +8,6 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
-    // const t = getElementFromTemplate`${ButtonComponent} flex flex-col`;
     console.log(
       getElementFromTemplate`div flex flex-col`,
       getElementFromTemplate`${ButtonComponent} flex flex-col`,
