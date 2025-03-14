@@ -44,3 +44,4 @@ export const getElementFromTemplate = <T extends BaseElementConstructor>(
     return createCustomElement<InstanceType<T>>(customTagName).addClass(...classList).set
   }
   else return createEl(resultTagStr as `${HtmlTagName} ${string}`)
+}
