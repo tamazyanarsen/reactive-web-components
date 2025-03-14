@@ -44,6 +44,7 @@ export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
     })
 
 export abstract class BaseElement extends HTMLElement {
+  static observedAttributes: string[] = [];
 
   slotContext?: SlotContext
 
