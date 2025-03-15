@@ -1,5 +1,5 @@
-import { ComponentConfig, ComponentContent, HtmlTagName } from "@shared/types"
-import { BaseElementConstructor, createCustomElement, createEl, CustomComponentConfig } from "./html-elements"
+import { HtmlTagName } from "@shared/types"
+import { BaseElementConstructor, createCustomElement, createEl } from "./html-elements"
 
 export const checkCall = (ctx: HTMLElement, fn?: (...args: any[]) => any) => { if (fn) fn.call(ctx) }
 
@@ -13,10 +13,8 @@ export const camelToKebab = (v: string) => v.replace(/([A-Z])/gm, v => `-${v.toL
 export const kebabToCamel = (v: string) => v.replace(/-(\w)/gm, (_, v) => v.toUpperCase())
 
 export const getElementFromTemplate = <T extends BaseElementConstructor>(
-  strings: TemplateStringsArray, ...values: [T?, ...any]
-): T extends BaseElementConstructor
-  ? (...content: ComponentContent[]) => ComponentConfig<InstanceType<T>> & CustomComponentConfig<InstanceType<T>>
-  : (...content: ComponentContent[]) => ComponentConfig<any> => {
+  strings: TemplateStringsArray, ...values: [T, ...any]
+) => {
   console.log(strings, values)
   const result = [strings[0]];
 
@@ -41,7 +39,9 @@ export const getElementFromTemplate = <T extends BaseElementConstructor>(
   const resultTagStr = result.join('')
   if (isCustom) {
     const [customTagName, ...classList] = resultTagStr.split(' ');
-    return createCustomElement<InstanceType<T>>(customTagName).addClass(...classList).set
+    return createCustomElement<InstanceType<T>>(customTagName).addClass(...classList)
   }
-  else return createEl(resultTagStr as `${HtmlTagName} ${string}`)
+  else {
+    return createEl(resultTagStr as `${HtmlTagName} ${string}`)()
+  }
 }

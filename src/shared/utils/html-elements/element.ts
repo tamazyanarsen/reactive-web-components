@@ -1,7 +1,6 @@
 import { ReactiveSignal } from "@shared/types";
 import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SignalValue, SlotContext } from "../../types/element";
-import { elementHelpers, initComponent } from "./element-helper";
-import { isReactiveSignal } from "./signal";
+import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
 
 export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName)
@@ -9,15 +8,6 @@ export const createElement = <K extends HtmlTagName>(tagName: K, config?: Compon
     ...elementHelpers(wrapper),
   }
   return initComponent(component, config)
-}
-
-export const appendContentItem = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, ...items: ComponentContent[]) => {
-  items.forEach(item => {
-    if (typeof item === 'string') comp.addHtmlContent(item)
-    else if (isReactiveSignal(item)) { comp.addReactiveContent(item) }
-    else comp.append(item)
-  })
-  return comp
 }
 
 export const createEl = <K extends HtmlTagName>(tagName: `${K} ${string}` | K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
