@@ -1,10 +1,10 @@
 import { ReactiveSignal } from "@shared/types"
-import { ComponentConfig, ComponentInitConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { CustomComponentConfig } from "./custom-element"
 import { effect, isReactiveSignal } from "./signal"
 
-export const eventEmitter = () => () => { }
+export const eventEmitter = () => () => {}
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
   const divWrapper = document.createElement(wrapperElement)
   setHtmlContent(divWrapper, content)
@@ -177,4 +177,13 @@ export const addAttributeList = <T extends ExtraHTMLElement>
       }
     })
   }
+}
+
+export const appendContentItem = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, ...items: ComponentContent[]) => {
+  items.forEach(item => {
+    if (typeof item === 'string') comp.addHtmlContent(item)
+    else if (isReactiveSignal(item)) { comp.addReactiveContent(item) }
+    else comp.append(item)
+  })
+  return comp
 }

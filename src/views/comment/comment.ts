@@ -1,5 +1,6 @@
-import { BaseElement, component, createCustomElement, createElement, } from "@shared/utils";
-import { ButtonComponent, IconComponent, SwitchComponent } from "components";
+import { BaseElement, component, createCustomElement, createElement } from "@shared/utils";
+import { createComponent } from "@shared/utils/html-elements/component";
+import { ButtonComponent, IconComponent, SwitchComponent } from "../../components";
 
 @component("comment-widget")
 export class CommentWidget extends BaseElement {
@@ -8,6 +9,8 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
+    createComponent('div flex')().setAttribute('namespaceURI', 'sdf')
+    createComponent('rx-icon flex')().setAttribute('url', 'sdf')
     return createElement("div")
       .addClass("container")
       .set(
@@ -31,5 +34,12 @@ export class CommentWidget extends BaseElement {
               )
           ),
       );
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "rx-button": ButtonComponent;
+    "rx-icon": IconComponent;
   }
 }
