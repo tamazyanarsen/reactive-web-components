@@ -1,7 +1,6 @@
 import { ReactiveSignal } from "@shared/types"
-import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { ComponentConfig, ComponentContent, ComponentInitConfig, CustomComponentConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
-import { CustomComponentConfig } from "./custom-element"
 import { effect, isReactiveSignal } from "./signal"
 
 export const eventEmitter = () => () => {}
@@ -152,7 +151,7 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
   }
 }
 
-export const initComponent = <T extends ExtraHTMLElement, K extends ComponentConfig<T> | (ComponentConfig<T> & CustomComponentConfig<T>)>(
+export const initComponent = <T extends ExtraHTMLElement, K extends ComponentConfig<T> | CustomComponentConfig<T>>(
   component: K, config?: ComponentInitConfig<T>) => {
   addClassList(component, config?.classList || [])
   addAttributeList(component, config?.attributes)

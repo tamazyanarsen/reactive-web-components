@@ -2,7 +2,10 @@ import { ReactiveSignal } from "@shared/types";
 import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SignalValue, SlotContext } from "../../types/element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
 
-export const createElement = <K extends HtmlTagName>(tagName: K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>): ComponentConfig<HTMLElementTagNameMap[K]> => {
+export const createElement = <K extends HtmlTagName>(
+  tagName: K,
+  config?: ComponentInitConfig<HTMLElementTagNameMap[K]>
+): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName)
   const component = {
     ...elementHelpers(wrapper),
@@ -10,17 +13,24 @@ export const createElement = <K extends HtmlTagName>(tagName: K, config?: Compon
   return initComponent(component, config)
 }
 
-export const createEl = <K extends HtmlTagName>(tagName: `${K} ${string}` | K, config?: ComponentInitConfig<HTMLElementTagNameMap[K]>) => {
-  const classList = tagName.split(' ').slice(1).map(e => e.trim())
-  const comp = createElement(tagName.split(' ')[0] as K, config)
-  if (Array.isArray(classList) && classList.length > 0) { comp.addClass(...classList) }
-  return (
-    ...content: ComponentContent[]
-  ): ComponentConfig<HTMLElementTagNameMap[K]> => {
-    content.filter(Boolean).forEach(item => appendContentItem(comp, item));
-    return comp
+export const createEl:
+  <K extends HtmlTagName>(
+    tagName: `${K} ${string}` | K,
+    config?: ComponentInitConfig<HTMLElementTagNameMap[K]>
+  ) => (...content: ComponentContent[]) => ComponentConfig<HTMLElementTagNameMap[K]> = <K extends HtmlTagName>(
+    tagName: `${K} ${string}` | K,
+    config?: ComponentInitConfig<HTMLElementTagNameMap[K]>
+  ): (...content: ComponentContent[]) => ComponentConfig<HTMLElementTagNameMap[K]> => {
+    const classList = tagName.split(' ').slice(1).map(e => e.trim())
+    const comp = createElement<K>(tagName.split(' ')[0] as K, config)
+    if (Array.isArray(classList) && classList.length > 0) { comp.addClass(...classList) }
+    return (
+      ...content: ComponentContent[]
+    ): ComponentConfig<HTMLElementTagNameMap[K]> => {
+      content.filter(Boolean).forEach(item => appendContentItem(comp, item));
+      return comp
+    }
   }
-}
 
 export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
   cb: (item: SignalValue<R>) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')

@@ -1,17 +1,12 @@
-import { ReactiveSignal } from "@shared/types";
-import { ComponentConfig, ComponentContent, ComponentInitConfig, HtmlTagName } from "../../types/element";
+import { ComponentContent, ComponentInitConfig, CustomComponentConfig, HtmlTagName } from "../../types/element";
 import { BaseElement } from "./element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
 
-export type CustomComponentConfig<T extends HTMLElement> = {
-  setReactiveValue<ModelType = unknown>(value: ReactiveSignal<ModelType>): ComponentConfig<T>;
-}
-
 export const createCustomElement = <T extends HTMLElement>(
   tagName: string, config?: ComponentInitConfig<T>
-): ComponentConfig<T> & CustomComponentConfig<T> => {
+): CustomComponentConfig<T> => {
   const wrapper = document.createElement(tagName) as T;
-  const component: ComponentConfig<T> & CustomComponentConfig<T> = {
+  const component: CustomComponentConfig<T> = {
     ...elementHelpers(wrapper),
     setReactiveValue(value) {
       if (wrapper instanceof BaseElement) wrapper.setReactiveValue(value);

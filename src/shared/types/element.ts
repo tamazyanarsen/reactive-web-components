@@ -125,6 +125,10 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
   hostElement: T;
 }
 
+export type CustomComponentConfig<T extends ExtraHTMLElement> = {
+  setReactiveValue<ModelType = unknown>(value: ReactiveSignal<ModelType>): ComponentConfig<T>;
+} & ComponentConfig<T>
+
 export type CssKey = Exclude<keyof CSSStyleDeclaration, 'length' | 'parentRule'>
 
 export interface EventEmitterWrapper {
