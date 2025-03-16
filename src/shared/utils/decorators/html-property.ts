@@ -56,7 +56,7 @@ export const component = (
     class NewClass extends target {
       static observedAttributes = target.prototype[observedAttrFieldName] ?? [];
 
-      static tagName = selector;
+      static renderTagName = selector;
 
       constructor(...params: any[]) {
         super(...params);
