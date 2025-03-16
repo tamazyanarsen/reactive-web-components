@@ -1,5 +1,5 @@
 import { BaseElement, component, createCustomElement, createElement } from "@shared/utils";
-import { createComponent } from "@shared/utils/html-elements/component";
+import { createComponent, createTemplate } from "@shared/utils/html-elements/component";
 import { ButtonComponent, IconComponent, SwitchComponent } from "../../components";
 
 @component("comment-widget")
@@ -9,8 +9,10 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
-    createComponent('div flex')().setAttribute('namespaceURI', 'sdf')
-    createComponent('rx-icon flex')().setAttribute('url', 'sdf')
+    createTemplate('div flex')().setAttribute('namespaceURI', 'sdf')
+    createTemplate('rx-icon flex')().setAttribute('url', 'sdf')
+    console.log(createComponent`${ButtonComponent} flex flex-col`)
+    console.log(createComponent`${HTMLAnchorElement} flex flex-col`)
     return createElement("div")
       .addClass("container")
       .set(

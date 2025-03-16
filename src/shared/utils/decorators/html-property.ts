@@ -1,5 +1,5 @@
 import { ComponentConfig, EventEmitter } from "../../types/element";
-import { camelToKebab, checkCall, log, kebabToCamel } from "../helpers";
+import { camelToKebab, checkCall, kebabToCamel, log } from "../helpers";
 import {
   BaseElementConstructor,
   isSlotTemplate,
@@ -39,7 +39,7 @@ export const event =
     };
 
 export const newEventEmitter: <T = void>() => EventEmitter<T> = () => {
-  const resultFunc = () => { }
+  const resultFunc = () => {}
   resultFunc.oldValue = null
   return resultFunc
 };
@@ -154,6 +154,7 @@ export const component = (
         checkCall(this, target.prototype.disconnectedCallback);
       }
     }
+    NewClass.toString = () => selector
 
     if (!customElements.get(selector)) {
       customElements.define(selector, NewClass);

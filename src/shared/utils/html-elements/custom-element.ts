@@ -16,12 +16,28 @@ export const createCustomElement = <T extends HTMLElement>(
   return initComponent(component, config)
 };
 
-export const createCustomEl = <K extends HtmlTagName, T extends HTMLElementTagNameMap[K]>(
+// для создания кастомных компонентов, которые объявлены в интерфейсе HTMLElementTagNameMap
+export const createCustomHtmlElement = <K extends HtmlTagName, T extends HTMLElementTagNameMap[K]>(
   tagName: `${K} ${string}`,
   config?: ComponentInitConfig<T>
 ) => {
   const classList = tagName.split(' ').slice(1).map(e => e.trim())
   const comp = createCustomElement<T>(tagName.split(' ')[0] as K, config)
+  if (Array.isArray(classList) && classList.length > 0) { comp.addClass(...classList) }
+  return (
+    ...content: ComponentContent[]
+  ) => {
+    content.filter(Boolean).forEach(item => appendContentItem(comp, item));
+    return comp
+  }
+}
+
+export const createCustomEl = <T extends BaseElement>(
+  tagName: string,
+  config?: ComponentInitConfig<T>
+) => {
+  const classList = tagName.split(' ').slice(1).map(e => e.trim())
+  const comp = createCustomElement<T>(tagName.split(' ')[0], config)
   if (Array.isArray(classList) && classList.length > 0) { comp.addClass(...classList) }
   return (
     ...content: ComponentContent[]
