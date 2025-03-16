@@ -8,11 +8,11 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
-    createComponent(ButtonComponent, '')
+    createComponent(ButtonComponent, { attributes: { 'label': '1' } })
     return createElement("div")
       .addClass("container")
       .set(
-        createCustomElement<SwitchComponent>("rx-switch").setAttribute(
+        createComponent(SwitchComponent)().setAttribute(
           "label",
           "Виден только рекрутерам",
         ),

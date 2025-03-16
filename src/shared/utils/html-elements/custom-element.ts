@@ -1,4 +1,4 @@
-import { ComponentContent, ComponentInitConfig, CustomComponentConfig, HtmlTagName } from "../../types/element";
+import { ComponentContent, ComponentInitConfig, CustomComponentConfig, HtmlTagName, isComponentInitconfig } from "../../types/element";
 import { BaseElement, BaseElementConstructor } from "./element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
 
@@ -47,13 +47,18 @@ export const createCustomEl = <T extends BaseElement>(
   }
 }
 
-export const createComponent = <T extends BaseElementConstructor>(
+export const createComponent = <
+  T extends BaseElementConstructor,
+  K extends string | ComponentInitConfig<InstanceType<T>>
+>(
   srcComp: T,
-  classList: string,
-  config?: ComponentInitConfig<T extends BaseElementConstructor
-    ? InstanceType<T>
-    : T extends HtmlTagName ? HTMLElementTagNameMap[T] : never>
+  classList?: K,
+  config?: K extends string
+    ? ComponentInitConfig<InstanceType<T>>
+    : never,
 ) => {
-  // @ts-expect-error error
-  return createCustomEl(`${srcComp.renderTagName}${classList ? ' ' + classList : ''}`, config)
+  return createCustomEl(
+    // @ts-expect-error error
+    `${srcComp.renderTagName}${config && typeof config === 'string' ? ' ' + classList : ''}`,
+    isComponentInitconfig(classList) ? classList : classList && typeof classList === 'string' ? config : undefined)
 }
