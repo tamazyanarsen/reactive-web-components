@@ -1,5 +1,5 @@
 import { ComponentContent, ComponentInitConfig, CustomComponentConfig, HtmlTagName } from "../../types/element";
-import { BaseElement } from "./element";
+import { BaseElement, BaseElementConstructor } from "./element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
 
 export const createCustomElement = <T extends HTMLElement>(
@@ -45,4 +45,15 @@ export const createCustomEl = <T extends BaseElement>(
     content.filter(Boolean).forEach(item => appendContentItem(comp, item));
     return comp
   }
+}
+
+export const createComponent = <T extends BaseElementConstructor>(
+  srcComp: T,
+  classList: string,
+  config?: ComponentInitConfig<T extends BaseElementConstructor
+    ? InstanceType<T>
+    : T extends HtmlTagName ? HTMLElementTagNameMap[T] : never>
+) => {
+  // @ts-expect-error error
+  return createCustomEl(`${srcComp.renderTagName}${classList ? ' ' + classList : ''}`, config)
 }

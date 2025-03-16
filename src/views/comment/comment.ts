@@ -1,4 +1,4 @@
-import { BaseElement, component, createCustomElement, createElement } from "@shared/utils";
+import { BaseElement, component, createComponent, createCustomElement, createElement } from "@shared/utils";
 import { ButtonComponent, IconComponent, SwitchComponent } from "../../components";
 
 @component("comment-widget")
@@ -8,6 +8,7 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
+    createComponent(ButtonComponent, '')
     return createElement("div")
       .addClass("container")
       .set(
