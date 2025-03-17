@@ -148,8 +148,7 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> =
     attributes: { [key in AttrSignal<T>]?: ReactiveSignal<SignalValue<T[key]>> | SignalValue<T[key]> },
     customAttributes: Record<string, unknown>,
     reactiveClassList: { [k: string]: ReactiveSignal<boolean> },
-    children: ComponentContent[],
-    listeners: []
+    children: ComponentContent[]
   }>
 
 export const isComponentInitConfig = (item: any): item is ComponentInitConfig<any> =>
