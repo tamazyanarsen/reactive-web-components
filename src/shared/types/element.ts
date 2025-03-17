@@ -152,5 +152,5 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> =
     listeners: []
   }>
 
-export const isComponentInitconfig = (item: any): item is ComponentInitConfig<any> =>
-  item && typeof item === 'object' && 'classList' in item && 'attributes' in item && 'customAttributes' in item && 'reactiveClassList' in item
+export const isComponentInitConfig = (item: any): item is ComponentInitConfig<any> =>
+  item && typeof item === 'object' && ('classList' in item || 'attributes' in item || 'customAttributes' in item || 'reactiveClassList' in item)

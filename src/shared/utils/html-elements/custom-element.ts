@@ -1,4 +1,4 @@
-import { ComponentContent, ComponentInitConfig, CustomComponentConfig, HtmlTagName, isComponentInitconfig } from "../../types/element";
+import { ComponentContent, ComponentInitConfig, CustomComponentConfig, HtmlTagName, isComponentInitConfig } from "../../types/element";
 import { BaseElement, BaseElementConstructor } from "./element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
 
@@ -58,5 +58,5 @@ export const createCustom = <
   return createCustomEl(
     // @ts-expect-error error
     `${srcComp.renderTagName}${config && typeof config === 'string' ? ' ' + classList : ''}`,
-    isComponentInitconfig(classList) ? classList : classList && typeof classList === 'string' ? config : undefined)
+    isComponentInitConfig(classList) ? classList : classList && typeof classList === 'string' ? config : undefined)
 }
