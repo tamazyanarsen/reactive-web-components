@@ -155,7 +155,29 @@ export const initComponent = <T extends ExtraHTMLElement, K extends ComponentCon
   component: K, config?: ComponentInitConfig<T>) => {
   addClassList(component, config?.classList || [])
   addAttributeList(component, config?.attributes)
+  addReactiveClassList(component, config?.reactiveClassList)
+  addCustomAttributes(component, config?.customAttributes)
+  setChildren(component, config?.children)
   return component
+}
+
+export const setChildren = <T extends ExtraHTMLElement>(
+  comp: ComponentConfig<T>,
+  children: ComponentInitConfig<T>['children']
+) => appendContentItem(comp, ...(children || []))
+
+export const addCustomAttributes = <T extends ExtraHTMLElement>
+  (comp: ComponentConfig<T>, attributeList: ComponentInitConfig<T>['customAttributes']) => {
+  const attrObject = attributeList
+  if (attrObject) {
+    Object.keys(attrObject).forEach(attrName => {
+      if (isReactiveSignal(attrObject[attrName])) {
+        comp.setReactiveCustomAttribute(attrName, attrObject[attrName])
+      } else {
+        comp.setCustomAttribute(attrName, attrObject[attrName])
+      }
+    })
+  }
 }
 
 export const addClassList = <T extends ExtraHTMLElement>(comp: ComponentConfig<T>, classList: ComponentInitConfig<T>['classList']) => comp.addClass(...(classList || []))

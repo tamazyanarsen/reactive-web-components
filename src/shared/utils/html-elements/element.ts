@@ -27,8 +27,7 @@ export const createEl:
     return (
       ...content: ComponentContent[]
     ): ComponentConfig<HTMLElementTagNameMap[K]> => {
-      content.filter(Boolean).forEach(item => appendContentItem(comp, item));
-      return comp
+      return appendContentItem(comp, ...content.filter(Boolean))
     }
   }
 

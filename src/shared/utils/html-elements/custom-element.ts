@@ -27,8 +27,7 @@ export const createCustomHtmlElement = <K extends HtmlTagName, T extends HTMLEle
   return (
     ...content: ComponentContent[]
   ) => {
-    content.filter(Boolean).forEach(item => appendContentItem(comp, item));
-    return comp
+    return appendContentItem(comp, ...content.filter(Boolean))
   }
 }
 
@@ -42,12 +41,11 @@ export const createCustomEl = <T extends BaseElement>(
   return (
     ...content: ComponentContent[]
   ) => {
-    content.filter(Boolean).forEach(item => appendContentItem(comp, item));
-    return comp
+    return appendContentItem(comp, ...content.filter(Boolean))
   }
 }
 
-export const createComponent = <
+export const createCustom = <
   T extends BaseElementConstructor,
   K extends string | ComponentInitConfig<InstanceType<T>>
 >(
