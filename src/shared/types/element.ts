@@ -142,10 +142,16 @@ export interface EventEmitter<EventValue> {
 
 export type SlotContext = { [slotName: string]: unknown }
 
+export type AttributeValue<T extends ExtraHTMLElement, K extends AttrSignal<T>> =
+  ReactiveSignal<SignalValue<T[K]>>
+  | SignalValue<T[K]>
+  | (() => SignalValue<T[K]>)
+
 export type ComponentInitConfig<T extends ExtraHTMLElement> =
   Partial<{
     classList: string[],
-    attributes: { [key in AttrSignal<T>]?: ReactiveSignal<SignalValue<T[key]>> | SignalValue<T[key]> },
+    attributes: { [key in AttrSignal<T>]?: AttributeValue<T, key>
+    },
     customAttributes: Record<string, unknown>,
     reactiveClassList: { [k: string]: ReactiveSignal<boolean> },
     children: ComponentContent[]

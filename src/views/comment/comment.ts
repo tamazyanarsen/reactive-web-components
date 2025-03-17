@@ -1,4 +1,4 @@
-import { BaseElement, component, createCustom, createCustomElement, createEl, createElement } from "@shared/utils";
+import { BaseElement, component, createCustom, createCustomElement, createEl, createElement, signal } from "@shared/utils";
 import { ButtonComponent, IconComponent, SwitchComponent } from "../../components";
 
 @component("comment-widget")
@@ -8,8 +8,15 @@ export class CommentWidget extends BaseElement {
   );
 
   render() {
+    const testSignal = signal({ test: 12 })
     createEl('div container')(
-      createCustom(SwitchComponent, { 'attributes': { 'label': 'Виден только рекрутерам' } })(),
+      createCustom(SwitchComponent,
+        {
+          'attributes': {
+            'label': 'Виден только рекрутерам',
+            'isSelected': () => Boolean(testSignal().test)
+          }
+        })(),
       createEl('div text-block')(
         createEl('textarea', { attributes: { 'placeholder': 'подсказка для ввода' } })(),
         createCustom(ButtonComponent, { attributes: { type: 'secondary' } })(

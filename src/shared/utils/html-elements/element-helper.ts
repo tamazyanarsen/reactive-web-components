@@ -1,5 +1,5 @@
 import { ReactiveSignal } from "@shared/types"
-import { ComponentConfig, ComponentContent, ComponentInitConfig, CustomComponentConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { AttributeValue, AttrSignal, ComponentConfig, ComponentContent, ComponentInitConfig, CustomComponentConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { effect, isReactiveSignal } from "./signal"
 
@@ -186,16 +186,25 @@ export const addReactiveClassList = <T extends ExtraHTMLElement>(comp: Component
 export const addAttributeList = <T extends ExtraHTMLElement>
   (comp: ComponentConfig<T>, attributeList: ComponentInitConfig<T>['attributes']) => {
   const attrObject = attributeList
+  const addAttribute = (
+    attrName: keyof ComponentInitConfig<T>['attributes'],
+    attrValue?: AttributeValue<T, AttrSignal<T>>
+  ) => {
+    if (!attrValue) return;
+    if (isReactiveSignal(attrValue)) {
+      comp.setReactiveAttribute(attrName as AttrSignal<T>, attrValue)
+    } else if (typeof attrValue === 'function') {
+      comp.addEffect(() => {
+        comp.setAttribute(attrName, (attrValue as any)())
+      })
+    } else {
+      comp.setAttribute(attrName, attrValue as any)
+    }
+  }
   if (attrObject) {
-    Object.keys(attrObject).forEach(attrName => {
-      // @ts-expect-error string index
-      if (isReactiveSignal(attrObject[attrName])) {
-        // @ts-expect-error string index
-        comp.setReactiveAttribute(attrName, attrObject[attrName])
-      } else {
-        // @ts-expect-error string index
-        comp.setAttribute(attrName, attrObject[attrName])
-      }
+    // @ts-expect-error error
+    Object.keys(attrObject).forEach(<K extends keyof ComponentInitConfig<T>['attributes']>(attrName: K) => {
+      addAttribute(attrName, attrObject[attrName])
     })
   }
 }
