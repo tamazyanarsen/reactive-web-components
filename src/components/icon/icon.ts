@@ -1,4 +1,4 @@
-import { BaseElement, component, createEl, property, signal } from "@shared/utils";
+import { BaseElement, component, createEl, newEventEmitter, property, signal, event } from "@shared/utils";
 
 let iconRootPath = "@/assets/";
 
@@ -16,6 +16,8 @@ export class IconComponent extends BaseElement {
 
   iconComp = signal('')
 
+  @event()
+  click = newEventEmitter()
 
   async getIconRaw(svgPath: string) { return import(`@/assets/${svgPath}.svg?raw`).then(({ default: svgString }: { default: string }) => svgString) }
 
