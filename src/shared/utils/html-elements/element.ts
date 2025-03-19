@@ -32,7 +32,7 @@ export const createEl:
   }
 
 export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
-  cb: (item: SignalValue<R>) => ComponentContent | ComponentContent[]): ComponentContent => createElement('div')
+  cb: (item: SignalValue<R>) => ComponentContent | ComponentContent[]) => createElement('div')
     .addEffect(self => {
       const signalContent = cb(src())
       const newContent: ComponentContent[] = []
