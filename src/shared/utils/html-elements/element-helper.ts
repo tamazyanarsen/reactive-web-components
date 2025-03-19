@@ -18,6 +18,7 @@ export const setHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement:
 
 export const htmlEffectWrapper = (content: ReactiveSignal<unknown>): HTMLDivElement => {
   const htmlDiv = document.createElement('div')
+  htmlDiv.style.display = 'flex'
   effect(() => {
     const data = content()
     setHtmlContent(htmlDiv, data)
