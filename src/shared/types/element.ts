@@ -52,7 +52,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
   /**
    * add html (string) content to host element
    */
-  addHtmlContent(content: string, wrapperElement?: HtmlTagName): ComponentConfig<T>;
+  addHtmlContent(content: string): ComponentConfig<T>;
   /**
    * clear and add html (string) content to host element
    */

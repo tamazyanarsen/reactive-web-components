@@ -1,13 +1,12 @@
 import { ReactiveSignal } from "@shared/types"
-import { AttributeValue, AttrSignal, ComponentConfig, ComponentContent, ComponentInitConfig, CustomComponentConfig, ExtraHTMLElement, HtmlTagName } from "../../types/element"
+import { AttributeValue, AttrSignal, ComponentConfig, ComponentContent, ComponentInitConfig, CustomComponentConfig, ExtraHTMLElement } from "../../types/element"
 import { camelToKebab } from "../helpers"
 import { effect, isReactiveSignal } from "./signal"
 
 export const eventEmitter = () => () => {}
-export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown, wrapperElement: HtmlTagName = 'div') => {
-  const divWrapper = document.createElement(wrapperElement)
-  setHtmlContent(divWrapper, content)
-  htmlElement.appendChild(divWrapper)
+export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown) => {
+  const contentWrapper: Text = new Text(typeof content === 'string' ? content : JSON.stringify(content))
+  htmlElement.appendChild(contentWrapper)
   return htmlElement
 }
 
@@ -49,8 +48,8 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       })
       return this
     },
-    addHtmlContent(content, wrapperElement = 'div') {
-      addHtmlContent(wrapper, content, wrapperElement)
+    addHtmlContent(content) {
+      addHtmlContent(wrapper, content)
       return this
     },
     setHtmlContent(content) {
