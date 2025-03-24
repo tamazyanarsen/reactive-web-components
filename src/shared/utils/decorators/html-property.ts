@@ -39,13 +39,14 @@ export const event =
     };
 
 export const newEventEmitter: <T = void>() => EventEmitter<T> = () => {
-  const resultFunc = () => {}
+  const resultFunc = () => { }
   resultFunc.oldValue = null
   return resultFunc
 };
 
 export const component = (
   selector: string,
+  isClosed = true
 ): (<T extends BaseElementConstructor>(target: T) => T) => {
   return (target) => {
     console.log(
@@ -59,7 +60,7 @@ export const component = (
       static renderTagName = selector;
 
       constructor(...params: any[]) {
-        super(...params);
+        super(isClosed, ...params);
         // add!!! for string index @ts-expect-error index string
         // console.log(
         //   "observedAttrFieldName",
@@ -111,7 +112,7 @@ export const component = (
           const appendStyle = (css: string) => {
             const sheet = new CSSStyleSheet();
             sheet.replaceSync(css);
-            this.shadowRoot?.adoptedStyleSheets.push(sheet);
+            this.shadow.adoptedStyleSheets.push(sheet);
           }
           if (!Array.isArray(this.rootStyle)) {
             this.rootStyle.then((v) => appendStyle(v.default));
@@ -123,14 +124,14 @@ export const component = (
           }
         }
 
-        if (this.shadowRoot) this.shadowRoot.innerHTML = "";
-        this.shadowRoot?.appendChild(
+        if (this.shadow) this.shadow.innerHTML = "";
+        this.shadow.appendChild(
           (this.render() as ComponentConfig<any>).hostElement,
         );
         checkCall(this, target.prototype.connectedCallback);
 
         if (this.slotContext) {
-          this.shadowRoot?.querySelectorAll("slot").forEach((slotEl) => {
+          this.shadow.querySelectorAll("slot").forEach((slotEl) => {
             console.log(
               this.slotContext,
               this.slotContext && this.slotContext[slotEl.name],

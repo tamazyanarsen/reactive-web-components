@@ -53,9 +53,11 @@ export abstract class BaseElement extends HTMLElement {
 
   protected modelValue?: ReactiveSignal<unknown>
 
-  constructor() {
+  shadow: ShadowRoot;
+
+  constructor(isClosed = true) {
     super()
-    this.attachShadow({ mode: 'open' })
+    this.shadow = this.attachShadow({ mode: isClosed ? 'closed' : 'open' })
   }
 
   abstract render(): ComponentConfig<any>
