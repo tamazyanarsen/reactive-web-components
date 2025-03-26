@@ -3,7 +3,7 @@ import { AttributeValue, AttrSignal, ComponentConfig, ComponentContent, Componen
 import { camelToKebab } from "../helpers"
 import { effect, isReactiveSignal } from "./signal"
 
-export const eventEmitter = () => () => {}
+export const eventEmitter = () => () => { }
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(htmlElement: T, content: string | unknown) => {
   const contentWrapper: Text = new Text(typeof content === 'string' ? content : JSON.stringify(content))
   htmlElement.appendChild(contentWrapper)
@@ -106,7 +106,26 @@ export const elementHelpers = <T extends ExtraHTMLElement>(wrapper: T): Componen
       return this
     },
     addClass(...className) {
-      wrapper.classList.add(...className)
+      className.forEach(cls => {
+        if (typeof cls === 'string') {
+          wrapper.classList.add(...cls.split(' '))
+        }
+        else {
+          (() => {
+            let oldClassName = '_';
+            (() => {
+              this.addEffect(() => {
+                this.removeClass(oldClassName)
+                const currentClassName = cls()
+                if (currentClassName.length > 0) {
+                  oldClassName = currentClassName;
+                  this.addClass(oldClassName)
+                }
+              })
+            })()
+          })()
+        }
+      })
       return this
     },
     addReactiveClass(classConfig) {

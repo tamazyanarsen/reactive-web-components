@@ -33,7 +33,6 @@ export const createEl:
 
 export const getSignalContent = <R extends ReactiveSignal<any>>(src: R,
   cb: (item: SignalValue<R>) => ComponentContent | ComponentContent[]) => createElement('div')
-    .addStyle({ display: 'flex' })
     .addEffect(self => {
       const signalContent = cb(src())
       const newContent: ComponentContent[] = []

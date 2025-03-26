@@ -92,7 +92,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
   /**
   * add css-class to component
   */
-  addClass(...className: string[]): ComponentConfig<T>;
+  addClass(...className: (string | (() => string))[]): ComponentConfig<T>;
   /**
   * bind reactive signal with component css-class
   */
