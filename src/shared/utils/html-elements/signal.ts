@@ -1,60 +1,61 @@
-import { SignalValueEventName, ReactiveSignal, SignalValueEventDetail, SignalUpdateFunc } from "../../types/signal";
+import { ReactiveSignal, SignalUpdateFunc } from "../../types/signal";
 
-const isCustomEvent = <T = unknown>(event: Event | CustomEvent<T>): event is CustomEvent<T> => 'detail' in event;
+// Хранит текущий активный эффект для автоматической подписки
+let activeEffect: (() => void) | null = null;
 
-export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
+export function signal<T = unknown>(initialValue: T): ReactiveSignal<T> {
+  // Локальное состояние сигнала
+  let value = initialValue;
+
+  // Коллекция подписанных эффектов
+  const subscribers = new Set<() => void>();
+
+  // Основная функция сигнала (геттер)
   function result() {
-    dispatchEvent(new CustomEvent<SignalValueEventDetail<T>>(SignalValueEventName, {
-      detail: {
-        signalFunction: result
-      }
-    }))
-    return initValue
+    // Автоматическая подписка при чтении значения
+    if (activeEffect) subscribers.add(activeEffect);
+    return value;
+  };
+
+  // Сохранение предыдущего значения (для сравнений)
+  result.oldValue = value;
+
+  // Сеттер для обновления значения
+  result.set = function (newValue: T) {
+    // Оптимизация: пропуск одинаковых значений
+    if (value === newValue) return;
+
+    value = newValue;
+    result.oldValue = value;
+
+    // Триггеринг всех подписанных эффектов
+    subscribers.forEach(fn => fn());
   }
-  result.oldValue = initValue
-  result.set = function (value: T) {
-    result.oldValue = initValue
-    initValue = value
-  }
+
+  // Функциональное обновление
   result.update = function (cb: SignalUpdateFunc<T>) {
-    result.set(cb(initValue))
+    result.set(cb(value))
   }
-  return result
-}
 
-export function effect(cb: () => void) {
-  // TODO: заменить на uuid
-  const effectId = Math.random().toString();
-  const currentEffectId = localStorage.getItem('effectId');
-  localStorage.setItem('effectId', effectId);
-  console.log('create effect', effectId, cb);
+  return result;
+};
 
-  const signalList = new Set<ReactiveSignal<unknown>>();
-  (function () {
-    const signalCallback = (event: Event | CustomEvent<SignalValueEventDetail>) => {
-      if (effectId !== localStorage.getItem('effectId')) {
-        console.log({ effectId }, 'another effect running');
-        return;
-      };
-      if (isCustomEvent<SignalValueEventDetail>(event)) {
-        console.log({ effectId }, 'is cb registered', signalList.has(event.detail.signalFunction))
-        if (signalList.has(event.detail.signalFunction)) return;
-        const oldSetfunction = event.detail.signalFunction.set
-        console.log('call effect', effectId);
-        event.detail.signalFunction.set = (...args) => {
-          oldSetfunction(...args)
-          cb()
-        }
-        signalList.add(event.detail.signalFunction)
-      }
-    }
-    window.addEventListener(SignalValueEventName, signalCallback)
-    cb()
-    window.removeEventListener(SignalValueEventName, signalCallback);
-    if (currentEffectId) localStorage.setItem('effectId', currentEffectId);
-    else localStorage.removeItem('effectId');
-  })()
-}
+export function effect(fn: () => void) {
+  // Обёртка для отслеживания зависимостей
+  const execute = () => {
+    // Установка текущего эффекта как активного
+    activeEffect = execute;
+
+    // Выполнение пользовательской логики
+    fn();
+
+    // Сброс активного эффекта
+    activeEffect = null;
+  };
+
+  // Первичный запуск эффекта
+  execute();
+};
 
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(v: R | any): v is R => ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v && 'update' in v
