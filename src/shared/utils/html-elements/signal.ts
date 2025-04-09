@@ -1,20 +1,21 @@
-import { SignalValueEventName, ReactiveSignal, SignalValueEventDetail, SignalUpdateFunc } from "../../types/signal";
+import { ReactiveSignal, SignalUpdateFunc } from "../../types/signal";
 
-const isCustomEvent = <T = unknown>(event: Event | CustomEvent<T>): event is CustomEvent<T> => 'detail' in event;
+const effectStack: (() => void)[] = []
 
 export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
+  const subscribers = new Set<() => void>()
   function result() {
-    dispatchEvent(new CustomEvent<SignalValueEventDetail<T>>(SignalValueEventName, {
-      detail: {
-        signalFunction: result
-      }
-    }))
+    const currCb = effectStack[effectStack.length - 1]
+    if (currCb) subscribers.add(currCb)
     return initValue
   }
-  result.oldValue = initValue
+  result.oldValue = Object.freeze(initValue)
   result.set = function (value: T) {
-    result.oldValue = initValue
-    initValue = value
+    if (initValue !== value) {
+      result.oldValue = Object.freeze(initValue)
+      initValue = value
+      subscribers.forEach(cb => cb())
+    }
   }
   result.update = function (cb: SignalUpdateFunc<T>) {
     result.set(cb(initValue))
@@ -23,39 +24,10 @@ export function signal<T = unknown>(initValue: T): ReactiveSignal<T> {
 }
 
 export function effect(cb: () => void) {
-  // TODO: заменить на uuid
-  const effectId = Math.random().toString();
-  const currentEffectId = localStorage.getItem('effectId');
-  localStorage.setItem('effectId', effectId);
-  console.log('create effect', effectId, cb);
-
-  const signalList = new Set<ReactiveSignal<unknown>>();
-  (function () {
-    const signalCallback = (event: Event | CustomEvent<SignalValueEventDetail>) => {
-      if (effectId !== localStorage.getItem('effectId')) {
-        console.log({ effectId }, 'another effect running');
-        return;
-      };
-      if (isCustomEvent<SignalValueEventDetail>(event)) {
-        console.log({ effectId }, 'is cb registered', signalList.has(event.detail.signalFunction))
-        if (signalList.has(event.detail.signalFunction)) return;
-        const oldSetfunction = event.detail.signalFunction.set
-        console.log('call effect', effectId);
-        event.detail.signalFunction.set = (...args) => {
-          oldSetfunction(...args)
-          cb()
-        }
-        signalList.add(event.detail.signalFunction)
-      }
-    }
-    window.addEventListener(SignalValueEventName, signalCallback)
-    cb()
-    window.removeEventListener(SignalValueEventName, signalCallback);
-    if (currentEffectId) localStorage.setItem('effectId', currentEffectId);
-    else localStorage.removeItem('effectId');
-  })()
+  effectStack.push(cb)
+  cb()
+  effectStack.pop()
 }
-
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(v: R | any): v is R => ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v && 'update' in v
 
