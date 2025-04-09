@@ -108,27 +108,35 @@ export const component = (
         );
         console.log("start render", target.name, selector);
 
+        const insertRenderTemplate = () => {
+          while (this.shadow.firstChild) {
+            this.shadow.removeChild(this.shadow.firstChild);
+          }
+          this.shadow.appendChild(
+            (this.render() as ComponentConfig<any>).hostElement,
+          )
+          checkCall(this, target.prototype.connectedCallback);
+        }
+
         if (this.rootStyle) {
+          const stylePromise: Promise<typeof import("*?inline")>[] = []
           const appendStyle = (css: string) => {
             const sheet = new CSSStyleSheet();
             sheet.replaceSync(css);
-            this.shadow.adoptedStyleSheets.push(sheet);
+            this.shadow.adoptedStyleSheets = [sheet];
           }
           if (!Array.isArray(this.rootStyle)) {
-            this.rootStyle.then((v) => appendStyle(v.default));
+            stylePromise.push(this.rootStyle)
           }
           else {
-            Promise.all(this.rootStyle).then(styleList => {
-              styleList.forEach(v => appendStyle(v.default))
-            })
+            stylePromise.push(...this.rootStyle)
           }
+          Promise.all(stylePromise)
+            .then(v => v.forEach(e => appendStyle(e.default)))
+            .then(() => insertRenderTemplate());
+        } else {
+          insertRenderTemplate()
         }
-
-        if (this.shadow) this.shadow.innerHTML = "";
-        this.shadow.appendChild(
-          (this.render() as ComponentConfig<any>).hostElement,
-        );
-        checkCall(this, target.prototype.connectedCallback);
 
         if (this.slotContext) {
           this.shadow.querySelectorAll("slot").forEach((slotEl) => {
