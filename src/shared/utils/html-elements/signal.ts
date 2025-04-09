@@ -41,6 +41,7 @@ export function signal<T = unknown>(initialValue: T): ReactiveSignal<T> {
 };
 
 export function effect(fn: () => void) {
+  const oldEffect = activeEffect;
   // Обёртка для отслеживания зависимостей
   const execute = () => {
     // Установка текущего эффекта как активного
@@ -50,7 +51,7 @@ export function effect(fn: () => void) {
     fn();
 
     // Сброс активного эффекта
-    activeEffect = null;
+    activeEffect = oldEffect ?? null;
   };
 
   // Первичный запуск эффекта
