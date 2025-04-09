@@ -76,3 +76,46 @@ export const isSlotTemplate = (item: Element): item is ExtraHTMLElement => 'hand
 
 export const isBaseElement = (item: any): item is BaseElement => 'render' in item && 'setReactiveValue' in item
 
+/**
+ * Фабрика тегов с поддержкой всех HTML-элементов
+ * Использует Proxy для автоматического создания обработчиков
+ */
+const tags = new Proxy({}, {
+  get(_, tag: HtmlTagName) {
+    return (config: ComponentInitConfig<HTMLElementTagNameMap[typeof tag]>, ...content: ComponentContent[]) => {
+      return createEl(tag, config)(...content);
+    };
+  }
+}) as {
+    [key in keyof HTMLElementTagNameMap]: (config: ComponentInitConfig<HTMLElementTagNameMap[key]>, ...content: ComponentContent[]) => ComponentConfig<HTMLElementTagNameMap[key]>
+  };
+
+/**
+ * Экспорт всех стандартных HTML-тегов
+ * Полный список согласно спецификации HTML5
+ */
+export const {
+  a, abbr, address, area, article, aside, audio, b, base, bdi, bdo, blockquote,
+  body, br, button, canvas, caption, cite, code, col, colgroup, data, datalist,
+  dd, del, details, dfn, dialog, div, dl, dt, em, embed, fieldset, figcaption,
+  figure, footer, form, h1, h2, h3, h4, h5, h6, head, header, hgroup, hr, html,
+  i, iframe, img, input, ins, kbd, label, legend, li, link, main, map, mark,
+  menu, meta, meter, nav, noscript, object, ol, optgroup, option,
+  output, p, picture, pre, progress, q, rp, rt, ruby, s, samp, script,
+  section, select, slot, small, source, span, strong, style, sub, summary, sup,
+  table, tbody, td, template, textarea, tfoot, th, thead, time, title, tr, track,
+  u, ul, video, wbr
+} = tags;
+
+type ClassListResult = {
+  classList: string[];
+};
+
+export const classList = (template: TemplateStringsArray, ...values: any[]): ClassListResult => {
+  const combinedString = String.raw(template, ...values);
+  const classArray = combinedString.split(' ').filter(className => className.trim() !== '');
+
+  return {
+    classList: classArray
+  };
+};
