@@ -1,0 +1,40 @@
+.wrapper {
+  transition: background-color .15s ease-in-out;
+  position: relative;
+
+  .dropdown {
+    position: absolute;
+    padding: 0;
+    max-height: 12em;
+    overflow: auto;
+    background-color: whitesmoke;
+    z-index: 1000;
+    box-shadow: 0 5px 10px lightslategrey;
+  }
+
+  .selected-container {
+    display: flex;
+    gap: .5em;
+    border: 1px solid;
+    border-radius: var(--border-radius);
+    border-color: lightslategrey;
+    min-width: 3em;
+    min-height: 2em;
+    width: 15em;
+
+    &:hover {
+      cursor: pointer;
+    }
+
+    .selected-item {
+      text-overflow: ellipsis;
+      text-wrap-mode: nowrap;
+      overflow: hidden;
+    }
+
+    .selected-item-max-width {
+      max-width: 5em;
+    }
+  }
+
+}

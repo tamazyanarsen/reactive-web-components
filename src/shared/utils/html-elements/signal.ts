@@ -1,7 +1,7 @@
 import { ReactiveSignal, SignalUpdateFunc } from "../../types/signal";
 
-// Хранит текущий активный эффект для автоматической подписки
-let activeEffect: (() => void) | null = null;
+// Стек активных эффектов для поддержки вложенных эффектов
+const effectStack: (() => void)[] = [];
 
 export function signal<T = unknown>(initialValue: T): ReactiveSignal<T> {
   // Локальное состояние сигнала
@@ -13,6 +13,7 @@ export function signal<T = unknown>(initialValue: T): ReactiveSignal<T> {
   // Основная функция сигнала (геттер)
   function result() {
     // Автоматическая подписка при чтении значения
+    const activeEffect = effectStack[effectStack.length - 1];
     if (activeEffect) subscribers.add(activeEffect);
     return value;
   };
@@ -41,23 +42,16 @@ export function signal<T = unknown>(initialValue: T): ReactiveSignal<T> {
 };
 
 export function effect(fn: () => void) {
-  const oldEffect = activeEffect;
-  // Обёртка для отслеживания зависимостей
-  const execute = () => {
-    // Установка текущего эффекта как активного
-    activeEffect = execute;
+  effectStack.push(fn);
 
+  try {
     // Выполнение пользовательской логики
     fn();
-
-    // Сброс активного эффекта
-    activeEffect = oldEffect ?? null;
-  };
-
-  // Первичный запуск эффекта
-  execute();
+  } finally {
+    // Удаляем эффект из стека
+    effectStack.pop();
+  }
 };
-
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(v: R | any): v is R => ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v && 'update' in v
 
@@ -89,5 +83,6 @@ export function rs<T extends ReactiveSignal<any> | any>(
     });
     newSignal.set(result.join(''));
   });
+
   return newSignal;
 };

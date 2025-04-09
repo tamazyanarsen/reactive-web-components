@@ -128,6 +128,7 @@ export const component = (
         this.shadow.appendChild(
           (this.render() as ComponentConfig<any>).hostElement,
         );
+        console.log("connectedCallback", this.shadow.innerHTML);
         checkCall(this, target.prototype.connectedCallback);
 
         if (this.slotContext) {
