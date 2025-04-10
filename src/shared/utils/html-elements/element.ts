@@ -1,6 +1,7 @@
 import { ReactiveSignal } from "@shared/types";
 import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SignalValue, SlotContext } from "../../types/element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
+import { isReactiveSignal } from "@shared/index";
 
 export const createElement = <K extends HtmlTagName>(
   tagName: K,
@@ -108,14 +109,14 @@ export const {
 } = tags;
 
 type ClassListResult = {
-  classList: string[];
+  classList: (string | (() => string))[];
 };
 
 export const classList = (template: TemplateStringsArray, ...values: any[]): ClassListResult => {
-  const combinedString = String.raw(template, ...values);
+  const combinedString = String.raw(template, ...values.filter(e => typeof e !== 'function'));
   const classArray = combinedString.split(' ').filter(className => className.trim() !== '');
 
   return {
-    classList: classArray
+    classList: [...classArray, ...values.filter(e => typeof e === 'function')]
   };
 };
