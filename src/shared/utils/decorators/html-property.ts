@@ -123,7 +123,7 @@ export const component = (
           const appendStyle = (css: string) => {
             const sheet = new CSSStyleSheet();
             sheet.replaceSync(css);
-            this.shadow.adoptedStyleSheets = [sheet];
+            this.shadow.adoptedStyleSheets.push(sheet);
           }
           if (!Array.isArray(this.rootStyle)) {
             stylePromise.push(this.rootStyle)
