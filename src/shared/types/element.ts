@@ -153,7 +153,7 @@ export type AttributeValue<T extends ExtraHTMLElement, K extends AttrSignal<T>> 
 
 export type ComponentInitConfig<T extends ExtraHTMLElement> =
   Partial<{
-    classList: string[],
+    classList: (string | (() => string))[],
     attributes: { [key in AttrSignal<T>]?: AttributeValue<T, key>
     },
     customAttributes: Record<string, unknown>,
