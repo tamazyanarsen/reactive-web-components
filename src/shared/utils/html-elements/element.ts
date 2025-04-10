@@ -1,7 +1,6 @@
 import { ReactiveSignal } from "@shared/types";
 import { ComponentConfig, ComponentContent, ComponentInitConfig, ExtraHTMLElement, HtmlTagName, SignalValue, SlotContext } from "../../types/element";
 import { appendContentItem, elementHelpers, initComponent } from "./element-helper";
-import { isReactiveSignal } from "@shared/index";
 
 export const createElement = <K extends HtmlTagName>(
   tagName: K,
