@@ -1,48 +1,48 @@
-# Документация библиотеки Reactive Web Components (RWC)
+# Reactive Web Components (RWC) Library Documentation
 
 ---
 
-## Оглавление
-1. [Введение](#введение)
-2. [Основные концепции](#основные-концепции)
-   - [Сигналы](#сигналы)
-     - [Методы сигналов: set, update, forceSet](#сигналы)
-   - [Эффекты](#эффекты)
-   - [Реактивные строки (rs)](#реактивные-строки-rs)
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Core Concepts](#core-concepts)
+   - [Signals](#signals)
+     - [Signal Methods: set, update, forceSet](#signals)
+   - [Effects](#effects)
+   - [Reactive Strings (rs)](#reactive-strings-rs)
    - [createSignal](#createsignal)
-   - [Утилиты для работы с сигналами](#утилиты-для-работы-с-сигналами)
-   - [Функция как дочерний контент](#функция-как-дочерний-контент-динамические-списки-и-условный-рендер)
-3. [Компоненты](#компоненты)
-   - [Создание компонента](#создание-компонента)
-   - [Жизненный цикл](#жизненный-цикл)
-   - [События](#события)
-   - [Контекст (providers/injects)](#контекст-providersinjects)
-   - [Классовые компоненты и декораторы](#классовые-компоненты-и-декораторы)
-   - [Функциональные компоненты](#функциональные-компоненты)
-4. [Элементы и шаблоны](#элементы-и-шаблоны)
-   - [Фабрика HTML-элементов](#фабрика-html-элементов)
-   - [Конфигурирование элементов: ComponentInitConfig](#конфигурирование-элементов-componentinitconfig)
-   - [Кастомные компоненты: useCustomComponent](#кастомные-компоненты-usecustomcomponent)
-   - [Шаблоны слотов (Slot Templates)](#шаблоны-слотов-slot-templates)
-   - [Функция как дочерний контент (динамические списки и условный рендер)](#функция-как-дочерний-контент-динамические-списки-и-условный-рендер)
-   - [Эффективный рендеринг списков с getList](#эффективный-рендеринг-списков-с-getlist)
-   - [Условный рендеринг с помощью when](#условный-рендеринг-с-помощью-when)
-   - [Условное отображение с помощью show](#условное-отображение-с-помощью-show)
-5. [Примеры](#примеры)
-6. [Рекомендации и best practices](#рекомендации-и-best-practices)
-7. [Заключение](#заключение)
+   - [Signal Utilities](#signal-utilities)
+   - [Function as Child Content](#function-as-child-content-dynamic-lists-and-conditional-render)
+3. [Components](#components)
+   - [Creating a Component](#creating-a-component)
+   - [Lifecycle](#lifecycle)
+   - [Events](#events)
+   - [Context (providers/injects)](#context-providersinjects)
+   - [Class Components and Decorators](#class-components-and-decorators)
+   - [Functional Components](#functional-components)
+4. [Elements and Templates](#elements-and-templates)
+   - [HTML Element Factory](#html-element-factory)
+   - [Element Configuration: ComponentInitConfig](#element-configuration-componentinitconfig)
+   - [Custom Components: useCustomComponent](#custom-components-usecustomcomponent)
+   - [Slot Templates](#slot-templates)
+   - [Function as Child Content (Dynamic Lists and Conditional Render)](#function-as-child-content-dynamic-lists-and-conditional-render)
+   - [Efficient List Rendering with getList](#efficient-list-rendering-with-getlist)
+   - [Conditional Rendering with when](#conditional-rendering-with-when)
+   - [Conditional Display with show](#conditional-display-with-show)
+5. [Examples](#examples)
+6. [Recommendations and Best Practices](#recommendations-and-best-practices)
+7. [Conclusion](#conclusion)
 
 ---
 
-## Введение
-RWC — современная библиотека для создания реактивных веб-компонентов с декларативным синтаксисом и строгой типизацией. Она позволяет строить сложные UI с минимальным количеством кода и максимальной реактивностью.
+## Introduction
+RWC is a modern library for creating reactive web components with declarative syntax and strict typing. It allows you to build complex UIs with minimal code and maximum reactivity.
 
-## Основные концепции
+## Core Concepts
 
-### Сигналы
-Сигнал — это реактивная обёртка над значением. Все состояния, свойства, контексты и инъекции в компонентах реализуются через сигналы.
+### Signals
+A signal is a reactive wrapper around a value. All states, properties, contexts, and injections in components are implemented through signals.
 
-**Тип:**
+**Type:**
 ```typescript
 interface ReactiveSignal<T> {
   (): T;
@@ -58,43 +58,43 @@ interface ReactiveSignal<T> {
 }
 ```
 
-**Примеры:**
+**Examples:**
 ```typescript
 const count = signal(0);
-count();        // получить значение
-count.set(1);   // установить значение
-count.update(v => v + 1); // обновить через функцию
+count();        // get value
+count.set(1);   // set value
+count.update(v => v + 1); // update via function
 count.forceSet(1);
 
-// Реактивное использование
+// Reactive usage
 const doubled = signal(0);
 effect(() => {
   doubled.set(count() * 2);
 });
 
-// Дополнительные методы
-count.setCompareFn((oldV, newV) => Math.abs(newV - oldV) >= 1); // пользовательское сравнение
-count.peek();          // безопасное чтение без подписки
-count.clearSubscribers(); // очистка подписчиков эффекта
+// Additional methods
+count.setCompareFn((oldV, newV) => Math.abs(newV - oldV) >= 1); // custom comparison
+count.peek();          // safe read without subscription
+count.clearSubscribers(); // clear effect subscribers
 
-// pipe — создать производный сигнал
+// pipe — create a derived signal
 const doubled2 = count.pipe(v => v * 2);
 effect(() => console.log('x2:', doubled2()));
 ```
 
-**Когда использовать forceSet:**
-- Если нужно вручную инициировать обновление подписчиков, даже если значение сигнала не изменилось (например, для форс-обновления UI или побочных эффектов).
+**When to use forceSet:**
+- If you need to manually trigger subscriber updates, even if the signal value hasn't changed (e.g., for force-updating UI or side effects).
 
 **Edge case:**
 ```typescript
 const arr = signal([1,2,3]);
-arr.update(a => [...a, 4]); // реактивно добавит элемент
+arr.update(a => [...a, 4]); // reactively adds element
 ```
 
-### Эффекты
-Эффект — функция, которая автоматически подписывается на все сигналы, используемые внутри неё. Эффекты используются для побочных действий (логирование, синхронизация, вызов событий и т.д.).
+### Effects
+An effect is a function that automatically subscribes to all signals used inside it. Effects are used for side actions (logging, synchronization, event emission, etc.).
 
-**Пример:**
+**Example:**
 ```typescript
 effect(() => {
   console.log('Count:', count());
@@ -102,12 +102,12 @@ effect(() => {
 ```
 
 **Best practice:**
-- Не изменяйте сигналы внутри эффекта, если это не требуется (во избежание бесконечных циклов).
+- Don't modify signals inside an effect unless required (to avoid infinite loops).
 
-### Реактивные строки (rs)
-Позволяет создавать реактивные строки на основе сигналов и других значений.
+### Reactive Strings (rs)
+Allows creating reactive strings based on signals and other values.
 
-**Пример:**
+**Example:**
 ```typescript
 const name = signal('John');
 const greeting = rs`Hello, ${name}!`;
@@ -125,58 +125,58 @@ a.set('X'); // combined() === 'X-B'
 ```
 
 ### createSignal
-Позволяет создавать сигнал, значение которого вычисляется на основе функции или асинхронного значения. Отличие от signal — поддержка асинхронных источников и автоматическое обновление при изменении зависимостей.
+Allows creating a signal whose value is computed based on a function or async value. The difference from signal is support for async sources and automatic updates when dependencies change.
 
-**Типизация:**
+**Typing:**
 ```typescript
 function createSignal<T extends Promise<any> | (() => any), I = ...>(cb: T, initializeValue?: I): ReactiveSignal<...>
 ```
 
-**Основные случаи использования:**
+**Main use cases:**
 
-1. **Для получения свойства из сигнала:**
+1. **To get a property from a signal:**
 ```typescript
 const user = signal({ name: 'John', age: 30 });
 const userName = createSignal(() => user().name);
-// userName() вернет 'John'
+// userName() returns 'John'
 user.set({ name: 'Jane', age: 31 });
-// userName() автоматически обновится и вернет 'Jane'
+// userName() automatically updates and returns 'Jane'
 ```
 
-2. **Для вычисления нового значения на основе другого сигнала:**
+2. **To compute a new value based on another signal:**
 ```typescript
 const count = signal(0);
 const doubled = createSignal(() => count() * 2);
-count.set(5); // doubled() автоматически обновится и вернет 10
+count.set(5); // doubled() automatically updates and returns 10
 ```
 
-3. **Для работы с асинхронными данными:**
+3. **For working with async data:**
 ```typescript
 const userId = signal(1);
 const userData = createSignal(
   () => fetch(`/api/users/${userId()}`).then(r => r.json()),
-  { name: '', loading: true } // начальное значение
+  { name: '', loading: true } // initial value
 );
 ```
 
-**Примеры из кодовой базы:**
+**Examples from codebase:**
 ```typescript
-// Преобразование числового индекса в человекопонятный номер
+// Converting numeric index to human-readable number
 div({ classList: ['tab-header'] }, rs`current tab: ${createSignal(() => this.activeTab() + 1)}`);
 ```
 
 **Best practice:**
-- Используйте createSignal для вычисляемых значений вместо комбинации effect+signal
-- Для асинхронных данных всегда указывайте начальное значение (fallback)
-- Функция, переданная в createSignal, должна быть чистой (без побочных эффектов)
+- Use createSignal for computed values instead of effect+signal combination
+- For async data, always specify an initial value (fallback)
+- The function passed to createSignal should be pure (no side effects)
 
-### Утилиты для работы с сигналами
+### Signal Utilities
 
-RWC предоставляет дополнительные утилиты для работы с сигналами, которые упрощают сложные сценарии использования.
+RWC provides additional utilities for working with signals that simplify complex use cases.
 
 #### bindReactiveSignals
 
-Создает двустороннее связывание между двумя реактивными сигналами. Изменения в одном сигнале автоматически синхронизируются с другим.
+Creates two-way binding between two reactive signals. Changes in one signal are automatically synchronized with the other.
 
 ```typescript
 import { bindReactiveSignals, signal } from '@shared/utils';
@@ -184,16 +184,16 @@ import { bindReactiveSignals, signal } from '@shared/utils';
 const signalA = signal('Hello');
 const signalB = signal('World');
 
-// Создаем двустороннее связывание
+// Create two-way binding
 bindReactiveSignals(signalA, signalB);
 
-signalA.set('Привет'); // signalB автоматически станет 'Привет'
-signalB.set('Мир');    // signalA автоматически станет 'Мир'
+signalA.set('Hello'); // signalB automatically becomes 'Hello'
+signalB.set('World');    // signalA automatically becomes 'World'
 ```
 
 #### forkJoin
 
-Объединяет несколько сигналов в один, который обновляется только когда все исходные сигналы получают новые значения.
+Combines multiple signals into one that updates only when all source signals receive new values.
 
 ```typescript
 import { forkJoin, signal } from '@shared/utils';
@@ -203,38 +203,38 @@ const age = signal(25);
 const city = signal('Moscow');
 
 const userData = forkJoin(name, age, city);
-// userData() вернет ['John', 25, 'Moscow']
+// userData() returns ['John', 25, 'Moscow']
 
-name.set('Jane');  // userData не обновится
-age.set(30);       // userData не обновится  
-city.set('SPB');   // userData обновится до ['Jane', 30, 'SPB']
+name.set('Jane');  // userData doesn't update
+age.set(30);       // userData doesn't update  
+city.set('SPB');   // userData updates to ['Jane', 30, 'SPB']
 ```
 
-**Применение:**
-- Синхронизация связанных данных
-- Создание составных объектов из нескольких источников
-- Ожидание обновления всех зависимостей перед выполнением действий
+**Application:**
+- Synchronizing related data
+- Creating composite objects from multiple sources
+- Waiting for all dependencies to update before executing actions
 
-  ### Функция как дочерний контент (рекомендуемый стиль для динамических списков и условного рендера)
+  ### Function as Child Content (recommended style for dynamic lists and conditional render)
 
-Функции, переданные в качестве дочернего контента в `el` или `customEl`, автоматически преобразуются в реактивный контент. Это позволяет удобно создавать динамический контент, который будет обновляться при изменении зависимых сигналов. Функция-контент получает контекст (ссылку на свой компонент) в качестве первого аргумента.
+Functions passed as child content to `el` or `customEl` are automatically converted to reactive content. This allows convenient creation of dynamic content that will update when dependent signals change. The content function receives context (a reference to its component) as the first argument.
 
-**Пример: динамический список с контекстом**
+**Example: dynamic list with context**
 ```typescript
 const items = signal(['Item 1', 'Item 2']);
 div(
   ul(
     (self) => {
-      console.log('self!!!', self); // self - ссылка на компонент
+      console.log('self!!!', self); // self - component reference
       return items().map(item => li(item));
     }
   )
 )
-// При изменении items, весь список будет перерисован
+// When items changes, the entire list will be re-rendered
 items.set(['Item 1', 'Item 2', 'Item 3']);
 ```
 
-**Пример: условный рендеринг с контекстом**
+**Example: conditional render with context**
 ```typescript
 div(
   (self) => {
@@ -245,21 +245,21 @@ div(
 ```
 
 **Best practice:**
-- Для динамического рендера используйте функции как дочерний контент вместо signalComponent
-- Для простых случаев (текст, атрибуты) используйте rs или другие реактивные примитивы
-- Для сложных списков с условной логикой используйте функции в качестве дочернего контента
-- Используйте контекст (self) для доступа к свойствам и методам компонента внутри функции-контента
+- For dynamic rendering, use functions as child content instead of signalComponent
+- For simple cases (text, attributes), use rs or other reactive primitives
+- For complex lists with conditional logic, use functions as child content
+- Use context (self) to access component properties and methods inside the content function
 
-## Компоненты
+## Components
 
-### Создание компонента
+### Creating a Component
 
-Для объявления компонента используйте классы с декораторами. Это обеспечивает строгую типизацию, поддержку реактивных props, событий, провайдеров, инъекций и хуков жизненного цикла. 
+To declare a component, use classes with decorators. This provides strict typing, support for reactive props, events, providers, injections, and lifecycle hooks. 
 
-**Внутри компонента рекомендуется использовать фабричные функции элементов** (`div`, `button`, `input` и т.д.) из фабрики (`@shared/utils/html-fabric/fabric`). Это обеспечивает строгую типизацию, автодополнение и единый стиль кода. 
+**Inside a component, it's recommended to use element factory functions** (`div`, `button`, `input`, etc.) from the factory (`@shared/utils/html-fabric/fabric`). This ensures strict typing, autocomplete, and consistent code style. 
 
 
-#### Пример: Классовый компонент с props и событием
+#### Example: Class Component with props and event
 
 ```typescript
 @component('test-decorator-component')
@@ -278,26 +278,26 @@ export class TestDecoratorComponent extends BaseElement {
 export const TestDecoratorComponentComp = useCustomComponent(TestDecoratorComponent);
 ```
 
-#### Кратко о параметрах:
+#### Brief on parameters:
 
-- **@property** — поле-сигнал, автоматически синхронизируется с атрибутом.
-- **@event** — поле-событие, эмитит кастомные события.
-- **render** — метод, возвращающий шаблон компонента.
-- **@component** — регистрирует кастомный элемент с заданным селектором.
+- **@property** — a signal field that automatically syncs with an attribute.
+- **@event** — an event field that emits custom events.
+- **render** — a method that returns the component template.
+- **@component** — registers a custom element with the given selector.
 
 ---
 
 **Best practice:**
-- Все props/state/providers/injects — только сигналы (`ReactiveSignal<T>`)
-- Все события — только через `EventEmitter<T>`
-- Для передачи props используйте атрибуты
+- All props/state/providers/injects — only signals (`ReactiveSignal<T>`)
+- All events — only through `EventEmitter<T>`
+- Use attributes to pass props
 
-### Жизненный цикл
+### Lifecycle
 
-**Доступные хуки:**
+**Available hooks:**
 - `onInit`, `onBeforeRender`, `onAfterRender`, `onConnected`, `onDisconnected`, `onAttributeChanged`
 
-**Пример:**
+**Example:**
 ```typescript
 @component('logger-component')
 export class LoggerComponent extends BaseElement {
@@ -320,17 +320,17 @@ export class LoggerComponent extends BaseElement {
 export const LoggerComponentComp = useCustomComponent(LoggerComponent);
 ```
 
-### События
+### Events
 
-**Тип:**
+**Type:**
 ```typescript
 interface EventEmitter<T> {
-  (value: T | ReactiveSignal<T>): void; // можно передать сигнал — событие будет эмититься реактивно
+  (value: T | ReactiveSignal<T>): void; // can pass a signal — event will emit reactively
   oldValue: null;
 }
 ```
 
-**Пример:**
+**Example:**
 ```typescript
 @component('counter')
 export class Counter extends BaseElement {
@@ -345,9 +345,9 @@ export class Counter extends BaseElement {
             listeners: {
                 click: () => {
                     this.count.update(v => v + 1);
-                    // разовый эмит значением
+                    // one-time emit with value
                     this.onCountChange(this.count());
-                    // либо реактивный эмит: при следующих изменениях count событие будет эмититься автоматически
+                    // or reactive emit: on subsequent count changes, event will emit automatically
                     // this.onCountChange(this.count);
                 }
             }
@@ -357,9 +357,9 @@ export class Counter extends BaseElement {
 export const CounterComp = useCustomComponent(Counter);
 ```
 
-### Контекст (providers/injects)
+### Context (providers/injects)
 
-**Пример:**
+**Example:**
 ```typescript
 const ThemeContext = 'theme';
 
@@ -373,7 +373,7 @@ export class ThemeProvider extends BaseElement {
 
 @component('theme-consumer')
 export class ThemeConsumer extends BaseElement {
-    theme = this.inject<string>(ThemeContext); // Получаем сигнал контекста один раз вне render
+    theme = this.inject<string>(ThemeContext); // Get context signal once outside render
     render() {
         return div(rs`Theme: ${this.theme}`);
     }
@@ -389,17 +389,17 @@ export class AppRoot extends BaseElement {
 }
 ```
 
-### Классовые компоненты и декораторы
+### Class Components and Decorators
 
-RWC поддерживает декларативное объявление компонентов с помощью классов и TypeScript-декораторов. Это позволяет использовать привычный ООП-подход, строгую типизацию и автодополнение.
+RWC supports declarative component declaration using classes and TypeScript decorators. This allows using a familiar OOP approach, strict typing, and autocomplete.
 
-#### Основные декораторы
+#### Main Decorators
 
-- `@component('имя-компонента')` — регистрирует кастомный элемент с заданным селектором.
-- `@property()` — помечает поле класса как реактивное свойство (на основе сигнала). Автоматически синхронизируется с одноимённым атрибутом (kebab-case).
-- `@event()` — помечает поле класса как событие (EventEmitter). Позволяет удобно эмитить события наружу.
+- `@component('component-name')` — registers a custom element with the given selector.
+- `@property()` — marks a class field as a reactive property (based on signal). Automatically syncs with the eponymous attribute (kebab-case).
+- `@event()` — marks a class field as an event (EventEmitter). Allows convenient event emission outward.
 
-#### Пример классового компонента
+#### Class Component Example
 
 ```typescript
 @component('test-decorator-component')
@@ -419,26 +419,26 @@ export class TestDecoratorComponent extends BaseElement {
 export const TestDecoratorComponentComp = useCustomComponent(TestDecoratorComponent);
 ```
 
-#### Как это работает
+#### How It Works
 
-- Все поля с `@property()` должны быть сигналами (`signal<T>()`). Изменение значения сигнала автоматически обновляет DOM и атрибуты.
-- Все поля с `@event()` должны быть созданы через `newEventEmitter<T>()`. Вызов такого поля эмитит кастомное DOM-событие.
-- Метод `render()` возвращает шаблон компонента.
-- Класс должен наследоваться от `BaseElement`.
+- All fields with `@property()` must be signals (`signal<T>()`). Changing the signal value automatically updates DOM and attributes.
+- All fields with `@event()` must be created via `newEventEmitter<T>()`. Calling such a field emits a custom DOM event.
+- The `render()` method returns the component template.
+- The class must extend `BaseElement`.
 
-#### Особенности
+#### Features
 
-- Классовые и функциональные компоненты могут использоваться совместно.
-- Все преимущества реактивности и типизации сохраняются.
-- Декораторы реализованы в `@shared/utils/html-decorators/html-property.ts` и экспортируются через `@shared/utils/html-decorators`.
+- Class and functional components can be used together.
+- All reactivity and typing benefits are preserved.
+- Decorators are implemented in `@shared/utils/html-decorators/html-property.ts` and exported through `@shared/utils/html-decorators`.
 
-### Функциональные компоненты
+### Functional Components
 
-RWC поддерживает создание функциональных компонентов с помощью `createComponent`. Это альтернативный подход к классовым компонентам, который может быть более удобным для простых случаев.
+RWC supports creating functional components using `createComponent`. This is an alternative approach to class components that may be more convenient for simple cases.
 
 #### createComponent
 
-Создает функциональный компонент, который принимает props и возвращает конфигурацию элемента.
+Creates a functional component that accepts props and returns an element configuration.
 
 ```typescript
 import { createComponent } from '@shared/utils/html-fabric/fn-component';
@@ -458,37 +458,37 @@ const Button = createComponent<ButtonProps>((props) => {
   }, props.text);
 });
 
-// Использование
+// Usage
 const count = signal(0);
 const MyButton = Button({
-  text: 'Увеличить',
+  text: 'Increment',
   onClick: () => count.set(count() + 1),
   disabled: false
 });
 ```
 
-**Преимущества функциональных компонентов:**
-- Более простой синтаксис для простых случаев
-- Автоматическая поддержка `classList` и `reactiveClassList` через props
-- Лучшая производительность для компонентов без состояния
-- Удобство для создания переиспользуемых UI-элементов
+**Advantages of functional components:**
+- Simpler syntax for simple cases
+- Automatic support for `classList` and `reactiveClassList` via props
+- Better performance for stateless components
+- Convenience for creating reusable UI elements
 
-**Когда использовать:**
-- Простые компоненты без сложной логики
-- UI-элементы, которые принимают только props
-- Переиспользуемые компоненты (кнопки, инпуты, карточки)
+**When to use:**
+- Simple components without complex logic
+- UI elements that only accept props
+- Reusable components (buttons, inputs, cards)
 
-## Элементы и шаблоны
+## Elements and Templates
 
-### Фабрика HTML-элементов
+### HTML Element Factory
 
-Для создания HTML-элементов используйте фабричные функции (`div`, `button`, `input`, и т.д.) из `@shared/utils/html-fabric/fabric`. Это обеспечивает строгую типизацию, автодополнение и единый стиль.
+To create HTML elements, use factory functions (`div`, `button`, `input`, etc.) from `@shared/utils/html-fabric/fabric`. This ensures strict typing, autocomplete, and consistent style.
 
 ```typescript
 import { div, button, ul, li, input, slot } from '@shared/utils/html-fabric/fabric';
 
-// Примеры:
-div('Привет, мир!')
+// Examples:
+div('Hello, world!')
 div({ classList: ['container'] },
   button({ listeners: { click: onClick } }, "Click me"),
   ul(
@@ -497,14 +497,14 @@ div({ classList: ['container'] },
   )
 )
 ```
-- Первый аргумент — объект-конфиг или сразу контент.
-- Доступны все стандартные HTML-теги через соответствующие фабрики.
+- First argument — config object or content directly.
+- All standard HTML tags are available through corresponding factories.
 
-#### Конфигурирование элементов: ComponentInitConfig
+#### Element Configuration: ComponentInitConfig
 
-Для задания свойств, атрибутов, классов, событий и эффектов элементов и компонентов используется объект-конфиг специального типа — `ComponentInitConfig<T>`. Он поддерживает как стандартную, так и краткую нотацию.
+To set properties, attributes, classes, events, and effects for elements and components, a special config object type is used — `ComponentInitConfig<T>`. It supports both standard and shorthand notation.
 
-**Типизация:**
+**Typing:**
 ```typescript
 export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
   classList: ConfigClassList;
@@ -527,29 +527,29 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
 }>
 ```
 
-#### Основные возможности
+#### Main Features
 
-- **classList** — массив классов (строки или функции/сигналы)
-- **style** — объект CSS-стилей; поддерживает как обычные свойства, так и CSS Custom Properties (`--var`), значения могут быть функциями/сигналами
-- **attributes** — объект с HTML-атрибутами
-- **customAttributes** — объект с кастомными атрибутами
-- **reactiveClassList** — массив реактивных классов
-- **children** — дочерние элементы/контент
-- **effects** — массив эффектов (функций, вызываемых при создании элемента)
-- **listeners** — объект с обработчиками DOM-событий
-- **customListeners** — объект с обработчиками кастомных событий (например, `route-change`)
+- **classList** — array of classes (strings or functions/signals)
+- **style** — CSS styles object; supports both regular properties and CSS Custom Properties (`--var`), values can be functions/signals
+- **attributes** — object with HTML attributes
+- **customAttributes** — object with custom attributes
+- **reactiveClassList** — array of reactive classes
+- **children** — child elements/content
+- **effects** — array of effects (functions called when element is created)
+- **listeners** — object with DOM event handlers
+- **customListeners** — object with custom event handlers (e.g., `route-change`)
 
-##### Краткая нотация
+##### Shorthand Notation
 
-- `.имяАтрибута` — быстрое задание атрибута/свойства
-- `@имяСобытия` — быстрое задание обработчика события (DOM или кастомного)
-- `$` — быстрое задание эффекта
+- `.attributeName` — quick attribute/property assignment
+- `@eventName` — quick event handler assignment (DOM or custom)
+- `$` — quick effect assignment
 
 ---
 
-#### Примеры использования
+#### Usage Examples
 
-**1. Обычный конфиг**
+**1. Standard config**
 ```typescript
 div({
   classList: ['container', () => isActive() ? 'active' : ''],
@@ -560,10 +560,10 @@ div({
   effects: [
     (el) => console.log('created', el)
   ]
-}, 'Контент')
+}, 'Content')
 ```
 
-**2. Краткая нотация**
+**2. Shorthand notation**
 ```typescript
 div({
   '.id': 'main',
@@ -571,10 +571,10 @@ div({
   '.class': 'container',
   '@click': (e) => console.log('clicked', e),
   '$': (el) => console.log('created', el)
-}, 'Контент')
+}, 'Content')
 ```
 
-**2.1. Стили (static / reactive / custom properties)**
+**2.1. Styles (static / reactive / custom properties)**
 ```typescript
 const primaryColor = signal('#0d6efd');
 div({
@@ -582,39 +582,39 @@ div({
     color: 'white',
     backgroundColor: () => primaryColor(),
     '--gap': '8px',                // CSS Custom Property
-    marginTop: () => '12px'        // реактивное значение
+    marginTop: () => '12px'        // reactive value
   }
-}, 'Стили через config.style')
+}, 'Styles via config.style')
 ```
 
-**3. Использование с компонентами**
+**3. Usage with components**
 ```typescript
 MyComponentComp({
-  '.count': countSignal, // реактивный пропс
+  '.count': countSignal, // reactive prop
   '@onCountChange': (value) => console.log('count changed', value)
 })
 ```
 
-**3.1. Кастомные события через customListeners**
+**3.1. Custom events via customListeners**
 ```typescript
 div({
   customListeners: {
     'route-change': (e, self) => {
-      console.log('Изменение маршрута:', e.detail);
+      console.log('Route change:', e.detail);
     }
   }
 })
 ```
 
-**4. Реактивные классы через classList**
+**4. Reactive classes via classList**
 ```typescript
 div(
   classList`static-class ${() => isActive() ? 'active' : ''}`,
-  'Контент'
+  'Content'
 )
 ```
 
-**5. Реактивные классы через reactiveClassList**
+**5. Reactive classes via reactiveClassList**
 ```typescript
 const isRed = signal(false);
 const isBold = signal(true);
@@ -623,10 +623,10 @@ div({
     'red': isRed,
     'bold': isBold
   }
-}, 'Текст с реактивными классами');
+}, 'Text with reactive classes');
 ```
 
-**6. Дочерние элементы**
+**6. Child elements**
 ```typescript
 div(
   { classList: ['container'] },
@@ -638,15 +638,15 @@ div(
 ---
 
 **Best practice:**  
-Используйте краткую нотацию для лаконичности, а стандартную — для сложных случаев или автодополнения в IDE.
+Use shorthand notation for brevity, and standard notation for complex cases or IDE autocomplete.
 
-### Кастомные компоненты: useCustomComponent
+### Custom Components: useCustomComponent
 
-Для создания и использования кастомных компонентов используйте функцию `useCustomComponent` из `@shared/utils/html-fabric/custom-fabric`.
+To create and use custom components, use the `useCustomComponent` function from `@shared/utils/html-fabric/custom-fabric`.
 
-**Рекомендуемый стиль 1:** С использованием декоратора `@component`
-1. Объявляете класс компонента с декоратором `@component`.
-2. Под классом вызываете `useCustomComponent`, присваиваете результат в константу и экспортируете её (сам класс экспортировать не нужно).
+**Recommended style 1:** Using the `@component` decorator
+1. Declare the component class with the `@component` decorator.
+2. Call `useCustomComponent` below the class, assign the result to a constant, and export it (the class itself doesn't need to be exported).
 
 ```typescript
 import { component, event, property } from '@shared/utils/html-decorators';
@@ -663,9 +663,9 @@ class MyComponent extends BaseElement {
 export const MyComponentComp = useCustomComponent(MyComponent);
 ```
 
-**Рекомендуемый стиль 2:** С передачей селектора напрямую в `useCustomComponent`
-1. Объявляете класс компонента **без** декоратора `@component`.
-2. Вызываете `useCustomComponent` с передачей класса компонента и селектора в качестве второго аргумента.
+**Recommended style 2:** Passing selector directly to `useCustomComponent`
+1. Declare the component class **without** the `@component` decorator.
+2. Call `useCustomComponent` with the component class and selector as the second argument.
 
 ```typescript
 import { event, property } from '@shared/utils/html-decorators';
@@ -681,39 +681,39 @@ class MyComponent extends BaseElement {
 export const MyComponentComp = useCustomComponent(MyComponent, 'my-component');
 ```
 
-Во втором способе декоратор `@component` вызывается внутри `useCustomComponent`, когда передан селектор. Это позволяет упростить код компонента.
+In the second approach, the `@component` decorator is called inside `useCustomComponent` when a selector is passed. This simplifies the component code.
 
-**Использование в других компонентах:**
+**Usage in other components:**
 ```typescript
 div(
   MyComponentComp({ attributes: { someProp: 'value' } },
-    'Вложенный контент'
+    'Nested content'
   )
 )
 ```
 
-### Шаблоны слотов (Slot Templates)
+### Slot Templates
 
-`slotTemplate` — это мощный механизм для передачи кастомных шаблонов внутрь компонента. Это аналог "render props" или "scoped slots" из других фреймворков. Он позволяет дочернему компоненту получать шаблоны от родительского компонента и рендерить их с передачей специфичного для слота контекста.
+`slotTemplate` is a powerful mechanism for passing custom templates into a component. It's an analog of "render props" or "scoped slots" from other frameworks. It allows a child component to receive templates from a parent component and render them with slot-specific context passed.
 
-Это полезно, когда компонент должен управлять логикой, но делегировать рендеринг части своего контента внешнему коду.
+This is useful when a component should manage logic but delegate rendering of part of its content to external code.
 
-#### Как это работает
+#### How It Works
 
-1.  **В компоненте (провайдере шаблона):**
-    -   Определяется свойство `slotTemplate` с помощью `defineSlotTemplate<T>()`.
-    -   `T` — это тип, описывающий доступные шаблоны. Ключи — имена шаблонов, значения — функции, которые будут рендерить шаблон. Аргументы этих функций — это контекст, передаваемый из компонента.
-    -   В методе `render` компонент вызывает эти шаблоны, передавая им контекст.
+1.  **In the component (template provider):**
+    -   Define a `slotTemplate` property using `defineSlotTemplate<T>()`.
+    -   `T` is a type describing available templates. Keys are template names, values are functions that will render the template. Arguments of these functions are the context passed from the component.
+    -   In the `render` method, the component calls these templates, passing context to them.
 
-2.  **При использовании компонента (консьюмере шаблона):**
-    -   На инстансе компонента вызывается метод `.setSlotTemplate()`.
-    -   В `.setSlotTemplate()` передается объект с реализациями шаблонов.
+2.  **When using the component (template consumer):**
+    -   Call the `.setSlotTemplate()` method on the component instance.
+    -   Pass an object with template implementations to `.setSlotTemplate()`.
 
-#### Пример
+#### Example
 
-Допустим, у нас есть компонент списка, который рендерит элементы, но мы хотим позволить пользователю этого компонента настраивать, как именно будет выглядеть каждый элемент.
+Let's say we have a list component that renders items, but we want to allow users of this component to customize how each item looks.
 
-**1. Создание компонента (`example-list.ts`)**
+**1. Creating the component (`example-list.ts`)**
 
 ```typescript
 // src/components/example-list.ts
@@ -722,11 +722,11 @@ import { ComponentConfig } from "@shared/types";
 
 @component('example-list')
 export class ExampleListComponent extends BaseElement {
-    // Определяем доступные шаблоны и их контекст
+    // Define available templates and their context
     public slotTemplate = defineSlotTemplate<{
-        // Шаблон для элемента списка, получает сам элемент в контексте
+        // Template for list item, receives the item itself in context
         item: (slotCtx: { id: number, name: string }) => ComponentConfig<any> | null,
-        // Шаблон для индекса, получает номер в контексте
+        // Template for index, receives the number in context
         indexTemplate: (slotCtx: number) => ComponentConfig<any>
     }>()
 
@@ -734,14 +734,14 @@ export class ExampleListComponent extends BaseElement {
     items = signal<{ id: number, name: string }[]>([])
 
     render() {
-        // Используем getList для эффективного рендеринга
+        // Use getList for efficient rendering
         return div(getList(
             this.items,
             (item) => item.id,
             (item, index) => div(
-                // Рендерим шаблон 'item' если он предоставлен, иначе - стандартный вид
+                // Render 'item' template if provided, otherwise - standard view
                 this.slotTemplate.item?.(item) || div(item.name),
-                // Рендерим шаблон 'indexTemplate' если он предоставлен
+                // Render 'indexTemplate' template if provided
                 this.slotTemplate.indexTemplate?.(index) || div()
             )
         ));
@@ -750,16 +750,16 @@ export class ExampleListComponent extends BaseElement {
 export const ExampleList = useCustomComponent(ExampleListComponent);
 ```
 
-**2. Использование компонента**
+**2. Using the component**
 
 ```typescript
 // src/components/app.ts
 import { ExampleList } from './example-list';
 
 const allItems = [
-    { id: 1, name: 'Первый' },
-    { id: 2, name: 'Второй' },
-    { id: 3, name: 'Третий' },
+    { id: 1, name: 'First' },
+    { id: 2, name: 'Second' },
+    { id: 3, name: 'Third' },
 ];
 
 @component('my-app')
@@ -767,13 +767,13 @@ export class App extends BaseElement {
     render() {
         return div(
             ExampleList({ '.items': allItems })
-                // Передаем кастомные шаблоны
+                // Pass custom templates
                 .setSlotTemplate({
-                    // Кастомный рендер для элемента
-                    item: (itemCtx) => div(`Элемент: ${itemCtx.name} (id: ${itemCtx.id})`),
-                    // Кастомный рендер для четных индексов
+                    // Custom render for item
+                    item: (itemCtx) => div(`Item: ${itemCtx.name} (id: ${itemCtx.id})`),
+                    // Custom render for even indices
                     indexTemplate: indexCtx => indexCtx % 2 === 0 
-                        ? div(`Четный индекс: ${indexCtx}`) 
+                        ? div(`Even index: ${indexCtx}`) 
                         : null,
                 })
         );
@@ -781,18 +781,18 @@ export class App extends BaseElement {
 }
 ```
 
-#### Ключевые моменты:
+#### Key Points:
 
--   `defineSlotTemplate` создает типизированный объект для шаблонов.
--   Метод `.setSlotTemplate()` позволяет передать реализацию шаблонов в компонент.
--   Контекст (`slotCtx`) передается из компонента в функцию-шаблон, что обеспечивает гибкость.
--   Можно определить запасной рендеринг (fallback), если шаблон не был предоставлен, используя `||`.
+-   `defineSlotTemplate` creates a typed object for templates.
+-   The `.setSlotTemplate()` method allows passing template implementations to the component.
+-   Context (`slotCtx`) is passed from the component to the template function, providing flexibility.
+-   You can define fallback rendering if a template wasn't provided, using `||`.
 
-### Функция как дочерний контент (динамические списки и условный рендер)
+### Function as Child Content (Dynamic Lists and Conditional Render)
 
-Функции, переданные в качестве дочернего контента в фабрики (`div`, `ul`, и т.д.), автоматически преобразуются в реактивный контент.
+Functions passed as child content to factories (`div`, `ul`, etc.) are automatically converted to reactive content.
 
-**Пример: динамический список**
+**Example: dynamic list**
 ```typescript
 const items = signal(['Item 1', 'Item 2']);
 div(
@@ -800,15 +800,15 @@ div(
     () => items().map(item => li(item))
   )
 )
-// При изменении items, весь список будет перерисован
+// When items changes, the entire list will be re-rendered
 items.set(['Item 1', 'Item 2', 'Item 3']);
 ```
 
-### Эффективный рендеринг списков с getList
+### Efficient List Rendering with getList
 
-Для оптимизации производительности при работе со списками рекомендуется использовать функцию `getList`. Она позволяет эффективно обновлять только измененные элементы списка, вместо перерисовки всего списка.
+For performance optimization when working with lists, it's recommended to use the `getList` function. It allows efficiently updating only changed list elements instead of re-rendering the entire list.
 
-**Сигнатура:**
+**Signature:**
 ```typescript
 getList<I extends Record<string, any>, K extends keyof I>(
   items: ReactiveSignal<I[]>,
@@ -817,12 +817,12 @@ getList<I extends Record<string, any>, K extends keyof I>(
 ): ComponentConfig<HTMLDivElement>
 ```
 
-**Параметры:**
-- `items` - реактивный сигнал с массивом элементов
-- `keyFn` - функция, возвращающая уникальный ключ для каждого элемента (поддерживается `string` или поле элемента `I[K]`)
-- `cb` - функция рендеринга элемента, принимающая элемент, его индекс и весь актуальный массив `items`
+**Parameters:**
+- `items` - reactive signal with array of elements
+- `keyFn` - function returning a unique key for each element (supports `string` or element field `I[K]`)
+- `cb` - element rendering function, accepting the element, its index, and the entire current `items` array
 
-**Пример использования:**
+**Usage example:**
 ```typescript
 @component('example-list')
 class ExampleList extends BaseElement {
@@ -834,48 +834,48 @@ class ExampleList extends BaseElement {
 
     render() {
         return div(
-            // Обычный рендеринг списка (перерисовывает весь список)
+            // Regular list rendering (re-renders entire list)
             div(() => this.items().map(item => div(item.name))),
             
-            // Эффективный рендеринг с getList (обновляет только измененные элементы)
+            // Efficient rendering with getList (updates only changed elements)
             div(getList(
                 this.items,
-                (item) => item.id,  // ключ — id элемента
-                (item, index, items) => div(`${index + 1}. ${item.name}`)  // доступен index и весь массив
+                (item) => item.id,  // key — item id
+                (item, index, items) => div(`${index + 1}. ${item.name}`)  // index and entire array available
             ))
         )
     }
 }
 ```
 
-**Преимущества использования getList:**
-1. Оптимизированная производительность — обновляются только измененные элементы
-2. Сохранение состояния элементов списка
-3. Эффективная работа с большими списками
-4. Автоматическое обновление при изменении данных
+**Advantages of using getList:**
+1. Optimized performance — only changed elements are updated
+2. Preserving list element state
+3. Efficient work with large lists
+4. Automatic updates when data changes
 
-**Особенности реализации:**
-- Использует `data-key` для привязки DOM-узлов к элементам данных (ключ берётся из `keyFn`).
-- Для каждого ключа хранится собственный сигнал; смена значения сигнала форсирует обновление соответствующего DOM-узла.
-- Изменения элемента определяются сравнением: `JSON.stringify(currItem) !== JSON.stringify(oldItems[index])`.
-- Узлы, чьи ключи отсутствуют в новом списке, удаляются из DOM, а их кэш (сигналы/компоненты/эффекты) очищается.
-- Порядок DOM-узлов синхронизируется с порядком ключей в текущем массиве данных.
-- Эффекты рендера создаются один раз на ключ и кэшируются в `currRegisteredEffects`.
-- Инициализация эффектов откладывается через `Promise.resolve().then(...)` для корректной вставки в DOM в нужной позиции.
-- Ключи нормализуются к строке для консистентности сопоставления.
+**Implementation details:**
+- Uses `data-key` to bind DOM nodes to data elements (key comes from `keyFn`).
+- Each key has its own signal stored; changing the signal value forces update of the corresponding DOM node.
+- Element changes are determined by comparison: `JSON.stringify(currItem) !== JSON.stringify(oldItems[index])`.
+- Nodes whose keys are missing from the new list are removed from DOM, and their cache (signals/components/effects) is cleared.
+- DOM node order is synchronized with key order in the current data array.
+- Render effects are created once per key and cached in `currRegisteredEffects`.
+- Effect initialization is deferred via `Promise.resolve().then(...)` for correct DOM insertion at the right position.
+- Keys are normalized to string for consistent matching.
 
 **Best practices:**
-- Ключи должны быть уникальными и стабильными между перерендерингами.
-- Избегайте глубоких/больших объектов, если чувствительны к производительности: сравнение через `JSON.stringify` может быть затратным.
-- Обеспечьте неизменяемые обновления элементов (immutable), чтобы изменения корректно детектировались.
-- Если нужен специфический порядок, формируйте его на уровне данных перед рендером (например, сортируйте массив до передачи в `getList`).
+- Keys should be unique and stable between re-renders.
+- Avoid deep/large objects if performance-sensitive: comparison via `JSON.stringify` can be expensive.
+- Ensure immutable element updates so changes are detected correctly.
+- If a specific order is needed, form it at the data level before rendering (e.g., sort the array before passing to `getList`).
 
 **Best practice:**
-- Всегда используйте уникальные ключи для элементов списка
-- Используйте `getList` для динамических списков, особенно при частых обновлениях
-- Для простых статических списков можно использовать обычный map
+- Always use unique keys for list elements
+- Use `getList` for dynamic lists, especially with frequent updates
+- For simple static lists, you can use a regular map
 
-### Пример комплексного компонента
+### Complex Component Example
 
 ```typescript
 import { component, event, property } from '@shared/utils/html-decorators';
@@ -927,34 +927,34 @@ class TabBarTest extends BaseElement {
 export const TabBarTestComp = useCustomComponent(TabBarTest);
 ```
 
-### Условный рендеринг с помощью when
+### Conditional Rendering with when
 
-Для условного рендера используйте функцию `when` из фабрики. Она поддерживает как статические, так и реактивные условия.
+For conditional rendering, use the `when` function from the factory. It supports both static and reactive conditions.
 
 ```typescript
 import { when } from '@shared/utils/html-fabric/fabric';
 import { div, span } from '@shared/utils/html-fabric/fabric';
 import { signal } from '@shared/utils/html-elements/signal';
 
-// Статическое условие
+// Static condition
 const isVisible = true;
 div(
   when(isVisible,
-    () => span('Показано'),
-    () => span('Скрыто')
+    () => span('Shown'),
+    () => span('Hidden')
   )
 )
 
-// Реактивное условие
+// Reactive condition
 const isVisibleSignal = signal(true);
 div(
   when(isVisibleSignal,
-    () => span('Показано'),
-    () => span('Скрыто')
+    () => span('Shown'),
+    () => span('Hidden')
   )
 )
 
-// Условный рендеринг с функцией
+// Conditional rendering with function
 const items = signal(['Item 1', 'Item 2']);
 div(
   when(
@@ -962,64 +962,64 @@ div(
     () => ul(
       ...items().map(item => li(item))
     ),
-    () => div('Нет элементов')
+    () => div('No items')
   )
 )
 ```
 
-- `when` автоматически определяет тип условия (булево, сигнал или функция)
-- Поддерживает опциональный elseContent
-- Используйте для любого условного рендера вместо ручных if/ternary или устаревших rxRenderIf/renderIf
-- В качестве аргументов для отрисовки принимает функции типа `CompFuncContent` (функции, возвращающие `ComponentContent` или массив `ComponentContent[]`)
+- `when` automatically determines condition type (boolean, signal, or function)
+- Supports optional elseContent
+- Use for any conditional rendering instead of manual if/ternary or deprecated rxRenderIf/renderIf
+- Accepts functions of type `CompFuncContent` as rendering arguments (functions returning `ComponentContent` or array `ComponentContent[]`)
 
-### Условное отображение с помощью show
+### Conditional Display with show
 
-Для управления видимостью элементов без их удаления из DOM используйте функцию `show`. В отличие от `when`, который полностью добавляет/удаляет элементы, `show` управляет отображением через CSS свойство `display`.
+To control element visibility without removing them from DOM, use the `show` function. Unlike `when`, which completely adds/removes elements, `show` controls display via CSS `display` property.
 
 ```typescript
-// Статическое условие
+// Static condition
 const isVisible = true;
 div(
-  show(isVisible, () => span('Контент'))
+  show(isVisible, () => span('Content'))
 )
 
-// Реактивное условие
+// Reactive condition
 const isVisibleSignal = signal(true);
 div(
-  show(isVisibleSignal, () => span('Реактивный контент'))
+  show(isVisibleSignal, () => span('Reactive content'))
 )
 
-// Условие через функцию
+// Condition via function
 const itemCount = signal(5);
 div(
-  show(() => itemCount() > 0, () => span('Есть элементы'))
+  show(() => itemCount() > 0, () => span('Items exist'))
 )
 ```
 
-**Различия между `when` и `show`:**
+**Differences between `when` and `show`:**
 
-- **`when`** — полностью удаляет/добавляет элементы из DOM. Более эффективно для тяжелых компонентов, которые редко показываются.
-- **`show`** — скрывает/показывает элементы через `display: none/contents`. Более эффективно для частого переключения видимости, сохраняет состояние элементов.
+- **`when`** — completely removes/adds elements from DOM. More efficient for heavy components that are rarely shown.
+- **`show`** — hides/shows elements via `display: none/contents`. More efficient for frequent visibility toggling, preserves element state.
 
-**Когда использовать `show`:**
-- Для частого переключения видимости (например, выпадающие меню, модальные окна)
-- Когда нужно сохранить состояние элемента при скрытии
-- Для простых случаев показа/скрытия без альтернативного контента
+**When to use `show`:**
+- For frequent visibility toggling (e.g., dropdown menus, modals)
+- When you need to preserve element state when hidden
+- For simple show/hide cases without alternative content
 
-## Рекомендации и best practices
+## Recommendations and Best Practices
 
-### Архитектурные принципы
+### Architectural Principles
 
-1. **Разделение ответственности**: Используйте классовые компоненты для сложной логики, функциональные — для простых UI-элементов
-2. **Реактивность**: Все состояния должны быть сигналами для автоматического обновления UI
-3. **Типизация**: Используйте строгую типизацию для всех props, событий и контекстов
-4. **Производительность**: Применяйте `getList` для больших списков, `show` для частых переключений видимости
+1. **Separation of Concerns**: Use class components for complex logic, functional — for simple UI elements
+2. **Reactivity**: All states should be signals for automatic UI updates
+3. **Typing**: Use strict typing for all props, events, and contexts
+4. **Performance**: Apply `getList` for large lists, `show` for frequent visibility toggles
 
-### Паттерны использования
+### Usage Patterns
 
-#### Композиция компонентов
+#### Component Composition
 ```typescript
-// Хорошо: композиция простых компонентов
+// Good: composition of simple components
 const UserCard = createComponent<UserProps>((props) => 
   div({ classList: ['user-card'] },
     UserAvatar({ src: props.avatar }),
@@ -1027,15 +1027,15 @@ const UserCard = createComponent<UserProps>((props) =>
   )
 );
 
-// Плохо: один большой компонент со всей логикой
+// Bad: one large component with all logic
 const ComplexUserCard = createComponent<AllProps>((props) => {
-  // 200+ строк кода
+  // 200+ lines of code
 });
 ```
 
-#### Управление состоянием
+#### State Management
 ```typescript
-// Хорошо: локальное состояние в компоненте
+// Good: local state in component
 class UserProfile extends BaseElement {
   @property()
   isEditing = signal(false);
@@ -1048,28 +1048,28 @@ class UserProfile extends BaseElement {
   }
 }
 
-// Хорошо: глобальное состояние через контекст
+// Good: global state via context
 const ThemeContext = 'theme';
 class ThemeProvider extends BaseElement {
   providers = { [ThemeContext]: signal('dark') };
 }
 ```
 
-## Примеры
+## Examples
 
-#### Вставка небезопасного HTML (unsafeHtml)
+#### Inserting Unsafe HTML (unsafeHtml)
 ```typescript
-// Рендер строки как HTML. Используйте только для доверенного контента!
+// Render string as HTML. Use only for trusted content!
 const html = signal('<b>bold</b> and <i>italic</i>');
 div(
   unsafeHtml(html)
 )
 
-// статическая строка
+// static string
 div(unsafeHtml('<span style="color:red">red</span>'))
 ```
 
-### Базовый компонент с props и событием
+### Basic Component with props and event
 ```typescript
 import { component, event, property } from '@shared/utils/html-decorators';
 import { BaseElement } from '@shared/utils/html-elements/element';
@@ -1092,7 +1092,7 @@ export class TestDecoratorComponent extends BaseElement {
 export const TestDecoratorComponentComp = useCustomComponent(TestDecoratorComponent);
 ```
 
-#### Динамический список через функцию как дочерний контент
+#### Dynamic List via Function as Child Content
 ```typescript
 const items = signal(['Item 1', 'Item 2']);
 div(
@@ -1100,22 +1100,22 @@ div(
     ...items().map(item => li(item))
   )
 )
-// При изменении items, весь список будет перерисован
+// When items changes, the entire list will be re-rendered
 items.set(['Item 1', 'Item 2', 'Item 3']);
 ```
 
-#### Реактивное отображение массива строк
+#### Reactive Array Display
 ```typescript
 const items = signal(['A', 'B', 'C']);
 div(() => items().join(','));
 ```
 
-#### Пример: таб-хедер
+#### Example: Tab Header
 ```typescript
 div({ classList: ['tab-header'] }, rs`current tab: ${createSignal(() => this.activeTab() + 1)}`)
 ```
 
-#### Пример: компонент с пропсами
+#### Example: Component with props
 ```typescript
 class TestDecoratorComponent extends BaseElement {
   @property()
@@ -1130,7 +1130,7 @@ class TestDecoratorComponent extends BaseElement {
 export const TestDecoratorComponentComp = useCustomComponent(TestDecoratorComponent);
 ```
 
-#### Пример: компонент с логированием
+#### Example: Component with Logging
 ```typescript
 class LoggerComponent extends BaseElement {
   connectedCallback() {
@@ -1152,7 +1152,7 @@ class LoggerComponent extends BaseElement {
 export const LoggerComponentComp = useCustomComponent(LoggerComponent);
 ```
 
-#### Пример: кнопка с сигналом
+#### Example: Button with Signal
 ```typescript
 class Counter extends BaseElement {
   @property()
@@ -1173,15 +1173,15 @@ class Counter extends BaseElement {
 export const CounterComp = useCustomComponent(Counter);
 ```
 
-#### Пример: слот
+#### Example: Slot
 ```typescript
 div(slot({ attributes: { name: 'tab-item' } }))
 ```
 
-#### Пример: использование контекста
+#### Example: Using Context
 ```typescript
 class ThemeConsumer extends BaseElement {
-  theme = this.inject<string>(ThemeContext); // Получаем сигнал контекста один раз вне render
+  theme = this.inject<string>(ThemeContext); // Get context signal once outside render
   render() {
     return div(rs`Theme: ${this.theme}`);
   }
@@ -1189,7 +1189,7 @@ class ThemeConsumer extends BaseElement {
 export const ThemeConsumerComp = useCustomComponent(ThemeConsumer);
 ```
 
-#### Пример: вложенные компоненты
+#### Example: Nested Components
 ```typescript
 div(
   ThemeProviderComp(
@@ -1198,7 +1198,7 @@ div(
 )
 ```
 
-#### Пример: функциональный компонент
+#### Example: Functional Component
 ```typescript
 import { createComponent } from '@shared/utils/html-fabric/fn-component';
 import { button } from '@shared/utils/html-fabric/fabric';
@@ -1215,33 +1215,33 @@ const Counter = createComponent<CounterProps>((props) => {
     listeners: {
       click: () => count.set(count() + (props.step || 1))
     }
-  }, () => `Счетчик: ${count()}`);
+  }, () => `Counter: ${count()}`);
 });
 
-// Использование
+// Usage
 const MyCounter = Counter({
   initialValue: 10,
   step: 5
 });
 ```
 
-#### Пример: работа с утилитами сигналов
+#### Example: Working with Signal Utilities
 ```typescript
 import { bindReactiveSignals, forkJoin, signal } from '@shared/utils';
 
-// Двустороннее связывание
+// Two-way binding
 const inputValue = signal('');
 const displayValue = signal('');
 bindReactiveSignals(inputValue, displayValue);
 
-// Объединение сигналов
+// Combining signals
 const name = signal('John');
 const age = signal(25);
 const userInfo = forkJoin(name, age);
-// userInfo() вернет ['John', 25] только когда оба сигнала обновятся
+// userInfo() returns ['John', 25] only when both signals update
 ```
 
-#### Пример: обработка событий
+#### Example: Event Handling
 ```typescript
 class TestDecoratorComponent extends BaseElement {
   @property()
@@ -1256,46 +1256,47 @@ class TestDecoratorComponent extends BaseElement {
 export const TestDecoratorComponentComp = useCustomComponent(TestDecoratorComponent);
 ```
 
-### Дополнительные утилиты
+### Additional Utilities
 
-#### Использование функции `classList`
+#### Using the `classList` Function
 
-Для удобного задания динамических и статических классов в конфиге элемента можно использовать функцию `classList`. Она позволяет комбинировать строковые значения и функции (например, сигналы), возвращающие строку класса. Это особенно полезно для реактивного управления классами.
+For convenient assignment of dynamic and static classes in element config, you can use the `classList` function. It allows combining string values and functions (e.g., signals) that return a class string. This is especially useful for reactive class management.
 
-**Сигнатура:**
+**Signature:**
 ```typescript
 classList(strings: TemplateStringsArray, ...args: (() => string)[]): { classList: (string | (() => string))[] }
 ```
 
-**Пример статических и динамических классов:**
+**Example of static and dynamic classes:**
 ```typescript
 const isActive = signal(false);
 div(
   classList`my-static-class ${() => isActive() ? 'active' : ''}`,
-  'Контент'
+  'Content'
 )
-// При изменении isActive, класс 'active' будет добавляться или убираться автоматически
+// When isActive changes, the 'active' class will be added or removed automatically
 ```
 
-**Дополнительно:**
-- В качестве функции внутри `classList` можно передавать **сигнал**, который возвращает строку с классом:
+**Additionally:**
+- As a function inside `classList`, you can pass a **signal** that returns a class string:
 
 ```typescript
 const dynamicClass = signal('my-dynamic-class');
 div(
   classList`static-class ${dynamicClass}`,
-  'Контент'
+  'Content'
 )
-// При изменении dynamicClass, класс будет автоматически обновляться
+// When dynamicClass changes, the class will automatically update
 ```
 
-- Также можно передавать **функцию, возвращающую сигнал**:
+- You can also pass a **function that returns a signal**:
 
 ```typescript
 const getClassSignal = () => someSignal;
 div(
   classList`test-class ${getClassSignal}`,
-  'Контент'
+  'Content'
 )
-// Класс будет реактивно меняться при изменении значения сигнала, возвращаемого функцией
+// The class will reactively change when the signal value returned by the function changes
 ```
+
