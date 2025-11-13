@@ -1,17 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
     "experimentalDecorators": true,
     "lib": [
-      "ES2020",
+      "ESNext",
       "DOM",
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
-    "emitDeclarationOnly": true,
-    "declaration": true,
+    // "declaration": true,
     "outDir": "out-tsc",
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -22,9 +21,12 @@
     "paths": {
       "@shared/*": [
         "shared/*"
+      ],
+      "@/*": [
+        "*"
       ]
     },
-    // "noEmit": true,
+    "noEmit": true,
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

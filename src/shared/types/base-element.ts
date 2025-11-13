@@ -1,0 +1,1 @@
+export type RootStyle = Promise<typeof import("*?inline")> | Array<Promise<typeof import("*?inline")>> | string | string[]

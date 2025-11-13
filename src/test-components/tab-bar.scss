@@ -1,0 +1,11 @@
+.container {
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.tab-header {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}

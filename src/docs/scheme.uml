@@ -1,0 +1,52 @@
+sequenceDiagram
+    participant UserCode as "Пользовательский код"
+    participant effect as "effect(cb)"
+    participant effectStack as "effectStack"
+    participant cbStack as "cbStack"
+    participant signal as "signal()"
+    participant metadata as "effectsMetadata (WeakMap)"
+
+    UserCode->>effect: effect(A)
+    effect->>effectStack: push(A)
+    effect->>cbStack: push(A)
+    effect->>UserCode: Запуск A()
+    UserCode->>signal: sig1()
+    signal->>effectStack: Кто наверху? (A)
+    signal->>signal: subscribers.add(A)
+    UserCode->>effect: effect(B)
+    effect->>cbStack: Кто наверху? (A)
+    effect->>metadata: Установить B.parent = A
+    effect->>effectStack: push(B)
+    effect->>cbStack: push(B)
+    effect->>UserCode: Запуск B()
+    UserCode->>signal: sig2()
+    signal->>effectStack: Кто наверху? (B)
+    signal->>signal: subscribers.add(B)
+    signal->>metadata: У B есть родитель A? -> Да
+    signal->>metadata: Добавить в A.cleanupFns<br/>функцию отписки B от sig2
+    UserCode-->>effect: B() завершен
+    effect-->>effectStack: pop(B)
+    effect-->>cbStack: pop(B)
+    UserCode-->>effect: A() завершен
+    effect-->>effectStack: pop(A)
+    effect-->>cbStack: pop(A)
+
+sequenceDiagram
+    participant UserCode as "Пользовательский код"
+    participant sig1 as "sig1.set()"
+    participant forceSet as "forceSet()"
+    participant metadata as "effectsMetadata (WeakMap)"
+    participant effectA as "Код эффекта A"
+
+    UserCode->>sig1: sig1.set(новое_значение)
+    sig1->>forceSet: Вызов с новым значением
+    forceSet->>forceSet: Итерация по подписчикам (находит A)
+    forceSet->>metadata: Получить метаданные для A<br/>`effectsMetadata.get(A)`
+    metadata-->>forceSet: `A.cleanupFns` содержит<br/>функцию отписки B от sig2
+    forceSet->>forceSet: Выполнить все `cleanupFns` из A
+    note right of forceSet: Старый эффект B отписан от sig2
+    forceSet->>metadata: Очистить `A.cleanupFns`
+    forceSet->>effectA: Запустить код эффекта A()
+    effectA->>effectA: Выполняется `console.log('sig1', sig1())`
+    effectA->>effectA: Вызывается `effect(B)` заново
+    note right of effectA: Создается новый дочерний эффект B,<br/>он подписывается на sig2,<br/>и новая функция очистки<br/>добавляется в метаданные A.<br/>(Повторение схемы 1)
