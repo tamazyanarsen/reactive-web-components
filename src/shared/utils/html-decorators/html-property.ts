@@ -214,9 +214,6 @@ export const component = (
         projectLog("start render", `%c${selector}%c`, selector);
 
         const insertRenderTemplate = () => {
-          while (this.shadow.firstChild) {
-            this.shadow.removeChild(this.shadow.firstChild);
-          }
           const renderComponent = this.render() as ComponentConfig<any>;
           this.shadow.appendChild(renderComponent.hostElement);
 
@@ -306,6 +303,8 @@ export const component = (
       }
 
       disconnectedCallback() {
+        this.shadow.replaceChildren();
+        this.replaceChildren();
         checkCall(this, target.prototype.disconnectedCallback);
       }
     }

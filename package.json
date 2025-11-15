@@ -1,5 +1,5 @@
 {
-  "name": "@t1-ui/rwc",
+  "name": "@reactive-web-components/rwc",
   "version": "2.51.5",
   "type": "module",
   "scripts": {
@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "docs": "npx typedoc --exclude \"**/index.ts\" --entryPointStrategy Expand ./src/shared/",
     "lint": "npx eslint ./src/",
-    "upload": "npm publish ./dist",
-    "build:upload": "npm run build && npm publish ./dist",
+    "upload": "npm publish ./dist --access public",
+    "build:upload": "npm run build && npm run upload",
     "release": "npm version $npm_config_type && npm run build:upload && git push",
     "release:patch": "npm version patch && npm run build:upload && git push",
     "release:minor": "npm version minor && npm run build:upload && git push",

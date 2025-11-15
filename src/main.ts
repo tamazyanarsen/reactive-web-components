@@ -7,16 +7,15 @@ import './test-components/examples/test-list/dynamic-items-test';
 import './test-components/examples/test-list/example.list';
 
 import './test-components/examples/button/button';
+import { ButtonComp } from "./test-components/examples/button/button";
+
+document.body.append(ButtonComp('some default slot content').hostElement)
 
 setTimeout(() => {
-  document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-  <div>
-    <p>веб-компоненты</p>
-    
-    <button-test></button-test>
-  </div>
-`;
-}, 3000);
+  const btn = document.querySelector('button-component')
+  console.debug('btn', btn, btn?.children, btn?.childNodes)
+  document.body.append(btn!)
+}, 2000)
 
 // <example-list-test></example-list-test>
 // <dynamic-test-demo></dynamic-test-demo>
