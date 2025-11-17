@@ -34,6 +34,7 @@ const generatePackageJSON = () => ({
   writeBundle(_options: unknown, bundle: { [fileName: string]: unknown }) {
     const [fileName] = Object.keys(bundle)
     const packageJSONFilePath = './dist/package.json'
+    const readmeFilePath = './dist/README.md'
     const originPackageData = JSON.parse(readFileSync('./package.json').toString()) as PackageFormat;
     let packageData: PackageFormat;
     if (existsSync(packageJSONFilePath)) {
@@ -78,6 +79,7 @@ const generatePackageJSON = () => ({
       }
     }
     writeFileSync(packageJSONFilePath, JSON.stringify(packageData, null, 4))
+    writeFileSync(readmeFilePath, readFileSync('./README.md').toString())
   },
 })
 
