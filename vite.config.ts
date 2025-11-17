@@ -15,7 +15,6 @@ type PackageFormat = {
   exports: Record<string, { import?: string, require?: string, types?: string }>,
   peerDependencies?: Record<string, string>,
   description: string,
-  files: string[],
   keywords: string[],
   author: string,
   license: string,
@@ -61,7 +60,6 @@ const generatePackageJSON = () => ({
         homepage: originPackageData.homepage,
         bugs: originPackageData.bugs,
         description: originPackageData.description,
-        files: originPackageData.files,
         keywords: originPackageData.keywords
       }
     }

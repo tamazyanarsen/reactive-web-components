@@ -3,9 +3,6 @@
   "version": "2.51.10",
   "description": "Modern library for creating reactive web components with declarative syntax and strict typing",
   "type": "module",
-  "files": [
-    "dist"
-  ],
   "keywords": [
     "reactive",
     "web-components",
