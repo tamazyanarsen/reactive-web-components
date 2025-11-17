@@ -220,8 +220,8 @@ export const component = (
           console.debug('rwc: insertRenderTemplate');
           const renderComponent = this.render() as ComponentConfig<any>;
           this.shadow.appendChild(renderComponent.hostElement);
-          this.appendSlotContent();
           checkCall(this, target.prototype.connectedCallback);
+          this.appendSlotContent();
         };
 
         if (this.rootStyle && !target.styles) {
