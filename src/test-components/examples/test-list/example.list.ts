@@ -87,7 +87,7 @@ export class ExampleListComponent extends BaseElement {
           name: 'test item!!!!!!',
         }) || div()
       ),
-      show(
+      ...show(
         testSignalShow,
         () => div('test signal show'),
         () => div('test signal show else')

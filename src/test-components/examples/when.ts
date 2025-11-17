@@ -1,5 +1,5 @@
-import { when } from "../../shared/utils/html-elements/element";
 import { signal } from "../../shared";
+import { when } from "../../shared/utils/html-elements/element";
 import { button, div, h1, p } from "../../shared/utils/html-fabric/fabric";
 
 // Example 1: Basic usage with static boolean
@@ -8,7 +8,7 @@ export const StaticWhenExample = () => {
 
   return div(
     h1("Static When Example"),
-    when(
+    ...when(
       isVisible,
       () => p("This content is visible because isVisible is true"),
       () => p("This content would be shown if isVisible was false"),
@@ -27,7 +27,7 @@ export const ReactiveWhenExample = () => {
   return div(
     h1("Reactive When Example"),
     button({ "@click": toggleVisibility }, "Toggle Visibility"),
-    when(
+    ...when(
       isVisible,
       () => p("This content is visible because isVisible signal is true"),
       () => p("This content is shown when isVisible signal is false"),
@@ -47,7 +47,7 @@ export const FunctionWhenExample = () => {
     h1("Function When Example"),
     p(`Current count: ${count()}`),
     button({ listeners: { click: increment } }, "Increment"),
-    when(
+    ...when(
       () => count() > 5,
       () => p("Count is greater than 5!"),
       () => p("Count is 5 or less"),
@@ -72,7 +72,7 @@ export const NestedWhenExample = () => {
     h1("Nested When Example"),
     button({ listeners: { click: toggleLogin } }, "Toggle Login"),
     button({ listeners: { click: toggleAdmin } }, "Toggle Admin"),
-    when(
+    ...when(
       isLoggedIn,
       () =>
         when(
@@ -96,7 +96,7 @@ export const SingleContentWhenExample = () => {
   return div(
     h1("Single Content When Example"),
     button({ "@click": toggleContent }, "Toggle Content"),
-    when(
+    ...when(
       showContent,
       () => p("This is a single component content"), // Returns single ComponentContent
       () => p("Alternative single component content"),
@@ -115,7 +115,7 @@ export const ArrayContentWhenExample = () => {
   return div(
     h1("Array Content When Example"),
     button({ "@click": toggleContent }, "Toggle Content"),
-    when(
+    ...when(
       showContent,
       () => [
         // Returns array of ComponentContent

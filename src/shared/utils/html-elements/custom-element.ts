@@ -6,9 +6,10 @@ import {
   EventEmitter,
   isComponentConfig,
   isComponentInitConfig,
-  SlotTemplate,
+  SlotTemplate
 } from "../../types/element";
 import { colorLog, projectLog } from "../helpers";
+import { isReactiveSignal } from "../signal";
 import { BaseElement, BaseElementConstructor } from "./base-element";
 import { getSignalContent } from "./element";
 import {
@@ -16,7 +17,6 @@ import {
   elementHelpers,
   initComponent,
 } from "./element-helper";
-import { isReactiveSignal } from "../signal";
 
 export const createCustomElement = <T extends BaseElement>(
   tagName: string,
@@ -75,7 +75,7 @@ export const createCustomEl = <T extends BaseElement>(
     colorLog("@rcreateCustomEl content", tagName, content);
     const newContent = content
       .filter(Boolean)
-      .map((e) =>
+      .flatMap((e) =>
         typeof e === "function" && !isReactiveSignal(e)
           ? getSignalContent(() => e(comp))
           : e,
@@ -135,7 +135,7 @@ export const customEl = <
 };
 
 export const newEventEmitter: <T = void>() => EventEmitter<T> = () => {
-  const resultFunc = () => {};
+  const resultFunc = () => { };
   resultFunc.oldValue = null;
   return resultFunc;
 };

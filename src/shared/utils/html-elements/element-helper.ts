@@ -1,5 +1,4 @@
 import { ON_CONNECTED_NAME } from "@shared/constants/constants";
-import { ReactiveSignal } from "../signal";
 import {
   AttributeValue,
   AttrSignal,
@@ -18,17 +17,24 @@ import {
   ExtraHTMLElement,
 } from "../../types/element";
 import { camelToKebab } from "../helpers";
+import { effect, isReactiveSignal, ReactiveSignal } from "../signal";
 import { BaseElement } from "./base-element";
-import { effect, isReactiveSignal } from "../signal";
-export const eventEmitter = () => () => {};
+
+export const eventEmitter = () => () => { };
+
+export const getTextContent = (content: string | unknown) => typeof content === "string" ? content : JSON.stringify(content);
+
+export const textContentWrapper = (content: string | unknown) => {
+  const container = document.createElement('span');
+  container.textContent = getTextContent(content);
+  return container;
+};
+
 export const addHtmlContent = <T extends HTMLElement = HTMLElement>(
   htmlElement: T,
   content: string | unknown,
 ) => {
-  const contentWrapper: Text = new Text(
-    typeof content === "string" ? content : JSON.stringify(content),
-  );
-  htmlElement.appendChild(contentWrapper);
+  htmlElement.appendChild(textContentWrapper(content));
   return htmlElement;
 };
 
@@ -42,14 +48,13 @@ export const setHtmlContent = <T extends HTMLElement = HTMLElement>(
 
 export const htmlEffectWrapper = (
   content: ReactiveSignal<unknown>,
-): HTMLDivElement => {
-  const htmlDiv = document.createElement("div");
-  htmlDiv.style.display = "contents";
+): HTMLSpanElement => {
+  const htmlSpan = document.createElement("span");
   effect(() => {
     const data = content();
-    setHtmlContent(htmlDiv, data);
+    htmlSpan.textContent = getTextContent(data);
   });
-  return htmlDiv;
+  return htmlSpan;
 };
 
 export const elementHelpers = <T extends ExtraHTMLElement>(

@@ -9,13 +9,15 @@ import {
   ExtraHTMLElement,
   HtmlTagName,
 } from "../../types/element";
+import { projectLog } from "../helpers";
 import { effect, isReactiveSignal, ReactiveSignal, signal } from "../signal";
 import {
   appendContentItem,
   elementHelpers,
+  htmlEffectWrapper,
   initComponent,
+  textContentWrapper
 } from "./element-helper";
-import { projectLog } from "../helpers";
 
 export const createElement = <K extends HtmlTagName>(
   tagName: K,
@@ -44,7 +46,7 @@ export const createEl = <K extends HtmlTagName>(
       element,
       ...content
         .filter(Boolean)
-        .map((e) =>
+        .flatMap((e) =>
           typeof e === "function" && !isReactiveSignal(e)
             ? getSignalContent(() => e(element))
             : e,
@@ -61,11 +63,36 @@ export const el = <K extends HtmlTagName>(
   return Object.assign(result, result());
 };
 
+export const getSignalContent = (cb: CompFuncContent) => {
+  let items: ComponentConfig<any>[] = [];
+  effect(() => {
+    items.slice(1).forEach(item => item.hostElement?.remove());
+    const newContent: ComponentContent[] = [];
+    const signalContent = cb();
+    if (Array.isArray(signalContent)) {
+      newContent.push(...signalContent);
+    } else {
+      newContent.push(signalContent);
+    }
+    const newItems = newContent.map(item => {
+      if (typeof item === "string") {
+        if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
+      } else if (isReactiveSignal(item)) {
+        return elementHelpers(htmlEffectWrapper(item));
+      } else return item
+    }) as ComponentConfig<any>[];
+
+    (items[0].hostElement as HTMLElement).replaceWith(...newItems.map(e => e.hostElement));
+    items = newItems;
+  });
+  return items;
+}
+
 /**
  * Создает реактивный контейнер-элемент, который автоматически обновляет свое содержимое на основе функции обратного вызова.
  * Контейнер будет перерендериваться при изменении зависимостей функции обратного вызова.
  */
-export const getSignalContent = (cb: CompFuncContent) =>
+export const oldgetSignalContent = (cb: CompFuncContent) =>
   createElement("div")
     .addStyle({ display: "contents" })
     .addEffect((self) => {
@@ -475,11 +502,12 @@ export const showIf = (
 ) => {
   const templateContent = getSignalContent(template);
   if (typeof condition === "boolean") {
-    templateContent.hostElement.style.display = condition ? "contents" : "none";
+    templateContent.forEach(e => e.hostElement.style.display = condition ? "block" : "none");
   } else {
-    templateContent.addEffect((_, host) => {
-      host.style.display = condition() ? "contents" : "none";
-    });
+    effect(() => {
+      const conditionRes = condition() ? "contents" : "none";
+      templateContent.forEach(e => e.hostElement.style.display = conditionRes ? "block" : "none");
+    })
   }
   return templateContent;
 };
@@ -490,10 +518,10 @@ export const show = (
   elseTemplate?: CompFuncContent,
 ) => {
   const templates: ComponentConfig<any>[] = [];
-  templates.push(showIf(condition, template));
+  templates.push(...showIf(condition, template));
   if (elseTemplate) {
     templates.push(
-      showIf(
+      ...showIf(
         () => (typeof condition === "boolean" ? !condition : !condition()),
         elseTemplate,
       ),
