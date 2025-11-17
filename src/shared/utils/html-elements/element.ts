@@ -82,7 +82,7 @@ export const getSignalContent = (cb: CompFuncContent) => {
       } else return item
     }) as ComponentConfig<any>[];
 
-    (items[0].hostElement as HTMLElement).replaceWith(...newItems.map(e => e.hostElement));
+    (items[0]?.hostElement as HTMLElement)?.replaceWith(...newItems.map(e => e.hostElement));
     items = newItems;
   });
   return items;
