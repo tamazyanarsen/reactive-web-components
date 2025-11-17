@@ -105,8 +105,6 @@ export const component = (
         }
       }
 
-      private isFirstRender = true;
-
       render(): ComponentConfig<any> {
         let result = div();
         const wrapperEffectCallback = () => {
@@ -216,14 +214,12 @@ export const component = (
         projectLog("start render", `%c${selector}%c`, selector);
 
         const insertRenderTemplate = () => {
-          setTimeout(() => {
-            checkCall(this, target.prototype.connectedCallback);
-          });
-          if (!this.isFirstRender) return;
           const renderComponent = this.render() as ComponentConfig<any>;
           this.shadow.appendChild(renderComponent.hostElement);
           this.appendSlotContent();
-          this.isFirstRender = false;
+          setTimeout(() => {
+            checkCall(this, target.prototype.connectedCallback);
+          });
         };
 
         if (this.rootStyle && !target.styles) {
@@ -307,8 +303,8 @@ export const component = (
       }
 
       disconnectedCallback() {
-        // this.shadow.replaceChildren();
-        // this.replaceChildren();
+        this.shadow.replaceChildren();
+        this.replaceChildren();
         checkCall(this, target.prototype.disconnectedCallback);
       }
     }

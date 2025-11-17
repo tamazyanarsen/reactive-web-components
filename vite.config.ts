@@ -13,7 +13,20 @@ type PackageFormat = {
   main?: string,
   module?: string,
   exports: Record<string, { import?: string, require?: string, types?: string }>,
-  peerDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>,
+  description: string,
+  files: string[],
+  keywords: string[],
+  author: string,
+  license: string,
+  repository: {
+    type: string,
+    url: string
+  },
+  homepage: string,
+  bugs: {
+    url: string
+  }
 }
 
 const generatePackageJSON = () => ({
@@ -40,7 +53,15 @@ const generatePackageJSON = () => ({
             // require: "./dist/my-lib.umd.cjs"
           }
         },
-        peerDependencies: originPackageData.peerDependencies
+        peerDependencies: originPackageData.peerDependencies,
+        author: originPackageData.author,
+        license: originPackageData.license,
+        repository: originPackageData.repository,
+        homepage: originPackageData.homepage,
+        bugs: originPackageData.bugs,
+        description: originPackageData.description,
+        files: originPackageData.files,
+        keywords: originPackageData.keywords
       }
     }
     if (fileName.includes('.umd.cjs')) {
