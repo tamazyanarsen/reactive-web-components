@@ -14,7 +14,7 @@ document.body.append(ButtonComp('some default slot content').hostElement)
 setTimeout(() => {
   const btn = document.querySelector('button-component')
   console.debug('btn', btn, btn?.children, btn?.childNodes)
-  document.body.append(btn!)
+  document.body.append(btn!.cloneNode(true))
 }, 2000)
 
 // <example-list-test></example-list-test>
