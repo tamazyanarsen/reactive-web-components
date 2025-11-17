@@ -1,6 +1,6 @@
 {
   "name": "@reactive-web-components/rwc",
-  "version": "2.51.6",
+  "version": "2.51.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
