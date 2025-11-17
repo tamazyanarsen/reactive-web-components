@@ -1,7 +1,34 @@
 {
   "name": "@reactive-web-components/rwc",
   "version": "2.51.7",
+  "description": "Modern library for creating reactive web components with declarative syntax and strict typing",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "reactive",
+    "web-components",
+    "signals",
+    "typescript",
+    "framework",
+    "components",
+    "reactive-framework",
+    "declarative",
+    "custom-elements",
+    "ui",
+    "frontend"
+  ],
+  "author": "tamazyanarsen",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tamazyanarsen/reactive-web-components.git"
+  },
+  "homepage": "https://github.com/tamazyanarsen/reactive-web-components#readme",
+  "bugs": {
+    "url": "https://github.com/tamazyanarsen/reactive-web-components/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
