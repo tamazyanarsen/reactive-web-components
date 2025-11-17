@@ -221,9 +221,7 @@ export const component = (
           const renderComponent = this.render() as ComponentConfig<any>;
           this.shadow.appendChild(renderComponent.hostElement);
           this.appendSlotContent();
-          setTimeout(() => {
-            checkCall(this, target.prototype.connectedCallback);
-          });
+          checkCall(this, target.prototype.connectedCallback);
         };
 
         if (this.rootStyle && !target.styles) {
