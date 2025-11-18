@@ -72,30 +72,31 @@ export const getSignalContent = (cb: CompFuncContent) =>
     });
 
 
-// TODO: нужно доделать, есть ошибки
-export const newTestGetSignalContent = (cb: CompFuncContent) => {
-  const handleItem = (item: ComponentContent) => {
+type WrapFuncReturnType<Cb extends CompFuncContent> =
+  ReturnType<Cb> extends any[]
+  ? ComponentConfig<any>[]
+  : ComponentConfig<any>;
+
+export const getReactiveTemplate = <Cb extends CompFuncContent>(cb: Cb) => {
+  const handleItem = (item: ComponentContent): ComponentConfig<any> => {
     if (typeof item === "string") {
       if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
-      else return createEl('div')();
+      else return createEl('div')() as ComponentConfig<any>;
     } else if (isReactiveSignal(item)) {
-      return elementHelpers(htmlEffectWrapper(item));
-    } else return item
+      return elementHelpers(htmlEffectWrapper(item)) as ComponentConfig<any>;
+    } else return item as ComponentConfig<any>;
   }
 
-  // const wrapFunc = (): ReturnType<typeof cb> extends Array<any>
-  //   ? ComponentConfig<any>[]
-  //   : ComponentConfig<any> => {
-  //   const res = cb()
-  //   if (res instanceof Array && Array.isArray(res)) {
-  //     // @ts-ignore
-  //     return res.map(handleItem) as ComponentConfig<any>[]
-  //   } else {
-  //     return handleItem(res) as ComponentConfig<any>
-  //   }
-  // }
+  const wrapFunc = (): WrapFuncReturnType<Cb> => {
+    const res = cb()
+    if (res instanceof Array && Array.isArray(res)) {
+      return res.map(handleItem) as WrapFuncReturnType<Cb>;
+    } else {
+      return handleItem(res) as WrapFuncReturnType<Cb>;
+    }
+  }
 
-  const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
+  // const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
 
   return signalComponent(wrapFunc)
 }
