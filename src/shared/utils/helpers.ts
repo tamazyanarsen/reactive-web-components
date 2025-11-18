@@ -8,8 +8,8 @@ let enabledLogs = true;
 
 export const projectLog = (...values: any[]) => {
   if (!enabledLogs) return;
-  console.log(
-    values.join(' | '),
+  console.debug(
+    ['[rwc]', ...values].join(' | '),
     ...Array.from(values.join('').matchAll(/%c/gm))
       .map((_, ind) => ind % 2 === 0 ? 'color:red' : 'color:inherit')
   )

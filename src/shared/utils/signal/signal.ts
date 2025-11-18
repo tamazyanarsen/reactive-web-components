@@ -104,7 +104,7 @@ export function signal<T = unknown>(
 }
 
 export function effect(cb: () => void) {
-  const randomId = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 15);
   projectLog('current effect', `%c${randomId}%c`);
 
   const oldCb = cb;
@@ -136,7 +136,9 @@ export function effect(cb: () => void) {
   cbStack.pop()
 }
 
-export const isReactiveSignal = <R extends ReactiveSignal<any>>(v: R | any): v is R => Boolean(v) && ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v && 'update' in v && 'forceSet' in v
+export const isReactiveSignal = <R extends ReactiveSignal<any>>(v: R | any): v is R => Boolean(v) &&
+  ['object', 'function'].includes(typeof v) && 'set' in v && 'oldValue' in v
+  && 'update' in v && 'forceSet' in v
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.

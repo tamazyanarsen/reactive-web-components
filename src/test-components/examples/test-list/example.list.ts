@@ -1,5 +1,5 @@
 import { ComponentConfig } from "@shared/types";
-import { BaseElement, component, defineSlotTemplate, div, event, getList, newEventEmitter, oldGetList, property, show, signal, useCustomComponent } from "@shared/utils";
+import { BaseElement, component, defineSlotTemplate, div, event, getList, newEventEmitter, property, show, signal, useCustomComponent } from "@shared/utils";
 
 @component('example-list')
 export class ExampleListComponent extends BaseElement {
@@ -61,13 +61,6 @@ export class ExampleListComponent extends BaseElement {
         },
         div(() => this.items().map((item) => div(item.name))),
         div(
-          oldGetList(
-            this.items,
-            (item) => item.id,
-            (item) => div(item.name)
-          )
-        ),
-        div(
           getList(
             this.items,
             (item) => item.id,
@@ -87,7 +80,7 @@ export class ExampleListComponent extends BaseElement {
           name: 'test item!!!!!!',
         }) || div()
       ),
-      ...show(
+      show(
         testSignalShow,
         () => div('test signal show'),
         () => div('test signal show else')

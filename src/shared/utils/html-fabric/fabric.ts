@@ -1,5 +1,5 @@
 import { ChildrenContent, ComponentInitConfig, HtmlTagName, isComponentInitConfig } from '../../types/element';
-import { el } from '../html-elements/element';
+import { createEl } from '../html-elements/element';
 
 // Типизированная фабрика для HTML-тегов
 // Позволяет получить автодополнение для config для каждого тега
@@ -8,7 +8,7 @@ type HtmlFactories = {
     [K in HtmlTagName]: (
         config?: ComponentInitConfig<HTMLElementTagNameMap[K]> | ChildrenContent<HTMLElementTagNameMap[K]>,
         ...content: ChildrenContent<HTMLElementTagNameMap[K]>[]
-    ) => ReturnType<ReturnType<typeof el<K>>>;
+    ) => ReturnType<ReturnType<typeof createEl<K>>>;
 };
 
 const htmlFactories = {} as HtmlFactories;
@@ -28,7 +28,7 @@ TAGS.forEach(tag => {
             // resultContent.unshift(config as ChildrenContent<HTMLElementTagNameMap[typeof tag]>);
             resultContent = [config as ChildrenContent<HTMLElementTagNameMap[typeof tag]>].concat(resultContent);
         }
-        return el(tag, isComponentInitConfig(config) ? config : {})(...resultContent);
+        return createEl(tag, isComponentInitConfig(config) ? config : {})(...resultContent);
     };
 });
 

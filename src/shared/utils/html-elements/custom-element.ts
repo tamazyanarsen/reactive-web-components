@@ -75,6 +75,7 @@ export const createCustomEl = <T extends BaseElement>(
     colorLog("@rcreateCustomEl content", tagName, content);
     const newContent = content
       .filter(Boolean)
+      .flat()
       .flatMap((e) =>
         typeof e === "function" && !isReactiveSignal(e)
           ? getSignalContent(() => e(comp))
@@ -120,18 +121,6 @@ export const createCustom = <
         ? config
         : undefined,
   );
-};
-
-export const customEl = <
-  T extends BaseElementConstructor,
-  K extends string | ComponentInitConfig<InstanceType<T>>,
->(
-  srcComp: T,
-  classList?: K,
-  config?: K extends string ? ComponentInitConfig<InstanceType<T>> : never,
-) => {
-  const result = createCustom(srcComp, classList, config);
-  return Object.assign(result, result());
 };
 
 export const newEventEmitter: <T = void>() => EventEmitter<T> = () => {

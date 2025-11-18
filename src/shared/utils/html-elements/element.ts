@@ -46,6 +46,7 @@ export const createEl = <K extends HtmlTagName>(
       element,
       ...content
         .filter(Boolean)
+        .flat()
         .flatMap((e) =>
           typeof e === "function" && !isReactiveSignal(e)
             ? getSignalContent(() => e(element))
@@ -55,44 +56,7 @@ export const createEl = <K extends HtmlTagName>(
   };
 };
 
-export const el = <K extends HtmlTagName>(
-  tagName: `${K} ${string}` | K,
-  config?: ComponentInitConfig<HTMLElementTagNameMap[K]>,
-) => {
-  const result = createEl(tagName, config);
-  return Object.assign(result, result());
-};
-
-export const getSignalContent = (cb: CompFuncContent) => {
-  let items: ComponentConfig<any>[] = [];
-  effect(() => {
-    items.slice(1).forEach(item => item.hostElement?.remove());
-    const newContent: ComponentContent[] = [];
-    const signalContent = cb();
-    if (Array.isArray(signalContent)) {
-      newContent.push(...signalContent);
-    } else {
-      newContent.push(signalContent);
-    }
-    const newItems = newContent.map(item => {
-      if (typeof item === "string") {
-        if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
-      } else if (isReactiveSignal(item)) {
-        return elementHelpers(htmlEffectWrapper(item));
-      } else return item
-    }) as ComponentConfig<any>[];
-
-    (items[0]?.hostElement as HTMLElement)?.replaceWith(...newItems.map(e => e.hostElement));
-    items = newItems;
-  });
-  return items;
-}
-
-/**
- * Создает реактивный контейнер-элемент, который автоматически обновляет свое содержимое на основе функции обратного вызова.
- * Контейнер будет перерендериваться при изменении зависимостей функции обратного вызова.
- */
-export const oldgetSignalContent = (cb: CompFuncContent) =>
+export const getSignalContent = (cb: CompFuncContent) =>
   createElement("div")
     .addStyle({ display: "contents" })
     .addEffect((self) => {
@@ -106,6 +70,36 @@ export const oldgetSignalContent = (cb: CompFuncContent) =>
       self.clear();
       appendContentItem(self, ...newContent);
     });
+
+
+// TODO: нужно доделать, есть ошибки
+export const newTestGetSignalContent = (cb: CompFuncContent) => {
+  const handleItem = (item: ComponentContent) => {
+    if (typeof item === "string") {
+      if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
+      else return createEl('div')();
+    } else if (isReactiveSignal(item)) {
+      return elementHelpers(htmlEffectWrapper(item));
+    } else return item
+  }
+
+  // const wrapFunc = (): ReturnType<typeof cb> extends Array<any>
+  //   ? ComponentConfig<any>[]
+  //   : ComponentConfig<any> => {
+  //   const res = cb()
+  //   if (res instanceof Array && Array.isArray(res)) {
+  //     // @ts-ignore
+  //     return res.map(handleItem) as ComponentConfig<any>[]
+  //   } else {
+  //     return handleItem(res) as ComponentConfig<any>
+  //   }
+  // }
+
+  const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
+
+  return signalComponent(wrapFunc)
+}
+
 
 /**
  * Создает реактивный список элементов, который автоматически обновляется при изменении массива данных.
@@ -281,82 +275,6 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
   return container;
 };
 
-export const oldGetList = <I extends Record<string, any>, K extends keyof I>(
-  items: ReactiveSignal<I[]>,
-  keyFn: (item: I) => I[K] | string,
-  cb: (item: I, index: number, items: I[]) => ComponentConfig<any>,
-) => {
-  const container = createElement("div").addStyle({ display: "contents" });
-
-  const currItems = new Map<I[K], I>();
-
-  effect(() => {
-    let currItemsKeyList = Array.from(container.hostElement.children).map(
-      (e) => (e as HTMLElement).dataset.key as I[K],
-    );
-    const itemList = items();
-    const newItemsKeyList = itemList
-      .map(keyFn)
-      .map((e) => (e as any).toString());
-    const newItems = new Map<string, I>();
-    itemList.forEach((item, i) => newItems.set(newItemsKeyList[i], item));
-
-    currItemsKeyList
-      .filter((e) => !newItemsKeyList.includes(e))
-      .forEach((e) =>
-        container.hostElement.querySelector(`[data-key="${e}"]`)?.remove(),
-      );
-
-    currItemsKeyList = currItemsKeyList.filter((e) =>
-      newItemsKeyList.includes(e),
-    );
-
-    newItemsKeyList.forEach((e, i) => {
-      if (currItemsKeyList.includes(e)) {
-        // элемент уже существует
-        if (
-          JSON.stringify(currItems.get(e)) !== JSON.stringify(newItems.get(e))
-        ) {
-          const newElement = cb(itemList[i], i, itemList).setCustomAttribute(
-            "data-key",
-            e,
-          ).hostElement;
-          (
-            container.hostElement.querySelector(
-              `[data-key="${e}"]`,
-            ) as HTMLElement
-          ).replaceWith(newElement);
-
-          const currChildren = container.hostElement.children;
-          if (i > currChildren.length - 2) {
-            container.hostElement.append(newElement);
-          } else {
-            container.hostElement.insertBefore(newElement, currChildren[i + 1]);
-          }
-        }
-      } else {
-        // новый элемент
-        const newComponent = cb(itemList[i], i, itemList).setCustomAttribute(
-          "data-key",
-          e,
-        );
-        const currChildren = container.hostElement.children;
-        if (i > currChildren.length - 1) {
-          container.hostElement.append(newComponent.hostElement);
-        } else {
-          container.hostElement.insertBefore(
-            newComponent.hostElement,
-            currChildren[i],
-          );
-        }
-      }
-    });
-
-    itemList.forEach((item, i) => currItems.set(newItemsKeyList[i], item));
-  });
-
-  return container;
-};
 
 /**
  * Создает реактивный компонент, который автоматически обновляется при изменении его зависимостей.
@@ -384,23 +302,24 @@ export const signalComponent = <
   let isMulti = false;
   effect(() => {
     const reactiveComponent = cb();
+    isMulti = Array.isArray(reactiveComponent);
     const newReactiveComponent: ComponentConfig<any>[] = [];
-    if (!Array.isArray(reactiveComponent)) {
-      newReactiveComponent.push(reactiveComponent);
-    } else {
-      newReactiveComponent.push(...reactiveComponent);
-      isMulti = true;
-    }
+    newReactiveComponent.push(...[reactiveComponent].flat());
     if (newReactiveComponent.length === 0) {
       newReactiveComponent.push(
-        createElement("div").addStyle({ display: "none" }) as any,
+        createElement("div").addStyle({ display: "none" }).setAttribute("id", "empty_template") as any,
       );
     }
     try {
+      projectLog('newReactiveComponent.map', newReactiveComponent.map(e => {
+        projectLog('newReactiveComponent hostElement', e.hostElement)
+        return e.hostElement?.id
+      }))
+      projectLog('currComponent[0].hostElement?.id', currComponent[0].hostElement?.id, currComponent)
       currComponent[0].hostElement?.replaceWith(
         ...newReactiveComponent.map((e) => e.hostElement),
       );
-      currComponent.forEach((e) => e.hostElement?.remove());
+      currComponent.slice(1).forEach((e) => e.hostElement?.remove());
       currComponent = newReactiveComponent as any;
     } catch (error) {
       console.error(error);
@@ -415,7 +334,7 @@ export const isSlotTemplate = (item: Element): item is ExtraHTMLElement =>
   HANDLE_SLOT_CONTEXT_NAME in item;
 
 export const unsafeHtml = (html: string | ReactiveSignal<string>) => {
-  const template = el("div").addStyle({ display: "contents" });
+  const template = createEl("div")().addStyle({ display: "contents" });
   const setHtml = (htmlString: string) => {
     template.hostElement.innerHTML = htmlString;
     return template;
@@ -438,7 +357,7 @@ export const renderIf = (
     ? getSignalContent(content)
     : elseContent
       ? getSignalContent(elseContent)
-      : getSignalContent(() => "");
+      : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" });
 
 export const rxRenderIf = (
   condition: ReactiveSignal<any> | (() => boolean),
@@ -502,11 +421,11 @@ export const showIf = (
 ) => {
   const templateContent = getSignalContent(template);
   if (typeof condition === "boolean") {
-    templateContent.forEach(e => e.hostElement.style.display = condition ? "block" : "none");
+    [templateContent].flat().forEach(e => e.hostElement.style.display = condition ? "block" : "none");
   } else {
     effect(() => {
-      const conditionRes = condition() ? "contents" : "none";
-      templateContent.forEach(e => e.hostElement.style.display = conditionRes ? "block" : "none");
+      const conditionRes = condition() ? "block" : "none";
+      [templateContent].flat().forEach(e => e.hostElement.style.display = conditionRes);
     })
   }
   return templateContent;
@@ -517,14 +436,13 @@ export const show = (
   template: CompFuncContent,
   elseTemplate?: CompFuncContent,
 ) => {
-  const templates: ComponentConfig<any>[] = [];
-  templates.push(...showIf(condition, template));
+  const templates: ComponentConfig<any>[] = [showIf(condition, template)].flat();
   if (elseTemplate) {
     templates.push(
-      ...showIf(
+      ...[showIf(
         () => (typeof condition === "boolean" ? !condition : !condition()),
         elseTemplate,
-      ),
+      )].flat(),
     );
   }
   return getSignalContent(() => templates);

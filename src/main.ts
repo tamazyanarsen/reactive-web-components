@@ -1,21 +1,33 @@
 import "./style.css";
 
-import "./test-components/tab-bar";
+// import "./test-components/tab-bar";
 
 import './test-components/examples/counter';
 import './test-components/examples/test-list/dynamic-items-test';
 import './test-components/examples/test-list/example.list';
 
+import { div, signal, when } from "@shared/utils";
 import './test-components/examples/button/button';
-import { ButtonComp } from "./test-components/examples/button/button";
 
-document.body.append(ButtonComp('some default slot content').hostElement)
+// import { ButtonComp } from "./test-components/examples/button/button";
 
-setTimeout(() => {
-  const btn = document.querySelector('button-component')
-  console.debug('btn', btn, btn?.children, btn?.childNodes)
-  document.body.append(btn!.cloneNode(true))
-}, 2000)
+// document.body.append(ButtonComp('some default slot content').hostElement)
+
+// setTimeout(() => {
+//   const btn = document.querySelector('button-component')
+//   console.debug('btn', btn, btn?.children, btn?.childNodes)
+//   document.body.append(btn!.cloneNode(true))
+// }, 2000)
+
+const testSignal = signal(false)
+
+document.body.append(
+  div(
+    { '.id': 'main container div' },
+    when(testSignal, () => div('true')),
+    when(testSignal, () => div('true')),
+  ).hostElement
+)
 
 // <example-list-test></example-list-test>
 // <dynamic-test-demo></dynamic-test-demo>

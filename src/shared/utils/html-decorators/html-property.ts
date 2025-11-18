@@ -106,10 +106,10 @@ export const component = (
       }
 
       render(): ComponentConfig<any> {
-        console.debug('rwc: render from new class');
+        projectLog('rwc: render from new class');
         let result = div();
         const wrapperEffectCallback = () => {
-          console.debug('rwc: wrapperEffectCallback');
+          projectLog('rwc: wrapperEffectCallback');
           result = target.prototype.render.call(this);
         }
         wrapperEffectCallback.fake = true;
@@ -158,7 +158,7 @@ export const component = (
       }
 
       connectedCallback() {
-        console.debug('rwc: connectedCallback');
+        projectLog('rwc: connectedCallback');
         projectLog("connectedCallback", `%c${selector}%c`, this);
 
         if (this.providers && Object.keys(this.providers).length > 0) {
@@ -217,7 +217,7 @@ export const component = (
         projectLog("start render", `%c${selector}%c`, selector);
 
         const insertRenderTemplate = () => {
-          console.debug('rwc: insertRenderTemplate');
+          projectLog('rwc: insertRenderTemplate');
           const renderComponent = this.render() as ComponentConfig<any>;
           this.shadow.appendChild(renderComponent.hostElement);
           checkCall(this, target.prototype.connectedCallback);

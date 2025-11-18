@@ -92,7 +92,7 @@ export class TabBarTest extends BaseElement {
       () => {
         return when(signal(true), () => button("test-when-signal"));
       },
-      ...when(signal(true), () => button("test-when-signal")),
+      when(signal(true), () => button("test-when-signal")),
       div(
         { classList: [() => (isHidden() ? "test1" : "test2")] },
         "!!!test classList!!!",
