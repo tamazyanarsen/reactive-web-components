@@ -1,23 +1,7 @@
+import { CompFuncContent, ComponentConfig } from "@shared/types";
 import "./style.css";
 
-// import "./test-components/tab-bar";
-
-import './test-components/examples/counter';
-import './test-components/examples/test-list/dynamic-items-test';
-import './test-components/examples/test-list/example.list';
-
-import { div, signal, when } from "@shared/utils";
-import './test-components/examples/button/button';
-
-// import { ButtonComp } from "./test-components/examples/button/button";
-
-// document.body.append(ButtonComp('some default slot content').hostElement)
-
-// setTimeout(() => {
-//   const btn = document.querySelector('button-component')
-//   console.debug('btn', btn, btn?.children, btn?.childNodes)
-//   document.body.append(btn!.cloneNode(true))
-// }, 2000)
+import { button, createEl, div, getReactiveTemplate, ReactiveSignal, signal, span, when } from "@shared/utils";
 
 const testSignal = signal(false)
 
@@ -29,48 +13,84 @@ document.body.append(
   ).hostElement
 )
 
-// <example-list-test></example-list-test>
-// <dynamic-test-demo></dynamic-test-demo>
+getReactiveTemplate(() => [div('true')])
 
-// const sig1 = signal(Math.random() + 1);
-// const sig2 = signal(Math.random() + 2);
-// effect(()=>{
-//   console.log('sig1', sig1())
-//   effect(()=>{
-//     console.log('sig2', sig2())
-//     // effect(()=>{
-//     //   console.log('sig2', sig2())
-//     // })
-//   })
-// })
+type ContentType<T> = T extends CompFuncContent
+  ? ReturnType<T>
+  : ComponentConfig<HTMLDivElement>;
 
-// const timer = setInterval(() => {
-//   sig1.set(Math.random() + 1);
-//   // sig2.set(Math.random());
-// }, 100);
-// setTimeout(() => {
-//   clearInterval(timer);
-// }, 10000);
+export function newrenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean,
+  content: Content,
+  elseContent: ElseContent,
+): ReturnType<Content>
+  | ReturnType<ElseContent>;
 
-// const testList = document.querySelectorAll('.item') as unknown as (HTMLElement & { handleSlotContext: (value: any) => void })[];
+export function newrenderIf<Content extends CompFuncContent>(
+  condition: boolean,
+  content: Content
+): ReturnType<Content> | ComponentConfig<HTMLDivElement>;
 
-// testList.forEach(item => {
-//   setTimeout(() => {
-//     // item.handleSlotContext((value: { id: number, name: string }) => {
-//     //   console.log('handleSlotContext value', value)
-//     // })
-//   }, 1000);
-//   item.addEventListener('handleSlotContext', (e: Event) => {
-//     console.log('handleSlotContext value', (e as CustomEvent).detail)
-//   })
-// })
+export function newrenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean,
+  content: Content,
+  elseContent?: ElseContent,
+): ReturnType<Content>
+  | ContentType<typeof elseContent> {
+  return condition
+    ? getReactiveTemplate(content) as ReturnType<Content>
+    : elseContent
+      ? getReactiveTemplate(elseContent) as ContentType<typeof elseContent>
+      : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" }) as ComponentConfig<HTMLDivElement>;
+}
 
-// <test-counter></test-counter>
-// <example-list>
-//   <div slot="item" class="item">
-//   </div>
-//   <div slot="item" class="item">
-//   </div>
-// </example-list>
-// <example-list-test></example-list-test>
-// <tab-bar></tab-bar>
+newrenderIf(true, () => span('true'))
+newrenderIf(true, () => button('true'))
+newrenderIf(true, () => div('true'), () => div('false'))
+
+export function newrxRenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: Content,
+  elseContent: ElseContent,
+): ReturnType<Content> | ReturnType<ElseContent>
+
+export function newrxRenderIf<Content extends CompFuncContent>(
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: Content,
+): ReturnType<Content> | ComponentConfig<HTMLDivElement>
+
+export function newrxRenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: Content,
+  elseContent?: ElseContent,
+): ReturnType<Content> | ContentType<typeof elseContent> {
+  return getReactiveTemplate(() => elseContent
+    ? newrenderIf(Boolean(condition()), content, elseContent) as ReturnType<Content> | ContentType<typeof elseContent>
+    : newrenderIf(Boolean(condition()), content) as ReturnType<Content> | ComponentConfig<HTMLDivElement>
+  );
+}
+
+newrxRenderIf(signal(true), () => span('true'))
+newrxRenderIf(signal(true), () => button('true'), () => span('false'))
+
+
+/**
+ * 
+export const renderIf = (
+  condition: boolean,
+  content: CompFuncContent,
+  elseContent?: CompFuncContent,
+) =>
+  condition
+    ? getSignalContent(content)
+    : elseContent
+      ? getSignalContent(elseContent)
+      : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" });
+
+export const rxRenderIf = (
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: CompFuncContent,
+  elseContent?: CompFuncContent,
+) =>
+  getSignalContent(() => renderIf(Boolean(condition()), content, elseContent));
+ */
