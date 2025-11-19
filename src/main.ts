@@ -2,6 +2,7 @@ import { renderIf, rxRenderIf, when } from "@shared/utils/html-elements/element"
 
 import "./style.css";
 
+import { ComponentConfig } from "@shared/types";
 import { button, div, getSignalContent, signal, span } from "@shared/utils";
 
 const testSignal = signal(false)
@@ -16,12 +17,15 @@ document.body.append(
 
 getSignalContent(() => [div('true')])
 
-renderIf(true, () => span('true'))
-renderIf(true, () => button('true'))
-renderIf(true, () => div('true'), () => div('false'))
+const addToBody = (element: ComponentConfig<HTMLElement> | ComponentConfig<HTMLElement>[]) =>
+  document.body.append(...[element].flat().map(e => e.hostElement))
 
-rxRenderIf(signal(true), () => span('true'))
-rxRenderIf(signal(true), () => button('true'), () => span('false'))
+addToBody(renderIf(false, () => span('true')))
+addToBody(renderIf(true, () => button('true')))
+addToBody(renderIf(false, () => div('true'), () => div('false')))
 
-when(signal(true), () => span('true'))
-when(signal(true), () => [button('true')], () => `span('false')`)
+addToBody(rxRenderIf(signal(true), () => span('true')))
+addToBody(rxRenderIf(signal(true), () => button('true'), () => span('false')))
+
+addToBody(when(signal(false), () => span('true')))
+addToBody(when(signal(false), () => [button('true')], () => `span('false')`))
