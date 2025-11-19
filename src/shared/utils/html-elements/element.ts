@@ -76,7 +76,9 @@ type WrapFuncReturnType<Cb extends CompFuncContent> =
   ReturnType<Cb> extends any[]
   ? ComponentConfig<any>[]
   : ComponentConfig<any>;
-
+/**
+ * @deprecated
+ */
 export const getReactiveTemplate = <Cb extends CompFuncContent>(cb: Cb): ReturnType<typeof cb> => {
   const handleItem = (item: ComponentContent): ComponentConfig<any> => {
     if (typeof item === "string") {
