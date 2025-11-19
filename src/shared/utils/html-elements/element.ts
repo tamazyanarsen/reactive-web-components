@@ -56,7 +56,10 @@ export const createEl = <K extends HtmlTagName>(
   };
 };
 
-export const getSignalContent = (cb: CompFuncContent) =>
+/**
+ * @deprecated
+ */
+export const oldgetSignalContent = (cb: CompFuncContent) =>
   createElement("div")
     .addStyle({ display: "contents" })
     .addEffect((self) => {
@@ -72,12 +75,21 @@ export const getSignalContent = (cb: CompFuncContent) =>
     });
 
 
-type WrapFuncReturnType<Cb extends CompFuncContent> =
-  ReturnType<Cb> extends any[]
-  ? ComponentConfig<any>[]
-  : ComponentConfig<any>;
+// Вспомогательный тип для обработки одного элемента
+type ProcessContentItem<T> =
+  T extends ComponentConfig<infer E>
+  ? ComponentConfig<E>
+  : T extends string | ReactiveSignal<any>
+  ? ComponentConfig<HTMLSpanElement>
+  : ComponentConfig<HTMLSpanElement>; // fallback
 
-export const getReactiveTemplate = <Cb extends CompFuncContent>(cb: Cb): ReturnType<typeof cb> => {
+// Основной тип для обработки результата функции
+type WrapFuncReturnType<Cb extends CompFuncContent> =
+  ReturnType<Cb> extends (infer Item)[]
+  ? ProcessContentItem<Item>[]
+  : ProcessContentItem<ReturnType<Cb>>;
+
+export const getSignalContent = <Cb extends CompFuncContent>(cb: Cb): WrapFuncReturnType<Cb> => {
   const handleItem = (item: ComponentContent): ComponentConfig<any> => {
     if (typeof item === "string") {
       if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
@@ -98,7 +110,7 @@ export const getReactiveTemplate = <Cb extends CompFuncContent>(cb: Cb): ReturnT
 
   // const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
 
-  return signalComponent(wrapFunc) as ReturnType<typeof cb>;
+  return signalComponent(wrapFunc) as WrapFuncReturnType<Cb>;
 }
 
 
@@ -349,7 +361,7 @@ export const unsafeHtml = (html: string | ReactiveSignal<string>) => {
   return template;
 };
 
-export const renderIf = (
+export const oldrenderIf = (
   condition: boolean,
   content: CompFuncContent,
   elseContent?: CompFuncContent,
@@ -360,12 +372,12 @@ export const renderIf = (
       ? getSignalContent(elseContent)
       : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" });
 
-export const rxRenderIf = (
+export const oldrxRenderIf = (
   condition: ReactiveSignal<any> | (() => boolean),
   content: CompFuncContent,
   elseContent?: CompFuncContent,
 ) =>
-  getSignalContent(() => renderIf(Boolean(condition()), content, elseContent));
+  getSignalContent(() => oldrenderIf(Boolean(condition()), content, elseContent));
 
 /**
  * Условный рендеринг компонентов на основе условия.
@@ -407,19 +419,19 @@ export const rxRenderIf = (
  *   () => el('div', { text: 'Данные загружены' })
  * );
  */
-export const when = (
+export const oldwhen = (
   condition: boolean | ReactiveSignal<any> | (() => boolean),
   content: CompFuncContent,
   elseContent?: CompFuncContent,
 ) =>
   typeof condition === "boolean"
-    ? renderIf(condition, content, elseContent)
-    : rxRenderIf(condition, content, elseContent);
+    ? oldrenderIf(condition, content, elseContent)
+    : oldrxRenderIf(condition, content, elseContent);
 
-export const showIf = (
+export const showIf = <Content extends CompFuncContent>(
   condition: boolean | ReactiveSignal<any> | (() => boolean),
-  template: CompFuncContent,
-) => {
+  template: Content,
+): WrapFuncReturnType<Content> => {
   const templateContent = getSignalContent(template);
   if (typeof condition === "boolean") {
     [templateContent].flat().forEach(e => e.hostElement.style.display = condition ? "block" : "none");
@@ -429,14 +441,23 @@ export const showIf = (
       [templateContent].flat().forEach(e => e.hostElement.style.display = conditionRes);
     })
   }
-  return templateContent;
+  return templateContent as WrapFuncReturnType<Content>;
 };
 
-export const show = (
+export function show<Content extends CompFuncContent>(
   condition: boolean | ReactiveSignal<any> | (() => boolean),
-  template: CompFuncContent,
-  elseTemplate?: CompFuncContent,
-) => {
+  template: Content,
+): WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>;
+export function show<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean | ReactiveSignal<any> | (() => boolean),
+  template: Content,
+  elseTemplate: ElseContent,
+): WrapFuncReturnType<Content> | ContentType<typeof elseTemplate>
+export function show<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean | ReactiveSignal<any> | (() => boolean),
+  template: Content,
+  elseTemplate?: ElseContent,
+): WrapFuncReturnType<Content> | ContentType<typeof elseTemplate> {
   const templates: ComponentConfig<any>[] = [showIf(condition, template)].flat();
   if (elseTemplate) {
     templates.push(
@@ -446,5 +467,84 @@ export const show = (
       )].flat(),
     );
   }
-  return getSignalContent(() => templates);
+  return getSignalContent(() => templates) as WrapFuncReturnType<Content> | ContentType<typeof elseTemplate>;
 };
+
+type ContentType<T> = T extends CompFuncContent
+  ? WrapFuncReturnType<T>
+  : ComponentConfig<HTMLDivElement>;
+
+export function renderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean,
+  content: Content,
+  elseContent: ElseContent,
+): WrapFuncReturnType<Content>
+  | WrapFuncReturnType<ElseContent>;
+export function renderIf<Content extends CompFuncContent>(
+  condition: boolean,
+  content: Content
+): WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>;
+export function renderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean,
+  content: Content,
+  elseContent?: ElseContent,
+): WrapFuncReturnType<Content>
+  | ContentType<typeof elseContent> {
+  return condition
+    ? getSignalContent(content) as WrapFuncReturnType<Content>
+    : elseContent
+      ? getSignalContent(elseContent) as ContentType<typeof elseContent>
+      : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" }) as ComponentConfig<HTMLDivElement>;
+}
+
+export function rxRenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: Content,
+  elseContent: ElseContent,
+): WrapFuncReturnType<Content> | WrapFuncReturnType<ElseContent>
+export function rxRenderIf<Content extends CompFuncContent>(
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: Content,
+): WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>
+export function rxRenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: ReactiveSignal<any> | (() => boolean),
+  content: Content,
+  elseContent?: ElseContent,
+): WrapFuncReturnType<Content> | ContentType<typeof elseContent> {
+  return getSignalContent(() => elseContent
+    ? renderIf(Boolean(condition()), content, elseContent) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>
+    : renderIf(Boolean(condition()), content) as WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>
+  ) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>;
+}
+
+
+export function when<Content extends CompFuncContent>(
+  condition: boolean | ReactiveSignal<any> | (() => boolean),
+  content: Content,
+): WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>
+export function when<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean | ReactiveSignal<any> | (() => boolean),
+  content: Content,
+  elseContent: ElseContent,
+): WrapFuncReturnType<Content> | ContentType<typeof elseContent>
+export function when<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
+  condition: boolean | ReactiveSignal<any> | (() => boolean),
+  content: Content,
+  elseContent?: ElseContent,
+): WrapFuncReturnType<Content> | ContentType<typeof elseContent> {
+  return typeof condition === "boolean"
+    ? elseContent
+      ? renderIf(
+        condition, content, elseContent
+      ) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>
+      : renderIf(
+        condition, content
+      ) as WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>
+    : elseContent
+      ? rxRenderIf(
+        condition, content, elseContent
+      ) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>
+      : rxRenderIf(
+        condition, content
+      ) as WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>;
+}
