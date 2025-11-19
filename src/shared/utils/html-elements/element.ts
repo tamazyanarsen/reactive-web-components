@@ -99,18 +99,30 @@ export const getSignalContent = <Cb extends CompFuncContent>(cb: Cb): WrapFuncRe
     } else return item as ComponentConfig<any>;
   }
 
-  const wrapFunc = (): WrapFuncReturnType<Cb> => {
+  const wrapper = createElement('div')
+  let currComponents = [wrapper]
+  let count = 0
+  let isMulti = false
+
+  effect(() => {
+    console.log('количество вызовов эффекта:', ++count)
     const res = cb()
-    if (res instanceof Array && Array.isArray(res)) {
-      return res.map(handleItem) as WrapFuncReturnType<Cb>;
-    } else {
-      return handleItem(res) as WrapFuncReturnType<Cb>;
+    isMulti = Array.isArray(res)
+    const result = [res].flat().map(handleItem)
+    if (result.length === 0) {
+      result.push(
+        createElement('div')
+          .setAttribute('id', 'empty_template')
+          .addStyle({ display: 'none' })
+      )
     }
-  }
-
-  // const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
-
-  return signalComponent(wrapFunc) as WrapFuncReturnType<Cb>;
+    currComponents.slice(1).forEach(e => e.hostElement?.remove());
+    console.log('result', result)
+    console.log('currComponents', currComponents)
+    currComponents[0].hostElement?.replaceWith(...result.map(e => e.hostElement))
+    currComponents = result as ComponentConfig<HTMLDivElement>[]
+  })
+  return isMulti ? currComponents as unknown as WrapFuncReturnType<Cb> : currComponents[0] as WrapFuncReturnType<Cb>;
 }
 
 
