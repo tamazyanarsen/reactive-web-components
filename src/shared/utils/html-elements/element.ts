@@ -99,30 +99,42 @@ export const getSignalContent = <Cb extends CompFuncContent>(cb: Cb): WrapFuncRe
     } else return item as ComponentConfig<any>;
   }
 
-  const wrapper = createElement('div')
-  let currComponents = [wrapper]
-  let count = 0
+  const signalList: ReactiveSignal<number>[] = []
+  const signalMap = new Map<ReactiveSignal<number>, ComponentConfig<any>>()
+  const newComponents: ComponentConfig<any>[] = []
+
   let isMulti = false
 
   effect(() => {
-    console.log('количество вызовов эффекта:', ++count)
-    const res = cb()
-    isMulti = Array.isArray(res)
-    const result = [res].flat().map(handleItem)
-    if (result.length === 0) {
-      result.push(
-        createElement('div')
-          .setAttribute('id', 'empty_template')
-          .addStyle({ display: 'none' })
-      )
-    }
-    currComponents.slice(1).forEach(e => e.hostElement?.remove());
-    console.log('result', result)
-    console.log('currComponents', currComponents)
-    currComponents[0].hostElement?.replaceWith(...result.map(e => e.hostElement))
-    currComponents = result as ComponentConfig<HTMLDivElement>[]
+    const cbRes = cb();
+    const res = [cbRes].flat().map(handleItem)
+    isMulti = Array.isArray(cbRes)
+    res.forEach((comp, ind) => {
+      if (!signalList[ind]) {
+        signalList[ind] = signal(Math.random())
+        signalMap.set(signalList[ind], comp)
+      }
+      signalList[ind].set(Math.random())
+      newComponents[ind] = comp
+    })
   })
-  return isMulti ? currComponents as unknown as WrapFuncReturnType<Cb> : currComponents[0] as WrapFuncReturnType<Cb>;
+
+  signalList.forEach((s, ind) => {
+    effect(() => {
+      s();
+      const newComp = newComponents[ind];
+      const currComp = signalMap.get(s);
+      if (currComp) {
+        if (!(currComp.hostElement as HTMLElement).parentElement?.contains(newComp.hostElement)) {
+          (currComp.hostElement as HTMLElement).parentElement?.replaceChild(newComp.hostElement, currComp.hostElement)
+          signalMap.set(s, newComp)
+        }
+      }
+    })
+  })
+
+  return isMulti ? newComponents as WrapFuncReturnType<Cb> : newComponents[0] as WrapFuncReturnType<Cb>
+
 }
 
 
@@ -341,9 +353,15 @@ export const signalComponent = <
         return e.hostElement?.id
       }))
       projectLog('currComponent[0].hostElement?.id', currComponent[0].hostElement?.id, currComponent)
-      currComponent[0].hostElement?.replaceWith(
-        ...newReactiveComponent.map((e) => e.hostElement),
-      );
+      const replaceElement = currComponent[0].hostElement
+      if (replaceElement) {
+        replaceElement.replaceWith(
+          ...newReactiveComponent
+            .filter(e => e.hostElement && !(e.hostElement as HTMLElement).contains(replaceElement))
+            .map(e => e.hostElement)
+            .flat()
+        )
+      }
       currComponent.slice(1).forEach((e) => e.hostElement?.remove());
       currComponent = newReactiveComponent as any;
     } catch (error) {
