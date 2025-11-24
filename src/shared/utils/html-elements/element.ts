@@ -89,22 +89,22 @@ type WrapFuncReturnType<Cb extends CompFuncContent> =
   ? ProcessContentItem<Item>[]
   : ProcessContentItem<ReturnType<Cb>>;
 
-export const getSignalContent = <Cb extends CompFuncContent>(cb: Cb): WrapFuncReturnType<Cb> => {
-  const handleItem = (item: ComponentContent): ComponentConfig<any> => {
-    if (typeof item === "string") {
-      if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
-      else return createEl('div')() as ComponentConfig<any>;
-    } else if (isReactiveSignal(item)) {
-      return elementHelpers(htmlEffectWrapper(item)) as ComponentConfig<any>;
-    } else return item as ComponentConfig<any>;
-  }
+const itemToComponent = (item: ComponentContent): ComponentConfig<any> => {
+  if (typeof item === "string") {
+    if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
+    else return createEl('div')() as ComponentConfig<any>;
+  } else if (isReactiveSignal(item)) {
+    return elementHelpers(htmlEffectWrapper(item)) as ComponentConfig<any>;
+  } else return item as ComponentConfig<any>;
+}
 
+export const getSignalContent = <Cb extends CompFuncContent>(cb: Cb): WrapFuncReturnType<Cb> => {
   return signalComponent(() => {
     const res = cb()
     if (Array.isArray(res)) {
-      return res.map(handleItem)
+      return res.map(itemToComponent)
     } else {
-      return handleItem(res)
+      return itemToComponent(res)
     }
   }) as WrapFuncReturnType<Cb>;
 
@@ -453,6 +453,9 @@ export const oldwhen = (
     ? oldrenderIf(condition, content, elseContent)
     : oldrxRenderIf(condition, content, elseContent);
 
+/**
+ * @deprecated
+ */
 export const showIf = <Content extends CompFuncContent>(
   condition: boolean | ReactiveSignal<any> | (() => boolean),
   template: Content,
@@ -483,16 +486,22 @@ export function show<Content extends CompFuncContent, ElseContent extends CompFu
   template: Content,
   elseTemplate?: ElseContent,
 ): WrapFuncReturnType<Content> | ContentType<typeof elseTemplate> {
-  const templates: ComponentConfig<any>[] = [showIf(condition, template)].flat();
-  if (elseTemplate) {
-    templates.push(
-      ...[showIf(
-        () => (typeof condition === "boolean" ? !condition : !condition()),
-        elseTemplate,
-      )].flat(),
-    );
-  }
-  return getSignalContent(() => templates) as WrapFuncReturnType<Content> | ContentType<typeof elseTemplate>;
+  return getSignalContent(() => {
+    const conditionRes = typeof condition === "boolean" ? condition : condition();
+
+    const templates: ComponentConfig<any>[] = [];
+    templates.push(...[template()].flat().map(e => {
+      const style = conditionRes ? "block" : "none";
+      return itemToComponent(e).addEffect((_, host) => { host.style.display = style })
+    }
+    ));
+    if (elseTemplate) templates.push(...[elseTemplate()].flat().map(e => {
+      const style = !conditionRes ? "block" : "none";
+      return itemToComponent(e).addEffect((_, host) => { host.style.display = style })
+    }
+    ));
+    return templates
+  }) as WrapFuncReturnType<Content> | ContentType<typeof elseTemplate>;
 };
 
 type ContentType<T> = T extends CompFuncContent

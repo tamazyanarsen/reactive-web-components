@@ -1,4 +1,4 @@
-import { renderIf, rxRenderIf, when } from "@shared/utils/html-elements/element";
+import { renderIf, rxRenderIf, show, when } from "@shared/utils/html-elements/element";
 
 import "./style.css";
 
@@ -29,3 +29,12 @@ addToBody(rxRenderIf(signal(true), () => button('true'), () => span('false')))
 
 addToBody(when(signal(false), () => span('true')))
 addToBody(when(signal(false), () => [button('true')], () => `span('false')`))
+
+const test = signal(false)
+setInterval(() => {
+  test.set(!test())
+}, 2000);
+
+addToBody(div(
+  show(test, () => div('show true'), () => div('show false'))
+))
