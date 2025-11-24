@@ -109,7 +109,7 @@ export const component = (
         projectLog('rwc: render from new class');
         let result = div();
         const wrapperEffectCallback = () => {
-          projectLog('rwc: wrapperEffectCallback');
+          projectLog('wrapperEffectCallback');
           result = target.prototype.render.call(this);
         }
         wrapperEffectCallback.fake = true;
