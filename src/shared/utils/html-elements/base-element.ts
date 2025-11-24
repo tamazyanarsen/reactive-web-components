@@ -62,7 +62,7 @@ export abstract class BaseElement extends HTMLElement {
   public injects: Record<string, ReactiveSignal<any>> = {};
 
   public inject<T>(contextKey: string): ReactiveSignal<T | null> {
-    projectLog("%cinject%c", contextKey);
+    projectLog("inject", contextKey);
     if (!this.injects[contextKey]) {
       this.injects[contextKey] = signal<T | null>(null);
     }
@@ -72,8 +72,8 @@ export abstract class BaseElement extends HTMLElement {
   public checkInjects() {
     Object.entries(this.injects).forEach(([contextKey, injectSignal]) => {
       projectLog(
-        "%cinject%c",
-        `%c${contextKey}%c`,
+        "inject",
+        `${contextKey}`,
         "from BaseElement (dispatch event)",
       );
       this.shadow.dispatchEvent(

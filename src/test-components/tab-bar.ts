@@ -43,7 +43,7 @@ export class TabBar extends BaseElement {
 
   render() {
     effect(() => {
-      projectLog("%ctestInject%c", this.testInject());
+      projectLog("testInject", this.testInject());
     });
     return div(
       { classList: ["container"] },

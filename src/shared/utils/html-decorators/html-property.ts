@@ -97,7 +97,7 @@ export const component = (
       static renderTagName = selector;
 
       constructor(...params: any[]) {
-        projectLog("constructor", `%c${selector}%c`);
+        projectLog("constructor", `${selector}`);
         super(isClosed, ...params);
         colorLog("@osheet", sheet);
         if (sheet.length > 0) {
@@ -123,10 +123,10 @@ export const component = (
         newValue: string,
       ) {
         projectLog(
-          `%cAttribute has changed.%c`,
-          `%c${attrName}%c`,
+          `Attribute has changed.`,
+          `${attrName}`,
           `oldValue: ${oldValue}, newValue: ${newValue}`,
-          `%c${selector}%c`,
+          `${selector}`,
         );
         try {
           newValue = JSON.parse(newValue);
@@ -159,7 +159,7 @@ export const component = (
 
       connectedCallback() {
         projectLog('rwc: connectedCallback');
-        projectLog("connectedCallback", `%c${selector}%c`, this);
+        projectLog("connectedCallback", `${selector}`, this);
 
         if (this.providers && Object.keys(this.providers).length > 0) {
           projectLog("WRAPPER for providers", selector);
@@ -214,7 +214,7 @@ export const component = (
           },
         );
 
-        projectLog("start render", `%c${selector}%c`, selector);
+        projectLog("start render", `${selector}`, selector);
 
         const insertRenderTemplate = () => {
           projectLog('rwc: insertRenderTemplate');

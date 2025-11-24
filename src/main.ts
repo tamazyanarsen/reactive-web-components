@@ -1,7 +1,9 @@
-import { CompFuncContent, ComponentConfig } from "@shared/types";
+import { renderIf, rxRenderIf, when } from "@shared/utils/html-elements/element";
+
 import "./style.css";
 
-import { button, createEl, div, getReactiveTemplate, ReactiveSignal, signal, span, when } from "@shared/utils";
+import { ComponentConfig } from "@shared/types";
+import { button, div, getSignalContent, signal, span } from "@shared/utils";
 
 const testSignal = signal(false)
 
@@ -13,84 +15,17 @@ document.body.append(
   ).hostElement
 )
 
-getReactiveTemplate(() => [div('true')])
+getSignalContent(() => [div('true')])
 
-type ContentType<T> = T extends CompFuncContent
-  ? ReturnType<T>
-  : ComponentConfig<HTMLDivElement>;
+const addToBody = (element: ComponentConfig<HTMLElement> | ComponentConfig<HTMLElement>[]) =>
+  document.body.append(...[element].flat().map(e => e.hostElement))
 
-export function newrenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
-  condition: boolean,
-  content: Content,
-  elseContent: ElseContent,
-): ReturnType<Content>
-  | ReturnType<ElseContent>;
+addToBody(renderIf(false, () => span('true')))
+addToBody(renderIf(true, () => button('true')))
+addToBody(renderIf(false, () => div('true'), () => div('false')))
 
-export function newrenderIf<Content extends CompFuncContent>(
-  condition: boolean,
-  content: Content
-): ReturnType<Content> | ComponentConfig<HTMLDivElement>;
+addToBody(rxRenderIf(signal(true), () => span('true')))
+addToBody(rxRenderIf(signal(true), () => button('true'), () => span('false')))
 
-export function newrenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
-  condition: boolean,
-  content: Content,
-  elseContent?: ElseContent,
-): ReturnType<Content>
-  | ContentType<typeof elseContent> {
-  return condition
-    ? getReactiveTemplate(content) as ReturnType<Content>
-    : elseContent
-      ? getReactiveTemplate(elseContent) as ContentType<typeof elseContent>
-      : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" }) as ComponentConfig<HTMLDivElement>;
-}
-
-newrenderIf(true, () => span('true'))
-newrenderIf(true, () => button('true'))
-newrenderIf(true, () => div('true'), () => div('false'))
-
-export function newrxRenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
-  condition: ReactiveSignal<any> | (() => boolean),
-  content: Content,
-  elseContent: ElseContent,
-): ReturnType<Content> | ReturnType<ElseContent>
-
-export function newrxRenderIf<Content extends CompFuncContent>(
-  condition: ReactiveSignal<any> | (() => boolean),
-  content: Content,
-): ReturnType<Content> | ComponentConfig<HTMLDivElement>
-
-export function newrxRenderIf<Content extends CompFuncContent, ElseContent extends CompFuncContent>(
-  condition: ReactiveSignal<any> | (() => boolean),
-  content: Content,
-  elseContent?: ElseContent,
-): ReturnType<Content> | ContentType<typeof elseContent> {
-  return getReactiveTemplate(() => elseContent
-    ? newrenderIf(Boolean(condition()), content, elseContent) as ReturnType<Content> | ContentType<typeof elseContent>
-    : newrenderIf(Boolean(condition()), content) as ReturnType<Content> | ComponentConfig<HTMLDivElement>
-  );
-}
-
-newrxRenderIf(signal(true), () => span('true'))
-newrxRenderIf(signal(true), () => button('true'), () => span('false'))
-
-
-/**
- * 
-export const renderIf = (
-  condition: boolean,
-  content: CompFuncContent,
-  elseContent?: CompFuncContent,
-) =>
-  condition
-    ? getSignalContent(content)
-    : elseContent
-      ? getSignalContent(elseContent)
-      : createEl('div')().setAttribute("id", "empty_div_renderIf").addStyle({ display: "none" });
-
-export const rxRenderIf = (
-  condition: ReactiveSignal<any> | (() => boolean),
-  content: CompFuncContent,
-  elseContent?: CompFuncContent,
-) =>
-  getSignalContent(() => renderIf(Boolean(condition()), content, elseContent));
- */
+addToBody(when(signal(false), () => span('true')))
+addToBody(when(signal(false), () => [button('true')], () => `span('false')`))

@@ -105,12 +105,12 @@ export function signal<T = unknown>(
 
 export function effect(cb: () => void) {
   const randomId = Math.random().toString(36).substring(2, 15);
-  projectLog('current effect', `%c${randomId}%c`);
+  projectLog('current effect', `${randomId}`);
 
   const oldCb = cb;
 
   cb = () => {
-    projectLog('current effect callback', `%c${randomId}%c`)
+    projectLog('current effect callback', `${randomId}`)
     return oldCb()
   }
 
