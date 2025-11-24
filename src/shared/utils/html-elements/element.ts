@@ -546,13 +546,13 @@ export function rxRenderIf<Content extends CompFuncContent, ElseContent extends 
   elseContent?: ElseContent,
 ): WrapFuncReturnType<Content> | ContentType<typeof elseContent> {
   return getSignalContent(() => {
-    const trueContent = content()
+    const res = condition()
     const falseContent = elseContent
-      ? elseContent()
-      : createElement('div')
+      ? elseContent
+      : () => createElement('div')
         .setAttribute("id", "empty_div_renderIf")
         .addStyle({ display: "none" })
-    return condition() ? trueContent : falseContent
+    return res ? getSignalContent(() => content()) : getSignalContent(() => falseContent())
   }) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>;
 }
 
