@@ -9,7 +9,7 @@ let enabledLogs = true;
 export const projectLog = (...values: any[]) => {
   if (!enabledLogs) return;
   console.debug(
-    ['[rwc]', ...values].join(' | '),
+    '[rwc]', ...values,
     ...Array.from(values.join('').matchAll(/%c/gm))
       .map((_, ind) => ind % 2 === 0 ? 'color:red' : 'color:inherit')
   )

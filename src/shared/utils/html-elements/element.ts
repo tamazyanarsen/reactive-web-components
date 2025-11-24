@@ -7,7 +7,7 @@ import {
   ComponentInitConfig,
   CustomComponentConfig,
   ExtraHTMLElement,
-  HtmlTagName,
+  HtmlTagName
 } from "../../types/element";
 import { projectLog } from "../helpers";
 import { effect, isReactiveSignal, ReactiveSignal, signal } from "../signal";
@@ -99,41 +99,14 @@ export const getSignalContent = <Cb extends CompFuncContent>(cb: Cb): WrapFuncRe
     } else return item as ComponentConfig<any>;
   }
 
-  const signalList: ReactiveSignal<number>[] = []
-  const signalMap = new Map<ReactiveSignal<number>, ComponentConfig<any>>()
-  const newComponents: ComponentConfig<any>[] = []
-
-  let isMulti = false
-
-  effect(() => {
-    const cbRes = cb();
-    const res = [cbRes].flat().map(handleItem)
-    isMulti = Array.isArray(cbRes)
-    res.forEach((comp, ind) => {
-      if (!signalList[ind]) {
-        signalList[ind] = signal(Math.random())
-        signalMap.set(signalList[ind], comp)
-      }
-      signalList[ind].set(Math.random())
-      newComponents[ind] = comp
-    })
-  })
-
-  signalList.forEach((s, ind) => {
-    effect(() => {
-      s();
-      const newComp = newComponents[ind];
-      const currComp = signalMap.get(s);
-      if (currComp) {
-        if (!(currComp.hostElement as HTMLElement).parentElement?.contains(newComp.hostElement)) {
-          (currComp.hostElement as HTMLElement).parentElement?.replaceChild(newComp.hostElement, currComp.hostElement)
-          signalMap.set(s, newComp)
-        }
-      }
-    })
-  })
-
-  return isMulti ? newComponents as WrapFuncReturnType<Cb> : newComponents[0] as WrapFuncReturnType<Cb>
+  return signalComponent(() => {
+    const res = cb()
+    if (Array.isArray(res)) {
+      return res.map(handleItem)
+    } else {
+      return handleItem(res)
+    }
+  }) as WrapFuncReturnType<Cb>;
 
 }
 
@@ -353,16 +326,38 @@ export const signalComponent = <
         return e.hostElement?.id
       }))
       projectLog('currComponent[0].hostElement?.id', currComponent[0].hostElement?.id, currComponent)
+      /**
+       * Удаляем все лишние элементы
+       */
+      currComponent.slice(1).forEach((e) => e.hostElement?.remove());
+
       const replaceElement = currComponent[0].hostElement
+
+      // const parentElement = replaceElement?.parentElement
+      // if (parentElement) {
+      //   const children = Array.from(parentElement.children)
+      //   const childIndex = children.indexOf(replaceElement)
+      //   replaceElement.remove()
+      //   if (childIndex === children.length - 1) {
+      //     parentElement.append(...newReactiveComponent
+      //       .map(e => e.hostElement)
+      //       .flat())
+      //   } else {
+      //     newReactiveComponent
+      //       .map(e => e.hostElement)
+      //       .flat()
+      //       .forEach(el => parentElement.insertBefore(el, children[childIndex + 1]))
+      //   }
+      // }
+      // else 
       if (replaceElement) {
         replaceElement.replaceWith(
           ...newReactiveComponent
-            .filter(e => e.hostElement && !(e.hostElement as HTMLElement).contains(replaceElement))
             .map(e => e.hostElement)
             .flat()
         )
       }
-      currComponent.slice(1).forEach((e) => e.hostElement?.remove());
+      projectLog('currComponent success replaceElement', replaceElement)
       currComponent = newReactiveComponent as any;
     } catch (error) {
       console.error(error);
@@ -407,7 +402,7 @@ export const oldrxRenderIf = (
   content: CompFuncContent,
   elseContent?: CompFuncContent,
 ) =>
-  getSignalContent(() => oldrenderIf(Boolean(condition()), content, elseContent));
+  oldgetSignalContent(() => oldrenderIf(Boolean(condition()), content, elseContent));
 
 /**
  * Условный рендеринг компонентов на основе условия.
@@ -541,10 +536,15 @@ export function rxRenderIf<Content extends CompFuncContent, ElseContent extends 
   content: Content,
   elseContent?: ElseContent,
 ): WrapFuncReturnType<Content> | ContentType<typeof elseContent> {
-  return getSignalContent(() => elseContent
-    ? renderIf(Boolean(condition()), content, elseContent) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>
-    : renderIf(Boolean(condition()), content) as WrapFuncReturnType<Content> | ComponentConfig<HTMLDivElement>
-  ) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>;
+  return getSignalContent(() => {
+    const trueContent = content()
+    const falseContent = elseContent
+      ? elseContent()
+      : createElement('div')
+        .setAttribute("id", "empty_div_renderIf")
+        .addStyle({ display: "none" })
+    return condition() ? trueContent : falseContent
+  }) as WrapFuncReturnType<Content> | ContentType<typeof elseContent>;
 }
 
 
