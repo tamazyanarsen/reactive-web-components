@@ -86,16 +86,19 @@ export function signal<T = unknown>(
   result.pipe = <R>(fn: (sg: T) => R) => {
     const resSignal = signal<R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>>(null as any)
     effect(() => {
-      const fnResult = fn(result())
-      if (fnResult instanceof Promise) {
-        fnResult.then(v => resSignal.set(v))
-      } else {
-        if (isReactiveSignal(fnResult)) {
-          effect(() => resSignal.set(fnResult()))
+      const signalRes = result()
+      effect(() => {
+        const fnResult = fn(signalRes)
+        if (fnResult instanceof Promise) {
+          fnResult.then(v => resSignal.set(v))
         } else {
-          resSignal.set(fnResult as any)
+          if (isReactiveSignal(fnResult)) {
+            effect(() => resSignal.set(fnResult()))
+          } else {
+            resSignal.set(fnResult as any)
+          }
         }
-      }
+      })
     })
     return resSignal
   }
