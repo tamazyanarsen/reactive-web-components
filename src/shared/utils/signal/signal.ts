@@ -2,7 +2,13 @@ import { projectLog } from "../helpers";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import { CompareFn, ReactiveSignal, SignalUpdateFunc, UnwrapSignal } from "./signal.type";
 
-const effectMap = new Map<string, WeakSet<ReactiveSignal<any>>>()
+export const effectMap = new Map<
+  string, 
+  {
+    signals: Array<ReactiveSignal<any>>,
+    parent: string | null
+  }
+>()
 
 interface EffectMetadata {
   parent?: () => void;
@@ -15,14 +21,14 @@ const cbStack: (() => void)[] = []
 
 export function signal<T = unknown>(
   initValue: T,
-  signalCompareFn: CompareFn<T> = () => true,
   config?: {
-    name?:string
+    signalCompareFn?: CompareFn<T>,
+    name?: string
   }
 ): ReactiveSignal<T> {
   const subscribers = new Set<() => void>()
 
-  let globalCompareFn = signalCompareFn
+  let globalCompareFn = config?.signalCompareFn || (() => true)
 
   function result() {
     const currCb = effectStack[effectStack.length - 1]
@@ -38,12 +44,12 @@ export function signal<T = unknown>(
       }
 
       subscribers.add(currCb);
-      effectMap.get((currCb as any).effectId)?.add(result);
+      effectMap.get((currCb as any).effectId)?.signals.push(result);
     }
     return initValue
   }
 
-  result.effectId = config?.name || Math.random().toString(36).substring(2, 15);
+  result.signalId = config?.name || Math.random().toString(36).substring(2, 15);
 
   result.getSubscribers = () => [...subscribers]
 
@@ -125,15 +131,15 @@ export function effect(cb: () => void, name?: string) {
     return oldCb()
   }
 
-  if('fake' in oldCb && oldCb.fake) {
+  if ('fake' in oldCb && oldCb.fake) {
     (cb as any).fake = true;
   }
-
-  effectMap.set(randomId, new WeakSet<ReactiveSignal<any>>());
 
   (cb as any).effectId = randomId;
 
   const parentCb = cbStack[cbStack.length - 1]
+
+  effectMap.set(randomId, { signals: [], parent: (parentCb as any)?.effectId || null });
 
   if (!effectsMetadata.has(cb)) {
     effectsMetadata.set(cb, { cleanupFns: new Set() });
