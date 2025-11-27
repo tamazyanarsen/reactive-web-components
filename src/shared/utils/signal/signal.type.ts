@@ -17,7 +17,10 @@ export interface ReactiveSignal<T> {
 	clearSubscribers(): void;
 	peek(): Readonly<T>
 	pipe<R>(
-		fn: (sg: T) => R
+		fn: (sg: T) => R,
+		config?: {
+			name?: string
+		}
 	): ReactiveSignal<R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>>;
 }
 

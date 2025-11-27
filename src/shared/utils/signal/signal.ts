@@ -3,7 +3,7 @@ import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import { CompareFn, ReactiveSignal, SignalUpdateFunc, UnwrapSignal } from "./signal.type";
 
 export const effectMap = new Map<
-  string, 
+  string,
   {
     signals: Array<ReactiveSignal<any>>,
     parent: string | null
@@ -49,7 +49,7 @@ export function signal<T = unknown>(
     return initValue
   }
 
-  result.signalId = config?.name || Math.random().toString(36).substring(2, 15);
+  result.signalId = `${config?.name || ''}_${Math.random().toString(36).substring(2, 15)}`;
 
   result.getSubscribers = () => [...subscribers]
 
@@ -97,7 +97,9 @@ export function signal<T = unknown>(
     result.set(cb(initValue))
   }
 
-  result.pipe = <R>(fn: (sg: T) => R) => {
+  result.pipe = <R>(fn: (sg: T) => R, config?: {
+    name?: string
+  }) => {
     const resSignal = signal<R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>>(null as any)
     effect(() => {
       const signalRes = result()
@@ -112,7 +114,7 @@ export function signal<T = unknown>(
             resSignal.set(fnResult as any)
           }
         }
-      })
+      }, config)
     })
     return resSignal
   }
@@ -120,8 +122,10 @@ export function signal<T = unknown>(
   return result
 }
 
-export function effect(cb: () => void, name?: string) {
-  const randomId = name || Math.random().toString(36).substring(2, 15);
+export function effect(cb: () => void, config?: {
+  name?: string
+}) {
+  const randomId = `${config?.name || ''}_${Math.random().toString(36).substring(2, 15)}`;
   projectLog('current effect', `%c${randomId}%c`);
 
   const oldCb = cb;
@@ -140,6 +144,7 @@ export function effect(cb: () => void, name?: string) {
   const parentCb = cbStack[cbStack.length - 1]
 
   effectMap.set(randomId, { signals: [], parent: (parentCb as any)?.effectId || null });
+
 
   if (!effectsMetadata.has(cb)) {
     effectsMetadata.set(cb, { cleanupFns: new Set() });
