@@ -215,6 +215,34 @@ city.set('SPB');   // userData updates to ['Jane', 30, 'SPB']
 - Creating composite objects from multiple sources
 - Waiting for all dependencies to update before executing actions
 
+#### combineLatest
+
+Combines multiple signals into one that updates whenever any of the source signals receives a new value. Unlike `forkJoin`, which waits for all signals to update, `combineLatest` immediately updates when any signal changes.
+
+```typescript
+import { combineLatest, signal } from '@shared/utils';
+
+const name = signal('John');
+const age = signal(25);
+const city = signal('Moscow');
+
+const userData = combineLatest(name, age, city);
+// userData() returns ['John', 25, 'Moscow']
+
+name.set('Jane');  // userData immediately updates to ['Jane', 25, 'Moscow']
+age.set(30);       // userData immediately updates to ['Jane', 30, 'Moscow']
+city.set('SPB');   // userData immediately updates to ['Jane', 30, 'SPB']
+```
+
+**Application:**
+- Real-time synchronization of multiple data sources
+- Creating reactive computed values from multiple signals
+- Updating UI immediately when any dependency changes
+
+**Differences between `forkJoin` and `combineLatest`:**
+- **`forkJoin`** — waits for all signals to update before emitting a new value. Useful when you need all values to be updated together.
+- **`combineLatest`** — emits a new value immediately when any signal changes. Useful for real-time updates and reactive computations.
+
   ### Function as Child Content (recommended style for dynamic lists and conditional render)
 
 Functions passed as child content to `el` or `customEl` are automatically converted to reactive content. This allows convenient creation of dynamic content that will update when dependent signals change. The content function receives context (a reference to its component) as the first argument.
@@ -1227,18 +1255,25 @@ const MyCounter = Counter({
 
 #### Example: Working with Signal Utilities
 ```typescript
-import { bindReactiveSignals, forkJoin, signal } from '@shared/utils';
+import { bindReactiveSignals, forkJoin, combineLatest, signal } from '@shared/utils';
 
 // Two-way binding
 const inputValue = signal('');
 const displayValue = signal('');
 bindReactiveSignals(inputValue, displayValue);
 
-// Combining signals
+// Combining signals with forkJoin (waits for all to update)
 const name = signal('John');
 const age = signal(25);
 const userInfo = forkJoin(name, age);
 // userInfo() returns ['John', 25] only when both signals update
+
+// Combining signals with combineLatest (updates on any change)
+const firstName = signal('John');
+const lastName = signal('Doe');
+const fullName = combineLatest(firstName, lastName);
+// fullName() returns ['John', 'Doe'] and updates immediately when either signal changes
+firstName.set('Jane'); // fullName() immediately becomes ['Jane', 'Doe']
 ```
 
 #### Example: Event Handling

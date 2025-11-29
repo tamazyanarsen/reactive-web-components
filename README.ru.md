@@ -215,6 +215,34 @@ city.set('SPB');   // userData обновится до ['Jane', 30, 'SPB']
 - Создание составных объектов из нескольких источников
 - Ожидание обновления всех зависимостей перед выполнением действий
 
+#### combineLatest
+
+Объединяет несколько сигналов в один, который обновляется при изменении любого из исходных сигналов. В отличие от `forkJoin`, который ждет обновления всех сигналов, `combineLatest` немедленно обновляется при изменении любого сигнала.
+
+```typescript
+import { combineLatest, signal } from '@shared/utils';
+
+const name = signal('John');
+const age = signal(25);
+const city = signal('Moscow');
+
+const userData = combineLatest(name, age, city);
+// userData() вернет ['John', 25, 'Moscow']
+
+name.set('Jane');  // userData немедленно обновится до ['Jane', 25, 'Moscow']
+age.set(30);       // userData немедленно обновится до ['Jane', 30, 'Moscow']
+city.set('SPB');   // userData немедленно обновится до ['Jane', 30, 'SPB']
+```
+
+**Применение:**
+- Синхронизация нескольких источников данных в реальном времени
+- Создание реактивных вычисляемых значений из нескольких сигналов
+- Немедленное обновление UI при изменении любой зависимости
+
+**Различия между `forkJoin` и `combineLatest`:**
+- **`forkJoin`** — ждет обновления всех сигналов перед эмитом нового значения. Полезно, когда нужно, чтобы все значения обновились вместе.
+- **`combineLatest`** — эмитит новое значение немедленно при изменении любого сигнала. Полезно для обновлений в реальном времени и реактивных вычислений.
+
   ### Функция как дочерний контент (рекомендуемый стиль для динамических списков и условного рендера)
 
 Функции, переданные в качестве дочернего контента в `el` или `customEl`, автоматически преобразуются в реактивный контент. Это позволяет удобно создавать динамический контент, который будет обновляться при изменении зависимых сигналов. Функция-контент получает контекст (ссылку на свой компонент) в качестве первого аргумента.
@@ -1227,18 +1255,25 @@ const MyCounter = Counter({
 
 #### Пример: работа с утилитами сигналов
 ```typescript
-import { bindReactiveSignals, forkJoin, signal } from '@shared/utils';
+import { bindReactiveSignals, forkJoin, combineLatest, signal } from '@shared/utils';
 
 // Двустороннее связывание
 const inputValue = signal('');
 const displayValue = signal('');
 bindReactiveSignals(inputValue, displayValue);
 
-// Объединение сигналов
+// Объединение сигналов с forkJoin (ждет обновления всех)
 const name = signal('John');
 const age = signal(25);
 const userInfo = forkJoin(name, age);
 // userInfo() вернет ['John', 25] только когда оба сигнала обновятся
+
+// Объединение сигналов с combineLatest (обновляется при любом изменении)
+const firstName = signal('John');
+const lastName = signal('Doe');
+const fullName = combineLatest(firstName, lastName);
+// fullName() вернет ['John', 'Doe'] и обновится немедленно при изменении любого сигнала
+firstName.set('Jane'); // fullName() немедленно станет ['Jane', 'Doe']
 ```
 
 #### Пример: обработка событий
