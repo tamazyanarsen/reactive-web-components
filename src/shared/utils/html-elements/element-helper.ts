@@ -17,49 +17,22 @@ import {
   ExtraHTMLElement,
 } from "../../types/element";
 import { camelToKebab } from "../helpers";
-import { effect, isReactiveSignal, ReactiveSignal } from "../signal";
+import { effect, isReactiveSignal } from "../signal";
 import { BaseElement } from "./base-element";
+import { addHtmlContent, CustomHtmlComponentConfig, HtmlComponentConfig, htmlEffectWrapper, setHtmlContent } from "./create-component-config";
 
 export const eventEmitter = () => () => { };
 
-export const getTextContent = (content: string | unknown) => typeof content === "string" ? content : JSON.stringify(content);
-
-export const textContentWrapper = (content: string | unknown) => {
-  const container = document.createElement('span');
-  container.textContent = getTextContent(content);
-  return container;
-};
-
-export const addHtmlContent = <T extends HTMLElement = HTMLElement>(
-  htmlElement: T,
-  content: string | unknown,
-) => {
-  htmlElement.appendChild(textContentWrapper(content));
-  return htmlElement;
-};
-
-export const setHtmlContent = <T extends HTMLElement = HTMLElement>(
-  htmlElement: T,
-  content: string | unknown,
-) => {
-  htmlElement.innerHTML = "";
-  return addHtmlContent(htmlElement, content);
-};
-
-export const htmlEffectWrapper = (
-  content: ReactiveSignal<unknown>,
-): HTMLSpanElement => {
-  const htmlSpan = document.createElement("span");
-  effect(() => {
-    const data = content();
-    htmlSpan.textContent = getTextContent(data);
-  });
-  return htmlSpan;
+export const customElementHelpers = <T extends ExtraHTMLElement>(
+  wrapper: T,
+): CustomComponentConfig<T> => {
+  return new CustomHtmlComponentConfig(wrapper);
 };
 
 export const elementHelpers = <T extends ExtraHTMLElement>(
   wrapper: T,
 ): ComponentConfig<T> => {
+  return new HtmlComponentConfig(wrapper);
   return {
     append(...args) {
       args.forEach((element) => {

@@ -1,0 +1,1 @@
+export const componentStackFunc: ((e: () => void) => void)[] = [];

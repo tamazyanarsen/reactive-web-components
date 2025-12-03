@@ -1,5 +1,6 @@
 import { RootStyle } from "@shared/types";
 import { ComponentConfig, ContextEvent } from "../../types/element";
+import { componentStackFunc } from "../clean";
 import {
   camelToKebab,
   checkCall,
@@ -95,6 +96,12 @@ export const component = (
       static observedAttributes = target.prototype[observedAttrFieldName] ?? [];
 
       static renderTagName = selector;
+
+      effectCleanupHandleEvent = (e: () => void) => {
+        this.effects.push(e);
+      }
+
+      effects: (() => void)[] = [];
 
       constructor(...params: any[]) {
         projectLog("constructor", `%c${selector}%c`);
@@ -218,10 +225,12 @@ export const component = (
 
         const insertRenderTemplate = () => {
           projectLog('rwc: insertRenderTemplate');
+          componentStackFunc.push(this.effectCleanupHandleEvent)
           const renderComponent = this.render() as ComponentConfig<any>;
           this.shadow.appendChild(renderComponent.hostElement);
           checkCall(this, target.prototype.connectedCallback);
           this.appendSlotContent();
+          componentStackFunc.pop();
         };
 
         if (this.rootStyle && !target.styles) {
@@ -308,6 +317,10 @@ export const component = (
         this.shadow.replaceChildren();
         this.replaceChildren();
         checkCall(this, target.prototype.disconnectedCallback);
+        this.effects.forEach(effectCb => {
+          (effectCb as any).selfCleanup?.forEach((cleanup: () => void) => cleanup());
+        });
+        this.effects = [];
       }
     }
     NewClass.toString = () => selector;

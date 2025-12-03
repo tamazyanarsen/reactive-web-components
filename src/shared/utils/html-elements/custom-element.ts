@@ -14,8 +14,8 @@ import { BaseElement, BaseElementConstructor } from "./base-element";
 import { getSignalContent } from "./element";
 import {
   appendContentItem,
-  elementHelpers,
-  initComponent,
+  customElementHelpers,
+  initComponent
 } from "./element-helper";
 
 export const createCustomElement = <T extends BaseElement>(
@@ -24,23 +24,7 @@ export const createCustomElement = <T extends BaseElement>(
 ): CustomComponentConfig<T> => {
   projectLog("createCustomElement", tagName);
   const wrapper = document.createElement(tagName) as T;
-  const component: CustomComponentConfig<T> = {
-    ...elementHelpers(wrapper),
-    setReactiveValue(value) {
-      if (wrapper instanceof BaseElement) wrapper.setReactiveValue(value);
-      return this;
-    },
-    setSlotTemplate(templateConfig) {
-      const wrapperSlotTemplate = wrapper.slotTemplate;
-      if (wrapperSlotTemplate) {
-        Object.entries(templateConfig).forEach(([slotKey, slotTmpl]) => {
-          wrapperSlotTemplate[slotKey] =
-            slotTmpl as SlotTemplate[typeof slotKey];
-        });
-      }
-      return this;
-    },
-  };
+  const component = customElementHelpers(wrapper);
   return initComponent(component, config);
 };
 

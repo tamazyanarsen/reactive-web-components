@@ -1,3 +1,4 @@
+import { componentStackFunc } from "../clean";
 import { projectLog } from "../helpers";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import {
@@ -54,6 +55,11 @@ export function signal<T = unknown>(
         });
       }
 
+      if (!('selfCleanup' in currCb)) (currCb as any).selfCleanup = [];
+      (currCb as any).selfCleanup.push(() => {
+        subscribers.delete(currCb);
+      });
+
       subscribers.add(currCb);
       if (isEffectDebugEnabled) { effectMap.get((currCb as any).effectId)?.signals.push(result); }
     }
@@ -84,8 +90,9 @@ export function signal<T = unknown>(
   result.forceSet = function (value: T) {
     result.oldValue = Object.freeze(initValue);
     initValue = value;
-    subscribers.forEach((cb) =>
-      Promise.resolve(cb).then((fn) => {
+    subscribers.forEach((cb) => {
+      setTimeout(() => {
+        const fn = cb;
         const metadata = effectsMetadata.get(fn);
         if (metadata && metadata.cleanupFns.size > 0) {
           metadata.cleanupFns.forEach((cleanup) => cleanup());
@@ -95,8 +102,19 @@ export function signal<T = unknown>(
         cbStack.push(fn);
         fn();
         cbStack.pop();
-      }),
-    );
+      });
+      // Promise.resolve(cb).then((fn) => {
+      //   const metadata = effectsMetadata.get(fn);
+      //   if (metadata && metadata.cleanupFns.size > 0) {
+      //     metadata.cleanupFns.forEach((cleanup) => cleanup());
+      //     metadata.cleanupFns.clear();
+      //   }
+
+      //   cbStack.push(fn);
+      //   fn();
+      //   cbStack.pop();
+      // })
+    });
     // subscribers.forEach(cb => cb())
   };
 
@@ -189,6 +207,7 @@ export function effect(
 
   effectStack.push(cb);
   cb();
+  componentStackFunc[componentStackFunc.length - 1]?.(cb);
   effectStack.pop();
 
   cbStack.pop();

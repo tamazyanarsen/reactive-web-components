@@ -14,9 +14,7 @@ import { effect, isReactiveSignal, ReactiveSignal, signal } from "../signal";
 import {
   appendContentItem,
   elementHelpers,
-  htmlEffectWrapper,
-  initComponent,
-  textContentWrapper
+  initComponent
 } from "./element-helper";
 
 export const createElement = <K extends HtmlTagName>(
@@ -24,9 +22,7 @@ export const createElement = <K extends HtmlTagName>(
   config?: ComponentInitConfig<HTMLElementTagNameMap[K]>,
 ): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName);
-  const component = {
-    ...elementHelpers(wrapper),
-  };
+  const component = elementHelpers(wrapper);
   return initComponent(component, config);
 };
 
@@ -72,36 +68,36 @@ export const getSignalContent = (cb: CompFuncContent) =>
     });
 
 
-type WrapFuncReturnType<Cb extends CompFuncContent> =
-  ReturnType<Cb> extends any[]
-  ? ComponentConfig<any>[]
-  : ComponentConfig<any>;
-/**
- * @deprecated
- */
-export const getReactiveTemplate = <Cb extends CompFuncContent>(cb: Cb): ReturnType<typeof cb> => {
-  const handleItem = (item: ComponentContent): ComponentConfig<any> => {
-    if (typeof item === "string") {
-      if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
-      else return createEl('div')() as ComponentConfig<any>;
-    } else if (isReactiveSignal(item)) {
-      return elementHelpers(htmlEffectWrapper(item)) as ComponentConfig<any>;
-    } else return item as ComponentConfig<any>;
-  }
+// type WrapFuncReturnType<Cb extends CompFuncContent> =
+//   ReturnType<Cb> extends any[]
+//   ? ComponentConfig<any>[]
+//   : ComponentConfig<any>;
+// /**
+//  * @deprecated
+//  */
+// export const getReactiveTemplate = <Cb extends CompFuncContent>(cb: Cb): ReturnType<typeof cb> => {
+//   const handleItem = (item: ComponentContent): ComponentConfig<any> => {
+//     if (typeof item === "string") {
+//       if (item.trim().length > 0) return elementHelpers(textContentWrapper(item));
+//       else return createEl('div')() as ComponentConfig<any>;
+//     } else if (isReactiveSignal(item)) {
+//       return elementHelpers(htmlEffectWrapper(item)) as ComponentConfig<any>;
+//     } else return item as ComponentConfig<any>;
+//   }
 
-  const wrapFunc = (): WrapFuncReturnType<Cb> => {
-    const res = cb()
-    if (res instanceof Array && Array.isArray(res)) {
-      return res.map(handleItem) as WrapFuncReturnType<Cb>;
-    } else {
-      return handleItem(res) as WrapFuncReturnType<Cb>;
-    }
-  }
+//   const wrapFunc = (): WrapFuncReturnType<Cb> => {
+//     const res = cb()
+//     if (res instanceof Array && Array.isArray(res)) {
+//       return res.map(handleItem) as WrapFuncReturnType<Cb>;
+//     } else {
+//       return handleItem(res) as WrapFuncReturnType<Cb>;
+//     }
+//   }
 
-  // const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
+//   // const wrapFunc = (): ComponentConfig<any>[] => [cb()].flat().map(handleItem)
 
-  return signalComponent(wrapFunc) as ReturnType<typeof cb>;
-}
+//   return signalComponent(wrapFunc) as ReturnType<typeof cb>;
+// }
 
 
 /**
