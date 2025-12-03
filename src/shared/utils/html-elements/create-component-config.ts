@@ -43,13 +43,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     protected wrapper: T;
     hostElement: T;
 
-    // private effects: (() => void)[] = [];
-
     constructor(wrapper: T) {
-        // const effectCleanupHandleEvent = (e: () => void) => {
-        //     this.effects.push(e);
-        // }
-        // componentStackFunc.push(effectCleanupHandleEvent);
         this.wrapper = wrapper;
         this.hostElement = wrapper;
     }
@@ -99,10 +93,6 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     setHtmlContent: ComponentConfig<T>["setHtmlContent"] = (content) => {
         setHtmlContent(this.wrapper, content);
         return this;
-    }
-
-    test() {
-        console.log("test");
     }
 
     addEventlistener(
