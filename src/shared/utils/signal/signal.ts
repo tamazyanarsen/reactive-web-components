@@ -7,7 +7,11 @@ import {
   UnwrapSignal,
 } from "./signal.type";
 
-export let isEffectDebugEnabled = false;
+let isEffectDebugEnabled = false;
+
+export const setEffectDebugEnabled = (enabled: boolean) => {
+  isEffectDebugEnabled = enabled;
+};
 
 export const effectMap = new Map<
   string,
