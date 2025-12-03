@@ -221,7 +221,7 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
     });
 
     // Сохраняем текущее состояние как старое для следующего сравнения
-    oldItems = newItems;
+    oldItems = [...newItems.map(item => ({ ...item }))];
 
     /**
      * Создает эффекты для рендеринга элементов
