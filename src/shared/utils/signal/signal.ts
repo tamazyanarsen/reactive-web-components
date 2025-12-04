@@ -25,6 +25,7 @@ export const effectMap = new Map<
 interface EffectMetadata {
   parent?: () => void;
   cleanupFns: Set<() => void>;
+  children: Set<() => void>;
 }
 
 const effectsMetadata = new WeakMap<() => void, EffectMetadata>();
@@ -90,8 +91,25 @@ export function signal<T = unknown>(
   result.forceSet = function (value: T) {
     initValue = value;
     subscribers.forEach((cb) => {
-      setTimeout(() => {
-        const fn = cb;
+      // setTimeout(() => {
+      //   const fn = cb;
+      //   const metadata = effectsMetadata.get(fn);
+      //   if (metadata && metadata.cleanupFns.size > 0) {
+      //     metadata.cleanupFns.forEach((cleanup) => cleanup());
+      //     metadata.cleanupFns.clear();
+      //   }
+
+      //   if(metadata) {
+      //     metadata.children.forEach(() => {
+      //       // effectsMetadata.get(child)?.cleanupFns.forEach(cleanup => cleanup());
+      //     });
+      //   }
+
+      //   cbStack.push(fn);
+      //   fn();
+      //   cbStack.pop();
+      // });
+      Promise.resolve(cb).then((fn) => {
         const metadata = effectsMetadata.get(fn);
         if (metadata && metadata.cleanupFns.size > 0) {
           metadata.cleanupFns.forEach((cleanup) => cleanup());
@@ -101,20 +119,8 @@ export function signal<T = unknown>(
         cbStack.push(fn);
         fn();
         cbStack.pop();
-      });
-      // Promise.resolve(cb).then((fn) => {
-      //   const metadata = effectsMetadata.get(fn);
-      //   if (metadata && metadata.cleanupFns.size > 0) {
-      //     metadata.cleanupFns.forEach((cleanup) => cleanup());
-      //     metadata.cleanupFns.clear();
-      //   }
-
-      //   cbStack.push(fn);
-      //   fn();
-      //   cbStack.pop();
-      // })
+      })
     });
-    // subscribers.forEach(cb => cb())
   };
 
   result.set = function (
@@ -181,12 +187,14 @@ export function effect(
   }
 
   if (!effectsMetadata.has(cb)) {
-    effectsMetadata.set(cb, { cleanupFns: new Set() });
+    effectsMetadata.set(cb, { cleanupFns: new Set(), children: new Set() });
   }
 
   const metadata = effectsMetadata.get(cb)!;
   if (parentCb) {
     metadata.parent = parentCb;
+    const parentMetadata = effectsMetadata.get(parentCb);
+    parentMetadata?.children.add(cb);
   } else {
     delete metadata.parent;
   }
