@@ -1,1 +1,1 @@
-export const componentStackFunc: ((e: () => void) => void)[] = [];
+export const componentStackFunc: ((e: Set<() => void>) => void)[] = [];

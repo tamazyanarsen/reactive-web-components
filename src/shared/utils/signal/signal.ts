@@ -22,15 +22,21 @@ export const effectMap = new Map<
   }
 >();
 
-interface EffectMetadata {
-  parent?: () => void;
-  cleanupFns: Set<() => void>;
-  children: Set<() => void>;
-}
-
-const effectsMetadata = new WeakMap<() => void, EffectMetadata>();
-const effectStack: (() => void)[] = [];
 const cbStack: (() => void)[] = [];
+
+// список вложенных эффектов
+const effectStack: (() => void)[] = [];
+
+// список очисток дочерних эффектов
+const effectMetadata = new WeakMap<() => void, Set<() => void>>();
+
+// список подписчиков сигналов
+const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
+
+// список сигналов для каждого эффекта
+const effectSubscribers = new WeakMap<() => void, Set<ReactiveSignal<any>>>();
+
+const selfCleanupSet = 'selfCleanupSet'
 
 export function signal<T = unknown>(
   initValue: T,
@@ -39,39 +45,48 @@ export function signal<T = unknown>(
     name?: string;
   },
 ): ReactiveSignal<T> {
-  const subscribers = new Set<() => void>();
+  // const subscribers = new Set<() => void>();
 
   let globalCompareFn = config?.signalCompareFn || (() => true);
 
   function result() {
     const currCb = effectStack[effectStack.length - 1];
+
     if (currCb && !("fake" in currCb && currCb.fake)) {
-      const metadata = effectsMetadata.get(currCb);
-      const parentCb = metadata?.parent;
-
-      if (parentCb) {
-        const parentMetadata = effectsMetadata.get(parentCb);
-        parentMetadata?.cleanupFns.add(() => {
-          metadata?.cleanupFns.forEach(cleanup => cleanup());
-          metadata?.cleanupFns.clear();
-          subscribers.delete(currCb);
-        });
-      }
-
-      if (!('selfCleanup' in currCb)) (currCb as any).selfCleanup = [];
-      (currCb as any).selfCleanup.push(() => {
-        subscribers.delete(currCb);
+      if (!(selfCleanupSet in currCb)) (currCb as any)[selfCleanupSet] = new Set();
+      (currCb as any)[selfCleanupSet].add(() => {
+        signalSubscribers.get(result)?.delete(currCb);
       });
 
-      subscribers.add(currCb);
+      // добавляем список эффектов, которые подписаны на этот сигнал
+      if (!signalSubscribers.has(result)) { signalSubscribers.set(result, new Set()) }
+      signalSubscribers.get(result)?.add(currCb);
+
+      // добавляем список сигналов, которые внутри эффекта
+      if (!effectSubscribers.has(currCb)) { effectSubscribers.set(currCb, new Set()) }
+      effectSubscribers.get(currCb)?.add(result);
+
       if (isEffectDebugEnabled) { effectMap.get((currCb as any).effectId)?.signals.push(result); }
     }
     return initValue;
   }
 
+  let signalId = '';
+  Object.defineProperty(result, 'signalId', {
+    get: () => {
+      return signalId
+    },
+    set: (value: string) => {
+      signalId = value;
+    },
+  });
+
   result.signalId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
 
-  result.getSubscribers = () => [...subscribers];
+  result.setName = function (name: string) {
+    result.signalId = `${name}_${Math.random().toString(36).substring(2, 15)}`;
+    return result;
+  };
 
   result.setCompareFn = function (compareFn: CompareFn<T>) {
     globalCompareFn = compareFn;
@@ -79,7 +94,11 @@ export function signal<T = unknown>(
   };
 
   result.clearSubscribers = function () {
-    subscribers.clear();
+    signalSubscribers.get(result)?.clear();
+  };
+
+  result.getSubscribers = function () {
+    return signalSubscribers.get(result);
   };
 
   result.peek = function () {
@@ -90,36 +109,16 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    subscribers.forEach((cb) => {
-      // setTimeout(() => {
-      //   const fn = cb;
-      //   const metadata = effectsMetadata.get(fn);
-      //   if (metadata && metadata.cleanupFns.size > 0) {
-      //     metadata.cleanupFns.forEach((cleanup) => cleanup());
-      //     metadata.cleanupFns.clear();
-      //   }
-
-      //   if(metadata) {
-      //     metadata.children.forEach(() => {
-      //       // effectsMetadata.get(child)?.cleanupFns.forEach(cleanup => cleanup());
-      //     });
-      //   }
-
-      //   cbStack.push(fn);
-      //   fn();
-      //   cbStack.pop();
-      // });
+    signalSubscribers.get(result)?.forEach(cb => {
+      effectMetadata.get(cb)?.forEach(clean => {
+        clean();
+      });
+      effectMetadata.get(cb)?.clear();
       Promise.resolve(cb).then((fn) => {
-        const metadata = effectsMetadata.get(fn);
-        if (metadata && metadata.cleanupFns.size > 0) {
-          metadata.cleanupFns.forEach((cleanup) => cleanup());
-          metadata.cleanupFns.clear();
-        }
-
         cbStack.push(fn);
         fn();
         cbStack.pop();
-      })
+      });
     });
   };
 
@@ -182,31 +181,30 @@ export function effect(
   if (isEffectDebugEnabled) {
     effectMap.set(randomId, {
       signals: [],
-      parent: (parentCb as any)?.effectId || null,
+      // parent: (parentCb as any)?.effectId || null,
+      parent: null,
     });
   }
 
-  if (!effectsMetadata.has(cb)) {
-    effectsMetadata.set(cb, { cleanupFns: new Set(), children: new Set() });
-  }
-
-  const metadata = effectsMetadata.get(cb)!;
-  if (parentCb) {
-    metadata.parent = parentCb;
-    const parentMetadata = effectsMetadata.get(parentCb);
-    parentMetadata?.children.add(cb);
-  } else {
-    delete metadata.parent;
-  }
-
   cbStack.push(cb);
-
   effectStack.push(cb);
   cb();
-  componentStackFunc[componentStackFunc.length - 1]?.(cb);
+  componentStackFunc[componentStackFunc.length - 1]?.((cb as any)[selfCleanupSet] || new Set());
   effectStack.pop();
-
   cbStack.pop();
+
+  if (parentCb) {
+    if (!effectMetadata.has(parentCb)) { effectMetadata.set(parentCb, new Set()) }
+    effectMetadata.get(parentCb)?.add(() => {
+      const signals = effectSubscribers.get(cb);
+      signals?.forEach(s => {
+        signalSubscribers.get(s)?.delete(cb);
+      });
+      effectMetadata.get(cb)?.forEach(clean => clean());
+      effectMetadata.get(cb)?.clear();
+      effectMetadata.delete(cb);
+    });
+  }
 }
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(

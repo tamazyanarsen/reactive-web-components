@@ -15,6 +15,8 @@ export interface ReactiveSignal<T> {
 	update(cb: SignalUpdateFunc<T>): void;
 	clearSubscribers(): void;
 	peek(): Readonly<T>
+	setName(name: string): ReactiveSignal<T>;
+	getSubscribers(): Set<() => void> | undefined;
 	pipe<R>(
 		fn: (sg: T) => R,
 		config?: {

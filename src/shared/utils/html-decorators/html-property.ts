@@ -9,7 +9,6 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { div } from "../html-fabric";
 import { effect, isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
@@ -97,11 +96,11 @@ export const component = (
 
       static renderTagName = selector;
 
-      effectCleanupHandleEvent = (e: () => void) => {
+      effectCleanupHandleEvent = (e: Set<() => void>) => {
         this.effects.add(e);
       }
 
-      effects = new Set<() => void>();
+      effects = new Set<Set<() => void>>();
 
       constructor(...params: any[]) {
         projectLog("constructor", `%c${selector}%c`);
@@ -114,14 +113,7 @@ export const component = (
 
       render(): ComponentConfig<any> {
         projectLog('rwc: render from new class');
-        let result = div();
-        const wrapperEffectCallback = () => {
-          projectLog('wrapperEffectCallback');
-          result = target.prototype.render.call(this);
-        }
-        wrapperEffectCallback.fake = true;
-        effect(wrapperEffectCallback)
-        return result;
+        return target.prototype.render.call(this);
       }
 
       attributeChangedCallback(
@@ -165,160 +157,165 @@ export const component = (
       }
 
       connectedCallback() {
-        projectLog('rwc: connectedCallback');
-        projectLog("connectedCallback", `%c${selector}%c`, this);
+        componentStackFunc.push(this.effectCleanupHandleEvent)
+        const wrapperEffect = () => {
+          projectLog('rwc: connectedCallback');
+          projectLog("connectedCallback", `%c${selector}%c`, this);
 
-        if (this.providers && Object.keys(this.providers).length > 0) {
-          projectLog("WRAPPER for providers", selector);
-          Object.entries(this.providers).forEach(
-            ([provider, providerValue]) => {
-              projectLog("register provider", provider, providerValue());
-              this.addEventListener(provider, (e: Event) => {
-                projectLog("send provider", provider, providerValue());
-                const customEvent = e as ContextEvent<any>;
-                if (customEvent.detail?.context === provider) {
-                  customEvent.stopPropagation();
-                  customEvent.detail.callback(providerValue);
-                }
-              });
-            },
-          );
-        }
+          if (this.providers && Object.keys(this.providers).length > 0) {
+            projectLog("WRAPPER for providers", selector);
+            Object.entries(this.providers).forEach(
+              ([provider, providerValue]) => {
+                projectLog("register provider", provider, providerValue());
+                this.addEventListener(provider, (e: Event) => {
+                  projectLog("send provider", provider, providerValue());
+                  const customEvent = e as ContextEvent<any>;
+                  if (customEvent.detail?.context === provider) {
+                    customEvent.stopPropagation();
+                    customEvent.detail.callback(providerValue);
+                  }
+                });
+              },
+            );
+          }
 
-        // подключаем все инжекты
-        this.checkInjects();
+          // подключаем все инжекты
+          this.checkInjects();
 
-        (target.prototype[eventFieldName] as string[] | undefined)?.forEach(
-          (fieldName) => {
-            // @ts-expect-error index string
-            this[fieldName] = (value: unknown) => {
-              const config = (target.prototype[EVENT_CONFIG] as EventConfigObj)[
-                fieldName
-              ];
-              const { bubbles, composed } = config;
-              if (isReactiveSignal(value)) {
-                effect(() => {
-                  colorLog("@oemit reactive value", value());
+          (target.prototype[eventFieldName] as string[] | undefined)?.forEach(
+            (fieldName) => {
+              // @ts-expect-error index string
+              this[fieldName] = (value: unknown) => {
+                const config = (target.prototype[EVENT_CONFIG] as EventConfigObj)[
+                  fieldName
+                ];
+                const { bubbles, composed } = config;
+                if (isReactiveSignal(value)) {
+                  effect(() => {
+                    colorLog("@oemit reactive value", value());
+                    this.dispatchEvent(
+                      new CustomEvent(fieldName, {
+                        detail: value(),
+                        bubbles,
+                        composed,
+                      }),
+                    );
+                  });
+                } else {
+                  colorLog("@oemit value", value);
                   this.dispatchEvent(
                     new CustomEvent(fieldName, {
-                      detail: value(),
+                      detail: value,
                       bubbles,
                       composed,
                     }),
                   );
-                });
-              } else {
-                colorLog("@oemit value", value);
-                this.dispatchEvent(
-                  new CustomEvent(fieldName, {
-                    detail: value,
-                    bubbles,
-                    composed,
-                  }),
-                );
-              }
-            };
-          },
-        );
+                }
+              };
+            },
+          );
 
-        projectLog("start render", `%c${selector}%c`, selector);
+          projectLog("start render", `%c${selector}%c`, selector);
 
-        const insertRenderTemplate = () => {
-          projectLog('rwc: insertRenderTemplate');
-          componentStackFunc.push(this.effectCleanupHandleEvent)
-          const renderComponent = this.render() as ComponentConfig<any>;
-          this.shadow.appendChild(renderComponent.hostElement);
-          checkCall(this, target.prototype.connectedCallback);
-          this.appendSlotContent();
-          componentStackFunc.pop();
-        };
-
-        if (this.rootStyle && !target.styles) {
-          const isStylePromise = (
-            value: RootStyle,
-          ): value is
-            | Promise<typeof import("*?inline")>
-            | Promise<typeof import("*?inline")>[] =>
-            value instanceof Promise ||
-            (Array.isArray(value) && value.every((v) => v instanceof Promise));
-
-          const styleValue = this.rootStyle;
-
-          const appendStyle = (css: string) => {
-            const sheet = new CSSStyleSheet();
-            sheet.replaceSync(css);
-            this.shadow.adoptedStyleSheets.push(sheet);
-
-            const propertyCss = new CSSStyleSheet();
-            propertyCss.replaceSync(css.slice(css.indexOf("@property")));
-            document.adoptedStyleSheets.push(propertyCss);
+          const insertRenderTemplate = () => {
+            projectLog('rwc: insertRenderTemplate');
+            const renderComponent = this.render() as ComponentConfig<any>;
+            this.shadow.appendChild(renderComponent.hostElement);
+            checkCall(this, target.prototype.connectedCallback);
+            this.appendSlotContent();
           };
 
-          if (isStylePromise(styleValue)) {
-            const stylePromise: Promise<typeof import("*?inline")>[] = [];
-            if (!Array.isArray(styleValue)) {
-              stylePromise.push(styleValue);
+          if (this.rootStyle && !target.styles) {
+            const isStylePromise = (
+              value: RootStyle,
+            ): value is
+              | Promise<typeof import("*?inline")>
+              | Promise<typeof import("*?inline")>[] =>
+              value instanceof Promise ||
+              (Array.isArray(value) && value.every((v) => v instanceof Promise));
+
+            const styleValue = this.rootStyle;
+
+            const appendStyle = (css: string) => {
+              const sheet = new CSSStyleSheet();
+              sheet.replaceSync(css);
+              this.shadow.adoptedStyleSheets.push(sheet);
+
+              const propertyCss = new CSSStyleSheet();
+              propertyCss.replaceSync(css.slice(css.indexOf("@property")));
+              document.adoptedStyleSheets.push(propertyCss);
+            };
+
+            if (isStylePromise(styleValue)) {
+              const stylePromise: Promise<typeof import("*?inline")>[] = [];
+              if (!Array.isArray(styleValue)) {
+                stylePromise.push(styleValue);
+              } else {
+                stylePromise.push(...styleValue);
+              }
+              Promise.all(stylePromise)
+                .then((v) => v.forEach((e) => appendStyle(e.default)))
+                .then(() => insertRenderTemplate());
             } else {
-              stylePromise.push(...styleValue);
+              const newStyleList = [];
+              if (Array.isArray(styleValue)) {
+                newStyleList.push(...styleValue);
+              } else {
+                newStyleList.push(styleValue);
+              }
+              newStyleList.forEach((e) => appendStyle(e));
+              insertRenderTemplate();
             }
-            Promise.all(stylePromise)
-              .then((v) => v.forEach((e) => appendStyle(e.default)))
-              .then(() => insertRenderTemplate());
           } else {
-            const newStyleList = [];
-            if (Array.isArray(styleValue)) {
-              newStyleList.push(...styleValue);
-            } else {
-              newStyleList.push(styleValue);
-            }
-            newStyleList.forEach((e) => appendStyle(e));
             insertRenderTemplate();
           }
-        } else {
-          insertRenderTemplate();
-        }
 
-        if (this.slotContext && Object.keys(this.slotContext).length > 0) {
-          this.shadow.querySelectorAll("slot").forEach((slotEl) => {
-            projectLog(
-              this.slotContext,
-              this.slotContext && this.slotContext[slotEl.name],
-            );
-            colorLog(
-              "@bslot element",
-              slotEl,
-              `name:${slotEl.name};`,
-              slotEl.assignedElements(),
-            );
-            // this.querySelectorAll(`[slot="${slotEl.name}"]`)
-            slotEl.assignedElements().forEach((slotItem) => {
-              const slotContextValue = this.slotContext![slotEl.name];
-              if (this.slotContext && isReactiveSignal(slotContextValue)) {
-                colorLog(
-                  "@oslot element",
-                  slotEl,
-                  `name:${slotEl.name};`,
-                  slotEl.assignedElements(),
-                );
-                effect(() => {
-                  slotItem.dispatchEvent(
-                    new CustomEvent("handleSlotContext", {
-                      detail: slotContextValue(),
-                    }),
+          if (this.slotContext && Object.keys(this.slotContext).length > 0) {
+            this.shadow.querySelectorAll("slot").forEach((slotEl) => {
+              projectLog(
+                this.slotContext,
+                this.slotContext && this.slotContext[slotEl.name],
+              );
+              colorLog(
+                "@bslot element",
+                slotEl,
+                `name:${slotEl.name};`,
+                slotEl.assignedElements(),
+              );
+              // this.querySelectorAll(`[slot="${slotEl.name}"]`)
+              slotEl.assignedElements().forEach((slotItem) => {
+                const slotContextValue = this.slotContext![slotEl.name];
+                if (this.slotContext && isReactiveSignal(slotContextValue)) {
+                  colorLog(
+                    "@oslot element",
+                    slotEl,
+                    `name:${slotEl.name};`,
+                    slotEl.assignedElements(),
                   );
-                });
-              }
+                  effect(() => {
+                    slotItem.dispatchEvent(
+                      new CustomEvent("handleSlotContext", {
+                        detail: slotContextValue(),
+                      }),
+                    );
+                  });
+                }
+              });
             });
-          });
+          }
+
         }
+        wrapperEffect.fake = true;
+        effect(wrapperEffect)
+        componentStackFunc.pop();
       }
 
       disconnectedCallback() {
         this.shadow.replaceChildren();
         this.replaceChildren();
         checkCall(this, target.prototype.disconnectedCallback);
-        this.effects.forEach(effectCb => {
-          (effectCb as any).selfCleanup?.forEach((cleanup: () => void) => cleanup());
+        this.effects.forEach(effectCbSet => {
+          (effectCbSet as Set<()=>void>).forEach((cleanup: () => void) => cleanup());
         });
         this.effects.clear();
       }
