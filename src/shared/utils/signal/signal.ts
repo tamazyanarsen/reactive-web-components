@@ -170,17 +170,6 @@ export function effect(
   const randomId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
   projectLog("current effect", `%c${randomId}%c`);
 
-  const oldCb = cb;
-
-  cb = () => {
-    projectLog("current effect callback", `%c${randomId}%c`);
-    return oldCb();
-  };
-
-  if ("fake" in oldCb && oldCb.fake) {
-    (cb as any).fake = true;
-  }
-
   (cb as any).effectId = randomId;
 
   const parentCb = cbStack[cbStack.length - 1];
