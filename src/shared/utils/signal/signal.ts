@@ -171,6 +171,7 @@ export function effect(
     name?: string;
   },
 ) {
+  const isFake = "fake" in cb && cb.fake;
   const randomId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
   projectLog("current effect", `%c${randomId}%c`);
 
@@ -186,12 +187,14 @@ export function effect(
     });
   }
 
-  cbStack.push(cb);
+  if(!isFake) cbStack.push(cb);
   effectStack.push(cb);
   cb();
-  componentStackFunc[componentStackFunc.length - 1]?.((cb as any)[selfCleanupSet] || new Set());
+  if (!isFake) {
+    componentStackFunc[componentStackFunc.length - 1]?.((cb as any)[selfCleanupSet] || new Set());
+  }
   effectStack.pop();
-  cbStack.pop();
+  if(!isFake)cbStack.pop();
 
   if (parentCb) {
     if (!effectMetadata.has(parentCb)) { effectMetadata.set(parentCb, new Set()) }
@@ -203,6 +206,8 @@ export function effect(
       effectMetadata.get(cb)?.forEach(clean => clean());
       effectMetadata.get(cb)?.clear();
       effectMetadata.delete(cb);
+      
+      
     });
   }
 }
