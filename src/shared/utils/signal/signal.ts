@@ -51,6 +51,8 @@ export function signal<T = unknown>(
       if (parentCb) {
         const parentMetadata = effectsMetadata.get(parentCb);
         parentMetadata?.cleanupFns.add(() => {
+          metadata?.cleanupFns.forEach(cleanup => cleanup());
+          metadata?.cleanupFns.clear();
           subscribers.delete(currCb);
         });
       }
