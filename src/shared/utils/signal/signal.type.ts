@@ -8,7 +8,6 @@ export type CompareFn<T> = (oldValue: T, newValue: T) => boolean
 
 export interface ReactiveSignal<T> {
 	(): T;
-	oldValue: Readonly<T>;
 	initValue: Readonly<T>;
 	set(value: T): void;
 	forceSet(value: T): void;

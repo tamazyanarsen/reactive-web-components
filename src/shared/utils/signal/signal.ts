@@ -85,10 +85,7 @@ export function signal<T = unknown>(
 
   result.initValue = Object.freeze(initValue);
 
-  result.oldValue = Object.freeze(initValue);
-
   result.forceSet = function (value: T) {
-    result.oldValue = Object.freeze(initValue);
     initValue = value;
     subscribers.forEach((cb) => {
       setTimeout(() => {
@@ -208,7 +205,6 @@ export const isReactiveSignal = <R extends ReactiveSignal<any>>(
   Boolean(v) &&
   ["object", "function"].includes(typeof v) &&
   "set" in v &&
-  "oldValue" in v &&
   "update" in v &&
   "forceSet" in v;
 

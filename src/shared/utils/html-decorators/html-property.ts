@@ -98,10 +98,10 @@ export const component = (
       static renderTagName = selector;
 
       effectCleanupHandleEvent = (e: () => void) => {
-        this.effects.push(e);
+        this.effects.add(e);
       }
 
-      effects: (() => void)[] = [];
+      effects = new Set<() => void>();
 
       constructor(...params: any[]) {
         projectLog("constructor", `%c${selector}%c`);
@@ -320,7 +320,7 @@ export const component = (
         this.effects.forEach(effectCb => {
           (effectCb as any).selfCleanup?.forEach((cleanup: () => void) => cleanup());
         });
-        this.effects = [];
+        this.effects.clear();
       }
     }
     NewClass.toString = () => selector;
