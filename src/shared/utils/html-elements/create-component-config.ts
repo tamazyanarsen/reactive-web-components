@@ -24,7 +24,7 @@ export const setHtmlContent = <T extends HTMLElement = HTMLElement>(
     htmlElement: T,
     content: string | unknown,
 ) => {
-    htmlElement.innerHTML = "";
+    htmlElement.replaceChildren();
     return addHtmlContent(htmlElement, content);
 };
 
@@ -253,7 +253,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     clear: ComponentConfig<T>["clear"] = () => {
-        this.wrapper.innerHTML = "";
+        this.wrapper.replaceChildren();
         return this;
     }
 }

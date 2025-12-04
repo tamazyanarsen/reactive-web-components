@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { combineLatest, div, effect, signal, when } from "@shared/utils";
+import { BaseElement, combineLatest, component, div, effect, property, signal, when } from "@shared/utils";
 
 const testSignal = signal(false)
 
@@ -32,3 +32,14 @@ effect(() => {
     })
   }, 2000);
 })
+
+@component('app-test1')
+export class Test extends BaseElement {
+  @property()
+  test = signal(0)
+  render() {
+    // здесь эффект не создается заново, здесь перевызывается тот же эффект без какого-либо родительского эффекта
+    // а старый div(this.test().toString()) становится detached
+    return div('test', ()=> div(this.test().toString()))
+  }
+}

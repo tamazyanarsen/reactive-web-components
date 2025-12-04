@@ -114,9 +114,9 @@ export function signal<T = unknown>(
         clean();
       });
       effectMetadata.get(cb)?.clear();
-      Promise.resolve(cb).then((fn) => {
-        cbStack.push(fn);
-        fn();
+      Promise.resolve().then(() => {
+        cbStack.push(cb);
+        cb();
         cbStack.pop();
       });
     });
@@ -187,14 +187,14 @@ export function effect(
     });
   }
 
-  if(!isFake) cbStack.push(cb);
+  if (!isFake) cbStack.push(cb);
   effectStack.push(cb);
   cb();
   if (!isFake) {
     componentStackFunc[componentStackFunc.length - 1]?.((cb as any)[selfCleanupSet] || new Set());
   }
   effectStack.pop();
-  if(!isFake)cbStack.pop();
+  if (!isFake) cbStack.pop();
 
   if (parentCb) {
     if (!effectMetadata.has(parentCb)) { effectMetadata.set(parentCb, new Set()) }
@@ -206,8 +206,8 @@ export function effect(
       effectMetadata.get(cb)?.forEach(clean => clean());
       effectMetadata.get(cb)?.clear();
       effectMetadata.delete(cb);
-      
-      
+
+
     });
   }
 }
