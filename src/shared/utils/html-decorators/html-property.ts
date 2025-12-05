@@ -9,7 +9,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { componentEffectMap, effect, effectCleanup, effectComponentMap, isReactiveSignal, ReactiveSignal } from "../signal";
+import { componentEffectMap, effect, effectCleanup, isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -314,13 +314,13 @@ export const component = (
         this.shadow.replaceChildren();
         this.replaceChildren();
 
+        const componentEffectMapRef = new WeakRef(componentEffectMap).deref();
+        const effectCleanupRef = new WeakRef(effectCleanup).deref();
+
         // очищаем эффекты компонента
-        componentEffectMap.get(this)?.forEach(effectCb => {
-          effectCleanup.get(effectCb)?.forEach(cleanup => cleanup());
-          effectCleanup.delete(effectCb);
-          effectComponentMap.delete(effectCb);
+        componentEffectMapRef?.get(this)?.forEach(effectCb => {
+          effectCleanupRef?.get(effectCb)?.forEach(cleanup => cleanup());
         });
-        componentEffectMap.delete(this);
         // ------------------------------------------------------------
 
         checkCall(this, target.prototype.disconnectedCallback);

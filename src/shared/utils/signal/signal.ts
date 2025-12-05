@@ -28,14 +28,8 @@ const cbStack: (() => void)[] = [];
 // список вложенных эффектов
 const effectStack: (() => void)[] = [];
 
-// список очисток дочерних эффектов
-const effectMetadata = new WeakMap<() => void, Set<() => void>>();
-
 // список подписчиков сигналов
 const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
-
-// список сигналов для каждого эффекта
-const effectSubscribers = new WeakMap<() => void, Set<ReactiveSignal<any>>>();
 
 // список очисток эффектов
 export const effectCleanup = new WeakMap<() => void, Set<() => void>>();
@@ -43,7 +37,7 @@ export const effectCleanup = new WeakMap<() => void, Set<() => void>>();
 // Map для компонентов и их эффектов
 export const componentEffectMap = new WeakMap<BaseElement, Set<() => void>>();
 
-export const effectComponentMap = new WeakMap<() => void, BaseElement>();
+export const effectComponentMap = new WeakMap<() => void, WeakRef<BaseElement>>();
 
 export function signal<T = unknown>(
   initValue: T,
@@ -52,27 +46,24 @@ export function signal<T = unknown>(
     name?: string;
   },
 ): ReactiveSignal<T> {
-  // const subscribers = new Set<() => void>();
-
   let globalCompareFn = config?.signalCompareFn || (() => true);
 
   function result() {
     const currCb = effectStack[effectStack.length - 1];
 
     if (currCb && !("fake" in currCb && currCb.fake)) {
+      const signalSubscribersRef = new WeakRef(signalSubscribers).deref();
+      const effectCleanupRef = new WeakRef(effectCleanup).deref();
+
       // добавляем список эффектов, которые подписаны на этот сигнал
-      if (!signalSubscribers.has(result)) { signalSubscribers.set(result, new Set()) }
-      signalSubscribers.get(result)?.add(currCb);
+      if (!signalSubscribersRef?.has(result)) { signalSubscribersRef?.set(result, new Set()) }
+      signalSubscribersRef?.get(result)?.add(currCb);
 
       // добавляем функцию очистки для эффекта
-      if (!effectCleanup.has(currCb)) effectCleanup.set(currCb, new Set());
-      effectCleanup.get(currCb)?.add(() => {
-        signalSubscribers.get(result)?.delete(currCb);
+      if (!effectCleanupRef?.has(currCb)) effectCleanupRef?.set(currCb, new Set());
+      effectCleanupRef?.get(currCb)?.add(() => {
+        signalSubscribersRef?.get(result)?.delete(currCb);
       });
-
-      // добавляем список сигналов, которые внутри эффекта
-      if (!effectSubscribers.has(currCb)) { effectSubscribers.set(currCb, new Set()) }
-      effectSubscribers.get(currCb)?.add(result);
 
       if (isEffectDebugEnabled) { effectMap.get((currCb as any).effectId)?.signals.push(result); }
     }
@@ -102,11 +93,11 @@ export function signal<T = unknown>(
   };
 
   result.clearSubscribers = function () {
-    signalSubscribers.get(result)?.clear();
+    new WeakRef(signalSubscribers).deref()?.get(result)?.clear();
   };
 
   result.getSubscribers = function () {
-    return signalSubscribers.get(result);
+    return new WeakRef(signalSubscribers).deref()?.get(result);
   };
 
   result.peek = function () {
@@ -117,13 +108,10 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    signalSubscribers.get(result)?.forEach(cb => {
-      effectMetadata.get(cb)?.forEach(clean => {
-        clean();
-      });
-      effectMetadata.get(cb)?.clear();
+    const effectComponentMapRef = new WeakRef(effectComponentMap).deref();
+    new WeakRef(signalSubscribers).deref()?.get(result)?.forEach(cb => {
       Promise.resolve().then(() => {
-        const currComponent = effectComponentMap.get(cb);
+        const currComponent = effectComponentMapRef?.get(cb)?.deref();
         if (currComponent) componentStack.push(currComponent);
         cbStack.push(cb);
         cb();
@@ -188,12 +176,9 @@ export function effect(
 
   (cb as any).effectId = randomId;
 
-  const parentCb = cbStack[cbStack.length - 1];
-
   if (isEffectDebugEnabled) {
     effectMap.set(randomId, {
       signals: [],
-      // parent: (parentCb as any)?.effectId || null,
       parent: null,
     });
   }
@@ -203,28 +188,15 @@ export function effect(
   // добавляем эффект в компонент
   const currComponent = componentStack[componentStack.length - 1];
   if (currComponent && !isFake) {
-    if (!componentEffectMap.has(currComponent)) { componentEffectMap.set(currComponent, new Set()) }
-    componentEffectMap.get(currComponent)?.add(cb);
-    effectComponentMap.set(cb, currComponent);
+    const componentEffectMapRef = new WeakRef(componentEffectMap).deref();
+    if (!componentEffectMapRef?.has(currComponent)) { componentEffectMapRef?.set(currComponent, new Set()) }
+    componentEffectMapRef?.get(currComponent)?.add(cb);
+    new WeakRef(effectComponentMap).deref()?.set(cb, new WeakRef(currComponent));
   }
   // выполняем эффект
   cb();
   effectStack.pop();
   if (!isFake) cbStack.pop();
-
-  if (parentCb && !isFake) {
-    if (!effectMetadata.has(parentCb)) { effectMetadata.set(parentCb, new Set()) }
-    effectMetadata.get(parentCb)?.add(() => {
-      const signals = effectSubscribers.get(cb);
-      signals?.forEach(s => {
-        signalSubscribers.get(s)?.delete(cb);
-      });
-      effectMetadata.get(cb)?.forEach(clean => clean());
-      effectMetadata.get(cb)?.clear();
-      effectMetadata.delete(cb);
-      effectSubscribers.delete(cb);
-    });
-  }
 }
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(

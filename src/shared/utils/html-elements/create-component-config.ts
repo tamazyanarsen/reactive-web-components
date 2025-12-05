@@ -244,7 +244,10 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     addEffect: ComponentConfig<T>["addEffect"] = (cb) => {
+        const isCustom = this.wrapper instanceof BaseElement;
+        if (isCustom) componentStack.push(this.wrapper as unknown as BaseElement);
         effect(() => cb(this, this.hostElement));
+        if (isCustom) componentStack.pop();
         return this;
     }
     addReactiveContent: ComponentConfig<T>["addReactiveContent"] = (content) => {
