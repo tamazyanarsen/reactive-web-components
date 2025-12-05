@@ -1,5 +1,6 @@
-import { componentStackFunc } from "../clean";
+import { componentStack } from "../clean";
 import { projectLog } from "../helpers";
+import { BaseElement } from "../html-elements";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import {
   CompareFn,
@@ -36,7 +37,13 @@ const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
 // список сигналов для каждого эффекта
 const effectSubscribers = new WeakMap<() => void, Set<ReactiveSignal<any>>>();
 
-const selfCleanupSet = 'selfCleanupSet'
+// список очисток эффектов
+export const effectCleanup = new WeakMap<() => void, Set<() => void>>();
+
+// Map для компонентов и их эффектов
+export const componentEffectMap = new WeakMap<BaseElement, Set<() => void>>();
+
+export const effectComponentMap = new WeakMap<() => void, BaseElement>();
 
 export function signal<T = unknown>(
   initValue: T,
@@ -53,14 +60,15 @@ export function signal<T = unknown>(
     const currCb = effectStack[effectStack.length - 1];
 
     if (currCb && !("fake" in currCb && currCb.fake)) {
-      if (!(selfCleanupSet in currCb)) (currCb as any)[selfCleanupSet] = new Set();
-      (currCb as any)[selfCleanupSet].add(() => {
-        signalSubscribers.get(result)?.delete(currCb);
-      });
-
       // добавляем список эффектов, которые подписаны на этот сигнал
       if (!signalSubscribers.has(result)) { signalSubscribers.set(result, new Set()) }
       signalSubscribers.get(result)?.add(currCb);
+
+      // добавляем функцию очистки для эффекта
+      if (!effectCleanup.has(currCb)) effectCleanup.set(currCb, new Set());
+      effectCleanup.get(currCb)?.add(() => {
+        signalSubscribers.get(result)?.delete(currCb);
+      });
 
       // добавляем список сигналов, которые внутри эффекта
       if (!effectSubscribers.has(currCb)) { effectSubscribers.set(currCb, new Set()) }
@@ -115,9 +123,12 @@ export function signal<T = unknown>(
       });
       effectMetadata.get(cb)?.clear();
       Promise.resolve().then(() => {
+        const currComponent = effectComponentMap.get(cb);
+        if (currComponent) componentStack.push(currComponent);
         cbStack.push(cb);
         cb();
         cbStack.pop();
+        if (currComponent) componentStack.pop();
       });
     });
   };
@@ -189,14 +200,19 @@ export function effect(
 
   if (!isFake) cbStack.push(cb);
   effectStack.push(cb);
-  cb();
-  if (!isFake) {
-    componentStackFunc[componentStackFunc.length - 1]?.((cb as any)[selfCleanupSet] || new Set());
+  // добавляем эффект в компонент
+  const currComponent = componentStack[componentStack.length - 1];
+  if (currComponent && !isFake) {
+    if (!componentEffectMap.has(currComponent)) { componentEffectMap.set(currComponent, new Set()) }
+    componentEffectMap.get(currComponent)?.add(cb);
+    effectComponentMap.set(cb, currComponent);
   }
+  // выполняем эффект
+  cb();
   effectStack.pop();
   if (!isFake) cbStack.pop();
 
-  if (parentCb) {
+  if (parentCb && !isFake) {
     if (!effectMetadata.has(parentCb)) { effectMetadata.set(parentCb, new Set()) }
     effectMetadata.get(parentCb)?.add(() => {
       const signals = effectSubscribers.get(cb);
@@ -206,8 +222,7 @@ export function effect(
       effectMetadata.get(cb)?.forEach(clean => clean());
       effectMetadata.get(cb)?.clear();
       effectMetadata.delete(cb);
-
-
+      effectSubscribers.delete(cb);
     });
   }
 }

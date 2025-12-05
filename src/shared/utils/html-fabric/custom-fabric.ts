@@ -15,3 +15,21 @@ export const useCustomComponent = <B extends BaseElementConstructor>(comp: B, se
     return createCustom(newClassComponent, isComponentInitConfig(config) ? config : {})(...resultContent)
   }
 }
+
+export const configCustomComponent = <B extends BaseElementConstructor>(comp: B) => {
+  return [
+    (
+      config?: ComponentInitConfig<InstanceType<B>> | ChildrenContent<InstanceType<B>>,
+      ...content: ChildrenContent<InstanceType<B>>[]
+    ) => {
+      const resultContent = [...content];
+      if (config && !isComponentInitConfig(config)) {
+        resultContent.unshift(config as ChildrenContent<InstanceType<B>>);
+      }
+      return createCustom(comp, isComponentInitConfig(config) ? config : {})(...resultContent)
+    },
+    (selector: `${string}-${string}`, isClosed?: boolean) => {
+      return component(selector, isClosed)(comp)
+    }
+  ]
+}

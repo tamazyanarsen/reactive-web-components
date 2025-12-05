@@ -1,5 +1,6 @@
 import { ON_CONNECTED_NAME } from "@shared/constants/constants";
 import { ComponentConfig, CustomComponentConfig, ExtraHTMLElement, SlotTemplate } from "@shared/types/element";
+import { componentStack } from "../clean";
 import { camelToKebab } from "../helpers";
 import { effect, ReactiveSignal } from "../signal";
 import { BaseElement } from "./base-element";
@@ -137,7 +138,10 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     setReactiveAttribute: ComponentConfig<T>["setReactiveAttribute"] = (attrName, valueSignal) => {
+        const isCustom = this.wrapper instanceof BaseElement;
+        if (isCustom) componentStack.push(this.wrapper as unknown as BaseElement);
         effect(() => this.setAttribute(attrName, valueSignal()));
+        if (isCustom) componentStack.pop();
         return this;
     }
     setReactiveCustomAttribute: ComponentConfig<T>["setReactiveCustomAttribute"] = (attrName, valueSignal) => {

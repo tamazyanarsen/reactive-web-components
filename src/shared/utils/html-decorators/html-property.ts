@@ -1,6 +1,6 @@
 import { RootStyle } from "@shared/types";
 import { ComponentConfig, ContextEvent } from "../../types/element";
-import { componentStackFunc } from "../clean";
+import { componentStack } from "../clean";
 import {
   camelToKebab,
   checkCall,
@@ -9,7 +9,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { effect, isReactiveSignal, ReactiveSignal } from "../signal";
+import { componentEffectMap, effect, effectCleanup, effectComponentMap, isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -96,11 +96,11 @@ export const component = (
 
       static renderTagName = selector;
 
-      effectCleanupHandleEvent = (e: Set<() => void>) => {
-        this.effects.add(e);
-      }
+      // effectCleanupHandleEvent = (e: Set<() => void>) => {
+      //   this.effects.add(e);
+      // }
 
-      effects = new Set<Set<() => void>>();
+      // effects = new Set<Set<() => void>>();
 
       constructor(...params: any[]) {
         projectLog("constructor", `%c${selector}%c`);
@@ -157,7 +157,7 @@ export const component = (
       }
 
       connectedCallback() {
-        componentStackFunc.push(this.effectCleanupHandleEvent)
+        componentStack.push(this);
         const wrapperEffect = () => {
           projectLog('rwc: connectedCallback');
           projectLog("connectedCallback", `%c${selector}%c`, this);
@@ -307,17 +307,23 @@ export const component = (
         }
         wrapperEffect.fake = true;
         effect(wrapperEffect)
-        componentStackFunc.pop();
+        componentStack.pop();
       }
 
       disconnectedCallback() {
         this.shadow.replaceChildren();
         this.replaceChildren();
-        checkCall(this, target.prototype.disconnectedCallback);
-        this.effects.forEach(effectCbSet => {
-          (effectCbSet as Set<()=>void>).forEach((cleanup: () => void) => cleanup());
+
+        // очищаем эффекты компонента
+        componentEffectMap.get(this)?.forEach(effectCb => {
+          effectCleanup.get(effectCb)?.forEach(cleanup => cleanup());
+          effectCleanup.delete(effectCb);
+          effectComponentMap.delete(effectCb);
         });
-        this.effects.clear();
+        componentEffectMap.delete(this);
+        // ------------------------------------------------------------
+
+        checkCall(this, target.prototype.disconnectedCallback);
       }
     }
     NewClass.toString = () => selector;
