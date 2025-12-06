@@ -15,3 +15,15 @@ export const useCustomComponent = <B extends BaseElementConstructor>(comp: B, se
     return createCustom(newClassComponent, isComponentInitConfig(config) ? config : {})(...resultContent)
   }
 }
+
+export const configCustomComponent = <B extends BaseElementConstructor>(comp: B): [
+  ReturnType<typeof useCustomComponent<B>>,
+  (selector: `${string}-${string}`, isClosed?: boolean) => void
+] => {
+  return [
+    useCustomComponent(comp),
+    (selector: `${string}-${string}`, isClosed?: boolean) => {
+      component(selector, isClosed)(comp)
+    }
+  ]
+}
