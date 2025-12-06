@@ -9,7 +9,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { componentEffectMap, effect, effectCleanup, isReactiveSignal, ReactiveSignal } from "../signal";
+import { effect, EffectCb, effectCleanup, isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -140,6 +140,7 @@ export const component = (
           const propSignal = this[
             propName as keyof this
           ] as ReactiveSignal<any>;
+          // propSignal.setName(propName);
           if (newValue === null) {
             propSignal.set(propSignal.initValue);
             this.removeAttribute(attrName);
@@ -157,7 +158,6 @@ export const component = (
       }
 
       connectedCallback() {
-        componentStack.push(this);
         const wrapperEffect = () => {
           projectLog('rwc: connectedCallback');
           projectLog("connectedCallback", `%c${selector}%c`, this);
@@ -306,7 +306,9 @@ export const component = (
 
         }
         wrapperEffect.fake = true;
-        effect(wrapperEffect)
+
+        componentStack.push(this);
+        effect(wrapperEffect, { name: 'FAKE_wrapperEffect' });
         componentStack.pop();
       }
 
@@ -314,14 +316,21 @@ export const component = (
         this.shadow.replaceChildren();
         this.replaceChildren();
 
-        const componentEffectMapRef = new WeakRef(componentEffectMap).deref();
-        const effectCleanupRef = new WeakRef(effectCleanup).deref();
+        const handleEffectCb = (effectCb: EffectCb) => {
+          effectCb.willRemoved = true;
+          effectCleanup.get(effectCb)?.forEach(cleanup => cleanup());
+          effectCleanup.get(effectCb)?.clear();
+          delete effectCb.component;
+          effectCb.childCbs?.forEach(childCb => handleEffectCb(childCb));
+          effectCleanup.delete(effectCb);
+        }
 
-        // очищаем эффекты компонента
-        componentEffectMapRef?.get(this)?.forEach(effectCb => {
-          effectCleanupRef?.get(effectCb)?.forEach(cleanup => cleanup());
+        effectCleanup.entries().forEach(([effectCbKey]) => {
+          if (effectCbKey.component === this) {
+            effectCbKey.willRemoved = true;
+            handleEffectCb(effectCbKey)
+          }
         });
-        // ------------------------------------------------------------
 
         checkCall(this, target.prototype.disconnectedCallback);
       }

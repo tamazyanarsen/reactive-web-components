@@ -1,8 +1,7 @@
 import { ON_CONNECTED_NAME } from "@shared/constants/constants";
 import { ComponentConfig, CustomComponentConfig, ExtraHTMLElement, SlotTemplate } from "@shared/types/element";
-import { componentStack } from "../clean";
 import { camelToKebab } from "../helpers";
-import { effect, ReactiveSignal } from "../signal";
+import { effect, effectCleanup, ReactiveSignal } from "../signal";
 import { BaseElement } from "./base-element";
 
 export const getTextContent = (content: string | unknown) => typeof content === "string" ? content : JSON.stringify(content);
@@ -43,6 +42,8 @@ export const htmlEffectWrapper = (
 export class HtmlComponentConfig<T extends ExtraHTMLElement> implements ComponentConfig<T> {
     protected wrapper: T;
     hostElement: T;
+
+    private keyedEffects: Map<string | symbol, () => void> = new Map();
 
     constructor(wrapper: T) {
         this.wrapper = wrapper;
@@ -138,14 +139,15 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     setReactiveAttribute: ComponentConfig<T>["setReactiveAttribute"] = (attrName, valueSignal) => {
-        const isCustom = this.wrapper instanceof BaseElement;
-        if (isCustom) componentStack.push(this.wrapper as unknown as BaseElement);
-        effect(() => this.setAttribute(attrName, valueSignal()));
-        if (isCustom) componentStack.pop();
+        this.addEffect((self) => {
+            self.setAttribute(attrName, valueSignal());
+        }, attrName)
         return this;
     }
     setReactiveCustomAttribute: ComponentConfig<T>["setReactiveCustomAttribute"] = (attrName, valueSignal) => {
-        effect(() => this.setCustomAttribute(attrName, valueSignal()));
+        this.addEffect((self) => {
+            self.setCustomAttribute(attrName, valueSignal());
+        })
         return this;
     }
     removeAttribute: ComponentConfig<T>["removeAttribute"] = (attrName) => {
@@ -224,12 +226,12 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     }
     addReactiveClass: ComponentConfig<T>["addReactiveClass"] = (classConfig) => {
         Object.keys(classConfig).forEach((className) => {
-            effect(() => {
+            this.addEffect((self) => {
                 const classSignal = classConfig[className]();
                 if (classSignal) {
-                    this.addClass(className);
+                    self.addClass(className);
                 } else {
-                    this.removeClass(className);
+                    self.removeClass(className);
                 }
             });
         });
@@ -243,11 +245,19 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         this.wrapper.classList.replace(oldClass, newClass);
         return this;
     }
-    addEffect: ComponentConfig<T>["addEffect"] = (cb) => {
-        const isCustom = this.wrapper instanceof BaseElement;
-        if (isCustom) componentStack.push(this.wrapper as unknown as BaseElement);
-        effect(() => cb(this, this.hostElement));
-        if (isCustom) componentStack.pop();
+
+    addEffect: ComponentConfig<T>["addEffect"] = (cb, key?: string | symbol) => {
+        const effectCb = () => cb(this, this.wrapper);
+        effectCb.component = this.wrapper;
+        effect(effectCb, { name: key?.toString() });
+        if (key) {
+            effectCleanup.get(this.keyedEffects.get(key) || (() => { }))?.forEach(s => s());
+            effectCleanup.get(this.keyedEffects.get(key) || (() => { }))?.clear();
+            effectCleanup.delete(this.keyedEffects.get(key) || (() => { }));
+
+            this.keyedEffects.set(key, effectCb);
+        }
+        // effectCb.willRemoved = true;
         return this;
     }
     addReactiveContent: ComponentConfig<T>["addReactiveContent"] = (content) => {

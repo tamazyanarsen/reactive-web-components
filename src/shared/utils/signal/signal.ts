@@ -9,35 +9,49 @@ import {
   UnwrapSignal,
 } from "./signal.type";
 
-let isEffectDebugEnabled = false;
+const removeOldEffect = (effectCb: EffectCb) => {
+  if (effectCb.component?.isConnected) return;
+  effectCleanup.get(effectCb)?.forEach(cleanup => cleanup());
+  effectCleanup.get(effectCb)?.clear();
+  effectCb.childCbs?.forEach( childCb => removeOldEffect(childCb) );
+  effectCleanup.delete(effectCb);
+}
 
-export const setEffectDebugEnabled = (enabled: boolean) => {
-  isEffectDebugEnabled = enabled;
-};
+export type EffectCb = (() => void) & {
+  effectId?: string
+  component?: BaseElement
+  willRemoved?: boolean
+  childCbs?: Set<EffectCb>
+  signal?: Set<ReactiveSignal<any>>
+}
 
-export const effectMap = new Map<
-  string,
-  {
-    signals: Array<ReactiveSignal<any>>;
-    parent: string | null;
-  }
->();
-
-const cbStack: (() => void)[] = [];
+const cbStack: EffectCb[] = [];
 
 // список вложенных эффектов
-const effectStack: (() => void)[] = [];
+const effectStack: EffectCb[] = [];
 
 // список подписчиков сигналов
-const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
+// const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
 
 // список очисток эффектов
-export const effectCleanup = new WeakMap<() => void, Set<() => void>>();
+export const effectCleanup = new Map<EffectCb, Set<() => void>>();
+
+setInterval(() => {
+  effectCleanup.forEach((cleanup, effectCb) => {
+    if(effectCb.willRemoved) cleanup.forEach(cleanup => cleanup());
+    cleanup.clear();
+    effectCleanup.delete(effectCb);
+  });
+}, 1000);
 
 // Map для компонентов и их эффектов
-export const componentEffectMap = new WeakMap<BaseElement, Set<() => void>>();
+// export const componentEffectMap = new WeakMap<BaseElement, Set<() => void>>();
 
-export const effectComponentMap = new WeakMap<() => void, WeakRef<BaseElement>>();
+// export const effectComponentMap = new Map<() => void, WeakRef<BaseElement>>();
+
+const effectTreeCleanup = new WeakMap<EffectCb, Set<() => void>>();
+
+const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<EffectCb>>();
 
 export function signal<T = unknown>(
   initValue: T,
@@ -49,23 +63,40 @@ export function signal<T = unknown>(
   let globalCompareFn = config?.signalCompareFn || (() => true);
 
   function result() {
-    const currCb = effectStack[effectStack.length - 1];
+    const currCb = cbStack[cbStack.length - 1];
+    const parentCb = cbStack[cbStack.length - 2] as EffectCb | undefined;
 
     if (currCb && !("fake" in currCb && currCb.fake)) {
-      const signalSubscribersRef = new WeakRef(signalSubscribers).deref();
-      const effectCleanupRef = new WeakRef(effectCleanup).deref();
-
       // добавляем список эффектов, которые подписаны на этот сигнал
-      if (!signalSubscribersRef?.has(result)) { signalSubscribersRef?.set(result, new Set()) }
-      signalSubscribersRef?.get(result)?.add(currCb);
+      if (!signalSubscribers.has(result)) { signalSubscribers.set(result, new Set()) }
+      signalSubscribers.get(result)?.add(currCb);
+      if (!config?.name) result.setName(currCb.effectId as string);
 
-      // добавляем функцию очистки для эффекта
-      if (!effectCleanupRef?.has(currCb)) effectCleanupRef?.set(currCb, new Set());
-      effectCleanupRef?.get(currCb)?.add(() => {
-        signalSubscribersRef?.get(result)?.delete(currCb);
+      if (!currCb.signal) currCb.signal = new Set();
+      currCb.signal.add(result);
+      if (parentCb) {
+        if (!parentCb.childCbs) parentCb.childCbs = new Set();
+        parentCb.childCbs.add(currCb);
+      }
+
+      // ------------------------------------------------------------
+      // Сохраняем функцию удаления в эффекте
+      if (!effectCleanup.has(currCb)) effectCleanup.set(currCb, new Set());
+      effectCleanup.get(currCb)?.add(() => {
+        signalSubscribers.get(result)?.delete(currCb);
       });
+      // ------------------------------------------------------------
 
-      if (isEffectDebugEnabled) { effectMap.get((currCb as any).effectId)?.signals.push(result); }
+      // добавляем функцию удаления дочерних эффектов в эффект родителя
+      if (parentCb) {
+        if (!effectTreeCleanup.has(parentCb)) effectTreeCleanup.set(parentCb, new Set());
+        effectTreeCleanup.get(parentCb)?.add(() => {
+          signalSubscribers.get(result)?.delete(currCb);
+          effectTreeCleanup.get(currCb)?.forEach(cleanup => cleanup());
+          effectTreeCleanup.get(currCb)?.clear();
+          effectTreeCleanup.delete(currCb);
+        });
+      }
     }
     return initValue;
   }
@@ -93,11 +124,11 @@ export function signal<T = unknown>(
   };
 
   result.clearSubscribers = function () {
-    new WeakRef(signalSubscribers).deref()?.get(result)?.clear();
+    signalSubscribers.get(result)?.clear();
   };
 
   result.getSubscribers = function () {
-    return new WeakRef(signalSubscribers).deref()?.get(result);
+    return signalSubscribers.get(result);
   };
 
   result.peek = function () {
@@ -108,14 +139,20 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    const effectComponentMapRef = new WeakRef(effectComponentMap).deref();
-    new WeakRef(signalSubscribers).deref()?.get(result)?.forEach(cb => {
+    signalSubscribers.get(result)?.forEach(cb => {
       Promise.resolve().then(() => {
-        const currComponent = effectComponentMapRef?.get(cb)?.deref();
+        const currComponent = cb.component;
+
         if (currComponent) componentStack.push(currComponent);
+
+        effectTreeCleanup.get(cb)?.forEach(cleanup => cleanup());
+        effectTreeCleanup.get(cb)?.clear();
+        effectTreeCleanup.delete(cb);
+
         cbStack.push(cb);
         cb();
         cbStack.pop();
+
         if (currComponent) componentStack.pop();
       });
     });
@@ -126,6 +163,12 @@ export function signal<T = unknown>(
     setCompareFn: CompareFn<T> = globalCompareFn,
   ) {
     if (initValue !== value && setCompareFn(initValue, value)) {
+      setTimeout(() => {
+        effectCleanup.forEach((_, effectCb) => {
+          if (effectCb.component?.isConnected || !effectCb.willRemoved) return;
+          removeOldEffect(effectCb);
+        });
+      });
       result.forceSet(value);
     }
   };
@@ -140,6 +183,7 @@ export function signal<T = unknown>(
       name?: string;
     },
   ) => {
+    if (config?.name) result.setName(config.name);
     const resSignal = signal<
       R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>
     >(null as any);
@@ -174,27 +218,18 @@ export function effect(
   const randomId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
   projectLog("current effect", `%c${randomId}%c`);
 
-  (cb as any).effectId = randomId;
+  const effectCb: EffectCb = cb;
+  effectCb.effectId = randomId;
 
-  if (isEffectDebugEnabled) {
-    effectMap.set(randomId, {
-      signals: [],
-      parent: null,
-    });
-  }
-
-  if (!isFake) cbStack.push(cb);
-  effectStack.push(cb);
+  if (!isFake) cbStack.push(effectCb);
+  effectStack.push(effectCb);
   // добавляем эффект в компонент
   const currComponent = componentStack[componentStack.length - 1];
   if (currComponent && !isFake) {
-    const componentEffectMapRef = new WeakRef(componentEffectMap).deref();
-    if (!componentEffectMapRef?.has(currComponent)) { componentEffectMapRef?.set(currComponent, new Set()) }
-    componentEffectMapRef?.get(currComponent)?.add(cb);
-    new WeakRef(effectComponentMap).deref()?.set(cb, new WeakRef(currComponent));
+    if (!effectCb.component) { effectCb.component = currComponent; }
   }
   // выполняем эффект
-  cb();
+  effectCb();
   effectStack.pop();
   if (!isFake) cbStack.pop();
 }

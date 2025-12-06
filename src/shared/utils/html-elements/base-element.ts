@@ -1,10 +1,10 @@
 import {
-  ComponentConfig,
-  ComponentContent,
-  ContextEvent,
-  RootStyle,
-  SlotContext,
-  SlotTemplate,
+    ComponentConfig,
+    ComponentContent,
+    ContextEvent,
+    RootStyle,
+    SlotContext,
+    SlotTemplate,
 } from "@shared/types";
 import { projectLog } from "../helpers";
 import { effect, ReactiveSignal, signal } from "../signal";

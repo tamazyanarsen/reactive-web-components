@@ -189,7 +189,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
   /**
    * add reactive effect for component instance
    */
-  addEffect(cb: EffectCallback<T>): ComponentConfig<T>;
+  addEffect(cb: EffectCallback<T>, key?: string | symbol): ComponentConfig<T>;
   /**
    * bind reactive signal with component innerHtml
    */

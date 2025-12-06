@@ -52,19 +52,13 @@ export const createEl = <K extends HtmlTagName>(
 };
 
 export const getSignalContent = (cb: CompFuncContent) => {
-  // const res = cb()
-  // const content = signal([])
-  // if(isComponentConfig(res) && res.hostElement instanceof BaseElement) {
-  //   res.addEffect(()=>{
-  //     const newContent = cb()
-  //   })
-  // }
+  const effectId = Math.random().toString(36).substring(2, 15);
   return createElement("div")
     .addStyle({ display: "contents" })
     .addEffect((self) => {
       self.clear();
       appendContentItem(self, ...[cb()].flat());
-    });
+    }, effectId);
 }
 
 
