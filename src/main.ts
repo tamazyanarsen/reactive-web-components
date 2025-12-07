@@ -1,7 +1,7 @@
 import { ComponentConfig } from "@shared/types";
 import "./style.css";
 
-import { BaseElement, component, div, property, signal, slot, useCustomComponent } from "@shared/utils";
+import { BaseElement, component, div, effect, property, signal, slot, useCustomComponent } from "@shared/utils";
 
 const appendToBody = (element: ComponentConfig<any>) => {
   document.body.append(element.hostElement);
@@ -33,7 +33,7 @@ export class TestComponent extends BaseElement {
   @property()
   test = signal(0)
 
-  test1 = this.createEffect(() => {
+  test1 = effect(() => {
     console.log('test1', this.test())
   })
   connectedCallback() {

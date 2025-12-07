@@ -1,4 +1,6 @@
+import { componentStack } from "../clean";
 import { projectLog } from "../helpers";
+import type { BaseElement } from "../html-elements";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import {
   CompareFn,
@@ -11,10 +13,21 @@ export type EffectCb = (() => void) & {
   fake?: boolean;
   effectId?: string;
   children?: Set<EffectCb>;
+  parent?: WeakRef<EffectCb>;
   cleanupSet?: Set<() => void>;
+  component?: WeakRef<BaseElement>;
+  destroy?: () => void;
 }
 
 const cbStack: EffectCb[] = [];
+
+export const removeEffect = (effectCb: EffectCb) => {
+  effectCb.children?.forEach(child => removeEffect(child));
+  effectCb.children?.clear();
+  effectCb.cleanupSet?.forEach(clean => clean());
+  effectCb.cleanupSet?.clear();
+  effectCb.destroy?.();
+}
 
 export function signal<T = unknown>(
   initValue: T,
@@ -29,8 +42,9 @@ export function signal<T = unknown>(
 
   function result() {
     const currCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
-    if (currCb && !currCb.fake) {
+    if (currCb && !currCb.fake && !signalSubscribers.has(currCb)) {
       signalSubscribers.add(currCb);
+      currCb.cleanupSet?.add(() => signalSubscribers.delete(currCb));
     };
     if (!signalConfig?.name && currCb?.effectId) result.setName(currCb.effectId as string);
 
@@ -66,6 +80,7 @@ export function signal<T = unknown>(
   result.forceSet = function (value: T) {
     initValue = value;
     signalSubscribers.forEach(cb => {
+      removeEffect(cb);
       Promise.resolve().then(() => {
         cbStack.push(cb);
         cb();
@@ -100,10 +115,10 @@ export function signal<T = unknown>(
 
     effect(() => {
       const signalRes = result();
-      const effectId = Math.random().toString(36).substring(2, 15);
+      const effectId = 'pipe_effect';
       effect(() => {
         const fnResult = fn(signalRes);
-        const innerEffectId = Math.random().toString(36).substring(2, 15);
+        const innerEffectId = 'pipe_effect_inner';
         if (fnResult instanceof Promise) {
           fnResult.then((v) => resSignal.set(v));
         } else {
@@ -114,7 +129,7 @@ export function signal<T = unknown>(
           }
         }
       }, { name: effectId });
-    }, { name: pipeConfig?.name || result.signalId });
+    }, { name: pipeConfig?.name || `pipe_${result.signalId}` });
     return resSignal;
   };
 
@@ -135,8 +150,16 @@ export function effect(
   const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
   if (parentCb) {
     parentCb.children?.add(effectCb);
+    effectCb.parent = new WeakRef(parentCb);
+    effectCb.destroy = () => parentCb.children?.delete(effectCb);
   }
   effectCb.cleanupSet = new Set();
+
+  const currComponent = componentStack[componentStack.length - 1];
+  if (currComponent) {
+    currComponent.effectSet.add(new WeakRef(effectCb));
+    effectCb.component = new WeakRef(currComponent);
+  }
 
   cbStack.push(effectCb);
   effectCb();

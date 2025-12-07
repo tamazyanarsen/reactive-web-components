@@ -1,7 +1,7 @@
 import { ON_CONNECTED_NAME } from "@shared/constants/constants";
 import { ComponentConfig, CustomComponentConfig, ExtraHTMLElement, SlotTemplate } from "@shared/types/element";
 import { camelToKebab } from "../helpers";
-import { effect, ReactiveSignal } from "../signal";
+import { effect, type EffectCb, ReactiveSignal, removeEffect } from "../signal";
 import { BaseElement } from "./base-element";
 
 export const getTextContent = (content: string | unknown) => typeof content === "string" ? content : JSON.stringify(content);
@@ -43,7 +43,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     protected wrapper: T;
     hostElement: T;
 
-    private keyedEffects: Map<string | symbol, () => void> = new Map();
+    private keyedEffects: Map<string | symbol, WeakRef<EffectCb>> = new Map();
 
     constructor(wrapper: T) {
         this.wrapper = wrapper;
@@ -248,11 +248,15 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
 
     addEffect: ComponentConfig<T>["addEffect"] = (cb, key?: string | symbol) => {
         const effectCb = () => cb(this, this.wrapper);
-        effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
         if (key) {
-            // TODO: тут будет удаление старого эффекта
-            this.keyedEffects.set(key, effectCb);
+            const eff = this.keyedEffects.get(key)?.deref()
+            if (eff) {
+                console.log('remove old effect', key, eff);
+                removeEffect(eff);
+            }
+            this.keyedEffects.set(key, new WeakRef(effectCb));
         }
+        effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
         return this;
     }
     addReactiveContent: ComponentConfig<T>["addReactiveContent"] = (content) => {

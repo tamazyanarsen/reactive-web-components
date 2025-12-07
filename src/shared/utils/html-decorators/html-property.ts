@@ -9,7 +9,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { isReactiveSignal, ReactiveSignal } from "../signal";
+import { effect, isReactiveSignal, ReactiveSignal, removeEffect } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -193,7 +193,7 @@ export const component = (
                 ];
                 const { bubbles, composed } = config;
                 if (isReactiveSignal(value)) {
-                  this.createEffect(() => {
+                  effect(() => {
                     colorLog("@oemit reactive value", value());
                     this.dispatchEvent(
                       new CustomEvent(fieldName, {
@@ -294,7 +294,7 @@ export const component = (
                     `name:${slotEl.name};`,
                     slotEl.assignedElements(),
                   );
-                  this.createEffect(() => {
+                  effect(() => {
                     slotItem.dispatchEvent(
                       new CustomEvent("handleSlotContext", {
                         detail: slotContextValue(),
@@ -310,13 +310,17 @@ export const component = (
         wrapperEffect.fake = true;
 
         componentStack.push(this);
-        this.createEffect(wrapperEffect, 'FAKE_wrapperEffect');
+        effect(wrapperEffect, {name:'FAKE_wrapperEffect'});
         componentStack.pop();
       }
 
       disconnectedCallback() {
+        this.effectSet.forEach(eff => eff.deref() && removeEffect(eff.deref()!));
+        this.effectSet.clear();
+
         this.shadow.replaceChildren();
         this.replaceChildren();
+
 
         checkCall(this, target.prototype.disconnectedCallback);
       }

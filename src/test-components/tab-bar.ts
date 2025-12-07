@@ -1,6 +1,7 @@
 import {
   classList,
   colorLog,
+  effect,
   newEventEmitter,
   projectLog,
   rs,
@@ -42,9 +43,9 @@ export class TabBar extends BaseElement {
   }
 
   render() {
-    this.createEffect(() => {
+    effect(() => {
       projectLog("%ctestInject%c", this.testInject());
-    }, 'testInject');
+    }, {name: 'testInject'});
     return div(
       { classList: ["container"] },
       div(

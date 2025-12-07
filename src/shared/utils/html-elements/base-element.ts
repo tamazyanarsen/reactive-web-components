@@ -29,7 +29,7 @@ export abstract class BaseElement extends HTMLElement {
 
   public providers?: Record<string, ReactiveSignal<any>>;
 
-  effectSet = new Set<EffectCb>();
+  effectSet = new Set<WeakRef<EffectCb>>();
 
   appendAllSlotContent?: () => ComponentConfig<any>;
 
@@ -39,12 +39,6 @@ export abstract class BaseElement extends HTMLElement {
   htmlSlotContent: Record<string, HTMLElement[]> = {};
 
   shadow: ShadowRoot;
-
-  createEffect = (cb: () => void, key?: string | symbol) => {
-    effect(cb, {
-      name: key?.toString() || `${this.tagName}_${Math.random().toString(36).substring(2, 15)}`
-    });
-  }
 
   // @ts-expect-error - appendChild is not defined in the HTMLElement interface
   appendChild<T extends Node>(node: T, isLazy = true): T {
@@ -97,9 +91,9 @@ export abstract class BaseElement extends HTMLElement {
             >(
               providerSignal: ReactiveSignal<T>,
             ) =>
-              this.createEffect(() => {
+              effect(() => {
                 injectSignal.set(providerSignal());
-              }, contextKey),
+              }, {name: contextKey}),
           },
           bubbles: true,
           composed: true,

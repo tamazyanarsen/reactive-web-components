@@ -52,7 +52,7 @@ export const createEl = <K extends HtmlTagName>(
 };
 
 export const getSignalContent = (cb: CompFuncContent) => {
-  const effectId = Math.random().toString(36).substring(2, 15);
+  const effectId = `getSignalContent_${Math.random().toString(36).substring(2, 15)}`;
   return createElement("div")
     .addStyle({ display: "contents" })
     .addEffect((self) => {
