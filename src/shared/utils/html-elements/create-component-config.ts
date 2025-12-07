@@ -1,7 +1,7 @@
 import { ON_CONNECTED_NAME } from "@shared/constants/constants";
 import { ComponentConfig, CustomComponentConfig, ExtraHTMLElement, SlotTemplate } from "@shared/types/element";
 import { camelToKebab } from "../helpers";
-import { effect, effectCleanup, ReactiveSignal } from "../signal";
+import { effect, ReactiveSignal } from "../signal";
 import { BaseElement } from "./base-element";
 
 export const getTextContent = (content: string | unknown) => typeof content === "string" ? content : JSON.stringify(content);
@@ -248,16 +248,11 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
 
     addEffect: ComponentConfig<T>["addEffect"] = (cb, key?: string | symbol) => {
         const effectCb = () => cb(this, this.wrapper);
-        effectCb.component = this.wrapper;
-        effect(effectCb, { name: key?.toString() });
+        effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
         if (key) {
-            effectCleanup.get(this.keyedEffects.get(key) || (() => { }))?.forEach(s => s());
-            effectCleanup.get(this.keyedEffects.get(key) || (() => { }))?.clear();
-            effectCleanup.delete(this.keyedEffects.get(key) || (() => { }));
-
+            // TODO: тут будет удаление старого эффекта
             this.keyedEffects.set(key, effectCb);
         }
-        // effectCb.willRemoved = true;
         return this;
     }
     addReactiveContent: ComponentConfig<T>["addReactiveContent"] = (content) => {

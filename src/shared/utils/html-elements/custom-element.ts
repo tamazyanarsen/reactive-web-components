@@ -25,7 +25,8 @@ export const createCustomElement = <T extends BaseElement>(
   projectLog("createCustomElement", tagName);
   const wrapper = document.createElement(tagName) as T;
   const component = customElementHelpers(wrapper);
-  return initComponent(component, config);
+  wrapper.init = () => {initComponent(component, config);}
+  return component;
 };
 
 // для создания кастомных компонентов, которые объявлены в интерфейсе HTMLElementTagNameMap

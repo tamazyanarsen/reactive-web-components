@@ -9,7 +9,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { effect, EffectCb, effectCleanup, isReactiveSignal, ReactiveSignal } from "../signal";
+import { isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -140,7 +140,7 @@ export const component = (
           const propSignal = this[
             propName as keyof this
           ] as ReactiveSignal<any>;
-          // propSignal.setName(propName);
+          propSignal.setName(attrName);
           if (newValue === null) {
             propSignal.set(propSignal.initValue);
             this.removeAttribute(attrName);
@@ -161,6 +161,8 @@ export const component = (
         const wrapperEffect = () => {
           projectLog('rwc: connectedCallback');
           projectLog("connectedCallback", `%c${selector}%c`, this);
+
+          this.init?.();
 
           if (this.providers && Object.keys(this.providers).length > 0) {
             projectLog("WRAPPER for providers", selector);
@@ -191,7 +193,7 @@ export const component = (
                 ];
                 const { bubbles, composed } = config;
                 if (isReactiveSignal(value)) {
-                  effect(() => {
+                  this.createEffect(() => {
                     colorLog("@oemit reactive value", value());
                     this.dispatchEvent(
                       new CustomEvent(fieldName, {
@@ -292,7 +294,7 @@ export const component = (
                     `name:${slotEl.name};`,
                     slotEl.assignedElements(),
                   );
-                  effect(() => {
+                  this.createEffect(() => {
                     slotItem.dispatchEvent(
                       new CustomEvent("handleSlotContext", {
                         detail: slotContextValue(),
@@ -308,29 +310,13 @@ export const component = (
         wrapperEffect.fake = true;
 
         componentStack.push(this);
-        effect(wrapperEffect, { name: 'FAKE_wrapperEffect' });
+        this.createEffect(wrapperEffect, 'FAKE_wrapperEffect');
         componentStack.pop();
       }
 
       disconnectedCallback() {
         this.shadow.replaceChildren();
         this.replaceChildren();
-
-        const handleEffectCb = (effectCb: EffectCb) => {
-          effectCb.willRemoved = true;
-          effectCleanup.get(effectCb)?.forEach(cleanup => cleanup());
-          effectCleanup.get(effectCb)?.clear();
-          delete effectCb.component;
-          effectCb.childCbs?.forEach(childCb => handleEffectCb(childCb));
-          effectCleanup.delete(effectCb);
-        }
-
-        effectCleanup.entries().forEach(([effectCbKey]) => {
-          if (effectCbKey.component === this) {
-            effectCbKey.willRemoved = true;
-            handleEffectCb(effectCbKey)
-          }
-        });
 
         checkCall(this, target.prototype.disconnectedCallback);
       }

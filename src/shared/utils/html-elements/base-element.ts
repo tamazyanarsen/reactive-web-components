@@ -1,19 +1,21 @@
 import {
-    ComponentConfig,
-    ComponentContent,
-    ContextEvent,
-    RootStyle,
-    SlotContext,
-    SlotTemplate,
+  ComponentConfig,
+  ComponentContent,
+  ContextEvent,
+  RootStyle,
+  SlotContext,
+  SlotTemplate
 } from "@shared/types";
 import { projectLog } from "../helpers";
-import { effect, ReactiveSignal, signal } from "../signal";
+import { effect, EffectCb, ReactiveSignal, signal } from "../signal";
 
 export abstract class BaseElement extends HTMLElement {
   static observedAttributes: string[] = [];
   static renderTagName: string = "";
 
   static styles?: string | string[];
+
+  public init?: () => void;
 
   public isSlotLazyLoading = false;
 
@@ -27,6 +29,8 @@ export abstract class BaseElement extends HTMLElement {
 
   public providers?: Record<string, ReactiveSignal<any>>;
 
+  effectSet = new Set<EffectCb>();
+
   appendAllSlotContent?: () => ComponentConfig<any>;
 
   allSlotContent?: ComponentContent[] = [];
@@ -35,6 +39,12 @@ export abstract class BaseElement extends HTMLElement {
   htmlSlotContent: Record<string, HTMLElement[]> = {};
 
   shadow: ShadowRoot;
+
+  createEffect = (cb: () => void, key?: string | symbol) => {
+    effect(cb, {
+      name: key?.toString() || `${this.tagName}_${Math.random().toString(36).substring(2, 15)}`
+    });
+  }
 
   // @ts-expect-error - appendChild is not defined in the HTMLElement interface
   appendChild<T extends Node>(node: T, isLazy = true): T {
@@ -87,9 +97,9 @@ export abstract class BaseElement extends HTMLElement {
             >(
               providerSignal: ReactiveSignal<T>,
             ) =>
-              effect(() => {
+              this.createEffect(() => {
                 injectSignal.set(providerSignal());
-              }),
+              }, contextKey),
           },
           bubbles: true,
           composed: true,

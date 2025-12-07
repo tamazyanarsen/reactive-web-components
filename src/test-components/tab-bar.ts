@@ -6,7 +6,7 @@ import {
   rs,
   signal,
 } from "@shared/utils";
-import { createSignal, effect } from "../shared/utils";
+import { createSignal } from "../shared/utils";
 import {
   component,
   event,
@@ -42,9 +42,9 @@ export class TabBar extends BaseElement {
   }
 
   render() {
-    effect(() => {
+    this.createEffect(() => {
       projectLog("%ctestInject%c", this.testInject());
-    });
+    }, 'testInject');
     return div(
       { classList: ["container"] },
       div(

@@ -1,6 +1,4 @@
-import { componentStack } from "../clean";
 import { projectLog } from "../helpers";
-import { BaseElement } from "../html-elements";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import {
   CompareFn,
@@ -9,109 +7,37 @@ import {
   UnwrapSignal,
 } from "./signal.type";
 
-const removeOldEffect = (effectCb: EffectCb) => {
-  if (effectCb.component?.isConnected) return;
-  effectCleanup.get(effectCb)?.forEach(cleanup => cleanup());
-  effectCleanup.get(effectCb)?.clear();
-  effectCb.childCbs?.forEach( childCb => removeOldEffect(childCb) );
-  effectCleanup.delete(effectCb);
-}
-
 export type EffectCb = (() => void) & {
-  effectId?: string
-  component?: BaseElement
-  willRemoved?: boolean
-  childCbs?: Set<EffectCb>
-  signal?: Set<ReactiveSignal<any>>
+  fake?: boolean;
+  effectId?: string;
+  children?: Set<EffectCb>;
+  cleanupSet?: Set<() => void>;
 }
 
 const cbStack: EffectCb[] = [];
 
-// список вложенных эффектов
-const effectStack: EffectCb[] = [];
-
-// список подписчиков сигналов
-// const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
-
-// список очисток эффектов
-export const effectCleanup = new Map<EffectCb, Set<() => void>>();
-
-setInterval(() => {
-  effectCleanup.forEach((cleanup, effectCb) => {
-    if(effectCb.willRemoved) cleanup.forEach(cleanup => cleanup());
-    cleanup.clear();
-    effectCleanup.delete(effectCb);
-  });
-}, 1000);
-
-// Map для компонентов и их эффектов
-// export const componentEffectMap = new WeakMap<BaseElement, Set<() => void>>();
-
-// export const effectComponentMap = new Map<() => void, WeakRef<BaseElement>>();
-
-const effectTreeCleanup = new WeakMap<EffectCb, Set<() => void>>();
-
-const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<EffectCb>>();
-
 export function signal<T = unknown>(
   initValue: T,
-  config?: {
+  signalConfig?: {
     signalCompareFn?: CompareFn<T>;
     name?: string;
   },
 ): ReactiveSignal<T> {
-  let globalCompareFn = config?.signalCompareFn || (() => true);
+  let globalCompareFn = signalConfig?.signalCompareFn || (() => true);
+
+  const signalSubscribers = new Set<EffectCb>();
 
   function result() {
-    const currCb = cbStack[cbStack.length - 1];
-    const parentCb = cbStack[cbStack.length - 2] as EffectCb | undefined;
+    const currCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
+    if (currCb && !currCb.fake) {
+      signalSubscribers.add(currCb);
+    };
+    if (!signalConfig?.name && currCb?.effectId) result.setName(currCb.effectId as string);
 
-    if (currCb && !("fake" in currCb && currCb.fake)) {
-      // добавляем список эффектов, которые подписаны на этот сигнал
-      if (!signalSubscribers.has(result)) { signalSubscribers.set(result, new Set()) }
-      signalSubscribers.get(result)?.add(currCb);
-      if (!config?.name) result.setName(currCb.effectId as string);
-
-      if (!currCb.signal) currCb.signal = new Set();
-      currCb.signal.add(result);
-      if (parentCb) {
-        if (!parentCb.childCbs) parentCb.childCbs = new Set();
-        parentCb.childCbs.add(currCb);
-      }
-
-      // ------------------------------------------------------------
-      // Сохраняем функцию удаления в эффекте
-      if (!effectCleanup.has(currCb)) effectCleanup.set(currCb, new Set());
-      effectCleanup.get(currCb)?.add(() => {
-        signalSubscribers.get(result)?.delete(currCb);
-      });
-      // ------------------------------------------------------------
-
-      // добавляем функцию удаления дочерних эффектов в эффект родителя
-      if (parentCb) {
-        if (!effectTreeCleanup.has(parentCb)) effectTreeCleanup.set(parentCb, new Set());
-        effectTreeCleanup.get(parentCb)?.add(() => {
-          signalSubscribers.get(result)?.delete(currCb);
-          effectTreeCleanup.get(currCb)?.forEach(cleanup => cleanup());
-          effectTreeCleanup.get(currCb)?.clear();
-          effectTreeCleanup.delete(currCb);
-        });
-      }
-    }
     return initValue;
   }
 
-  let signalId = '';
-  Object.defineProperty(result, 'signalId', {
-    get: () => {
-      return signalId
-    },
-    set: (value: string) => {
-      signalId = value;
-    },
-  });
-
-  result.signalId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
+  result.signalId = `${signalConfig?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
 
   result.setName = function (name: string) {
     result.signalId = `${name}_${Math.random().toString(36).substring(2, 15)}`;
@@ -124,11 +50,11 @@ export function signal<T = unknown>(
   };
 
   result.clearSubscribers = function () {
-    signalSubscribers.get(result)?.clear();
+    signalSubscribers.clear();
   };
 
   result.getSubscribers = function () {
-    return signalSubscribers.get(result);
+    return signalSubscribers;
   };
 
   result.peek = function () {
@@ -139,21 +65,11 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    signalSubscribers.get(result)?.forEach(cb => {
+    signalSubscribers.forEach(cb => {
       Promise.resolve().then(() => {
-        const currComponent = cb.component;
-
-        if (currComponent) componentStack.push(currComponent);
-
-        effectTreeCleanup.get(cb)?.forEach(cleanup => cleanup());
-        effectTreeCleanup.get(cb)?.clear();
-        effectTreeCleanup.delete(cb);
-
         cbStack.push(cb);
         cb();
         cbStack.pop();
-
-        if (currComponent) componentStack.pop();
       });
     });
   };
@@ -163,12 +79,6 @@ export function signal<T = unknown>(
     setCompareFn: CompareFn<T> = globalCompareFn,
   ) {
     if (initValue !== value && setCompareFn(initValue, value)) {
-      setTimeout(() => {
-        effectCleanup.forEach((_, effectCb) => {
-          if (effectCb.component?.isConnected || !effectCb.willRemoved) return;
-          removeOldEffect(effectCb);
-        });
-      });
       result.forceSet(value);
     }
   };
@@ -179,29 +89,32 @@ export function signal<T = unknown>(
 
   result.pipe = <R>(
     fn: (sg: T) => R,
-    config?: {
+    pipeConfig?: {
       name?: string;
     },
   ) => {
-    if (config?.name) result.setName(config.name);
+    if (pipeConfig?.name) result.setName(pipeConfig.name);
     const resSignal = signal<
       R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>
     >(null as any);
+
     effect(() => {
       const signalRes = result();
+      const effectId = Math.random().toString(36).substring(2, 15);
       effect(() => {
         const fnResult = fn(signalRes);
+        const innerEffectId = Math.random().toString(36).substring(2, 15);
         if (fnResult instanceof Promise) {
           fnResult.then((v) => resSignal.set(v));
         } else {
           if (isReactiveSignal(fnResult)) {
-            effect(() => resSignal.set(fnResult()));
+            effect(() => resSignal.set(fnResult()), { name: innerEffectId });
           } else {
             resSignal.set(fnResult as any);
           }
         }
-      }, config);
-    });
+      }, { name: effectId });
+    }, { name: pipeConfig?.name || result.signalId });
     return resSignal;
   };
 
@@ -214,24 +127,20 @@ export function effect(
     name?: string;
   },
 ) {
-  const isFake = "fake" in cb && cb.fake;
   const randomId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
   projectLog("current effect", `%c${randomId}%c`);
 
   const effectCb: EffectCb = cb;
   effectCb.effectId = randomId;
-
-  if (!isFake) cbStack.push(effectCb);
-  effectStack.push(effectCb);
-  // добавляем эффект в компонент
-  const currComponent = componentStack[componentStack.length - 1];
-  if (currComponent && !isFake) {
-    if (!effectCb.component) { effectCb.component = currComponent; }
+  const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
+  if (parentCb) {
+    parentCb.children?.add(effectCb);
   }
-  // выполняем эффект
+  effectCb.cleanupSet = new Set();
+
+  cbStack.push(effectCb);
   effectCb();
-  effectStack.pop();
-  if (!isFake) cbStack.pop();
+  cbStack.pop();
 }
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(
@@ -241,7 +150,7 @@ export const isReactiveSignal = <R extends ReactiveSignal<any>>(
   ["object", "function"].includes(typeof v) &&
   "set" in v &&
   "update" in v &&
-  "forceSet" in v;
+  "forceSet" in v && 'signalId' in v;
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.
