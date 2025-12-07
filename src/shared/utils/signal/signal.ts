@@ -1,225 +1,202 @@
-import { componentStackFunc } from "../clean";
-import { projectLog } from "../helpers";
-import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
+import { projectLog } from '../helpers';
+import { IsPromise, IsPromiseFunction, UnwrapPromise } from './helpers.types';
 import {
-  CompareFn,
-  ReactiveSignal,
-  SignalUpdateFunc,
-  UnwrapSignal,
-} from "./signal.type";
-
-let isEffectDebugEnabled = false;
-
-export const setEffectDebugEnabled = (enabled: boolean) => {
-  isEffectDebugEnabled = enabled;
-};
-
-export const effectMap = new Map<
-  string,
-  {
-    signals: Array<ReactiveSignal<any>>;
-    parent: string | null;
-  }
->();
-
-const cbStack: (() => void)[] = [];
+	CompareFn,
+	ReactiveSignal,
+	SignalUpdateFunc,
+	UnwrapSignal,
+} from './signal.type';
+export interface Effect {
+	(): void;
+	cleanupFns: Set<() => void>;
+	children: Set<Effect>;
+	effectId: string;
+	status: 'active' | 'inactive';
+	destroy: () => void;
+}
 
 // список вложенных эффектов
-const effectStack: (() => void)[] = [];
+const effectStack: Effect[] = [];
 
-// список очисток дочерних эффектов
-const effectMetadata = new WeakMap<() => void, Set<() => void>>();
-
-// список подписчиков сигналов
-const signalSubscribers = new WeakMap<ReactiveSignal<any>, Set<() => void>>();
-
-// список сигналов для каждого эффекта
-const effectSubscribers = new WeakMap<() => void, Set<ReactiveSignal<any>>>();
-
-const selfCleanupSet = 'selfCleanupSet'
+// Рекурсивная функция для очистки дочерних эффектов
+const cleanupChildEffects = (child: Effect) => {
+	// Сначала очищаем cleanup функции самого дочернего эффекта
+	child.cleanupFns.forEach((cleanupFn) => cleanupFn());
+	// Затем рекурсивно очищаем всех его детей
+	child.children.forEach((grandChild) => {
+		grandChild.destroy();
+	});
+	// Очищаем Set детей после их удаления
+	child.children.clear();
+	child.cleanupFns.clear();
+};
 
 export function signal<T = unknown>(
-  initValue: T,
-  config?: {
-    signalCompareFn?: CompareFn<T>;
-    name?: string;
-  },
+	initValue: T,
+	config?: {
+		signalCompareFn?: CompareFn<T>;
+		name?: string;
+	}
 ): ReactiveSignal<T> {
-  // const subscribers = new Set<() => void>();
+	let globalCompareFn = config?.signalCompareFn || (() => true);
+	const subscribers = new Set<Effect>();
 
-  let globalCompareFn = config?.signalCompareFn || (() => true);
+	function result() {
+		const currCb = effectStack[effectStack.length - 1];
 
-  function result() {
-    const currCb = effectStack[effectStack.length - 1];
+		if (
+			currCb &&
+			!subscribers.has(currCb) &&
+			!('fake' in currCb && currCb.fake)
+		) {
+			subscribers.add(currCb);
+			currCb.cleanupFns.add(() => {
+				subscribers.delete(currCb);
+			});
+		}
 
-    if (currCb && !("fake" in currCb && currCb.fake)) {
-      if (!(selfCleanupSet in currCb)) (currCb as any)[selfCleanupSet] = new Set();
-      (currCb as any)[selfCleanupSet].add(() => {
-        signalSubscribers.get(result)?.delete(currCb);
-      });
+		return initValue;
+	}
 
-      // добавляем список эффектов, которые подписаны на этот сигнал
-      if (!signalSubscribers.has(result)) { signalSubscribers.set(result, new Set()) }
-      signalSubscribers.get(result)?.add(currCb);
+	let signalId = '';
+	Object.defineProperty(result, 'signalId', {
+		get: () => {
+			return signalId;
+		},
+		set: (value: string) => {
+			signalId = value;
+		},
+	});
 
-      // добавляем список сигналов, которые внутри эффекта
-      if (!effectSubscribers.has(currCb)) { effectSubscribers.set(currCb, new Set()) }
-      effectSubscribers.get(currCb)?.add(result);
+	result.signalId = `${config?.name || ''}_${Math.random()
+		.toString(36)
+		.substring(2, 15)}`;
 
-      if (isEffectDebugEnabled) { effectMap.get((currCb as any).effectId)?.signals.push(result); }
-    }
-    return initValue;
-  }
+	result.setName = function (name: string) {
+		result.signalId = `${name}_${Math.random()
+			.toString(36)
+			.substring(2, 15)}`;
+		return result;
+	};
 
-  let signalId = '';
-  Object.defineProperty(result, 'signalId', {
-    get: () => {
-      return signalId
-    },
-    set: (value: string) => {
-      signalId = value;
-    },
-  });
+	result.setCompareFn = function (compareFn: CompareFn<T>) {
+		globalCompareFn = compareFn;
+		return result;
+	};
 
-  result.signalId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
+	result.clearSubscribers = function () {
+		subscribers.clear();
+	};
 
-  result.setName = function (name: string) {
-    result.signalId = `${name}_${Math.random().toString(36).substring(2, 15)}`;
-    return result;
-  };
+	result.getSubscribers = function () {
+		return subscribers;
+	};
 
-  result.setCompareFn = function (compareFn: CompareFn<T>) {
-    globalCompareFn = compareFn;
-    return result;
-  };
+	result.peek = function () {
+		return Object.freeze(initValue);
+	};
 
-  result.clearSubscribers = function () {
-    signalSubscribers.get(result)?.clear();
-  };
+	result.initValue = Object.freeze(initValue);
 
-  result.getSubscribers = function () {
-    return signalSubscribers.get(result);
-  };
+	result.forceSet = function (value: T) {
+		initValue = value;
+		subscribers.forEach((cb) => {
+			cleanupChildEffects(cb);
+			Promise.resolve().then(() => {
+				effectStack.push(cb);
+				cb();
+				effectStack.pop();
+			});
+		});
+	};
 
-  result.peek = function () {
-    return Object.freeze(initValue);
-  };
+	result.set = function (
+		value: T,
+		setCompareFn: CompareFn<T> = globalCompareFn
+	) {
+		if (initValue !== value && setCompareFn(initValue, value)) {
+			result.forceSet(value);
+		}
+	};
 
-  result.initValue = Object.freeze(initValue);
+	result.update = function (cb: SignalUpdateFunc<T>) {
+		result.set(cb(initValue));
+	};
 
-  result.forceSet = function (value: T) {
-    initValue = value;
-    signalSubscribers.get(result)?.forEach(cb => {
-      effectMetadata.get(cb)?.forEach(clean => {
-        clean();
-      });
-      effectMetadata.get(cb)?.clear();
-      Promise.resolve(cb).then((fn) => {
-        cbStack.push(fn);
-        fn();
-        cbStack.pop();
-      });
-    });
-  };
+	result.pipe = <R>(
+		fn: (sg: T) => R,
+		config?: {
+			name?: string;
+		}
+	) => {
+		const resSignal = signal<
+			R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>
+		>(null as any);
+		effect(() => {
+			const signalRes = result();
+			effect(() => {
+				const fnResult = fn(signalRes);
+				if (fnResult instanceof Promise) {
+					fnResult.then((v) => resSignal.set(v));
+				} else {
+					if (isReactiveSignal(fnResult)) {
+						effect(() => resSignal.set(fnResult()));
+					} else {
+						resSignal.set(fnResult as any);
+					}
+				}
+			}, config);
+		});
+		return resSignal;
+	};
 
-  result.set = function (
-    value: T,
-    setCompareFn: CompareFn<T> = globalCompareFn,
-  ) {
-    if (initValue !== value && setCompareFn(initValue, value)) {
-      result.forceSet(value);
-    }
-  };
-
-  result.update = function (cb: SignalUpdateFunc<T>) {
-    result.set(cb(initValue));
-  };
-
-  result.pipe = <R>(
-    fn: (sg: T) => R,
-    config?: {
-      name?: string;
-    },
-  ) => {
-    const resSignal = signal<
-      R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>
-    >(null as any);
-    effect(() => {
-      const signalRes = result();
-      effect(() => {
-        const fnResult = fn(signalRes);
-        if (fnResult instanceof Promise) {
-          fnResult.then((v) => resSignal.set(v));
-        } else {
-          if (isReactiveSignal(fnResult)) {
-            effect(() => resSignal.set(fnResult()));
-          } else {
-            resSignal.set(fnResult as any);
-          }
-        }
-      }, config);
-    });
-    return resSignal;
-  };
-
-  return result;
+	return result;
 }
 
 export function effect(
-  cb: () => void,
-  config?: {
-    name?: string;
-  },
+	cb: () => void,
+	config?: {
+		name?: string;
+	}
 ) {
-  const isFake = "fake" in cb && cb.fake;
-  const randomId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
-  projectLog("current effect", `%c${randomId}%c`);
+	const randomId = `${config?.name || ''}_${Math.random()
+		.toString(36)
+		.substring(2, 15)}`;
+	projectLog('current effect', `%c${randomId}%c`);
 
-  (cb as any).effectId = randomId;
+	const parentCb = effectStack[effectStack.length - 1];
+	// if (parentCb && parentCb.status === 'inactive') {
+	// 	return;
+	// }
 
-  const parentCb = cbStack[cbStack.length - 1];
+	const newEffect: Effect = cb as any;
+	newEffect.cleanupFns = new Set<() => void>();
+	newEffect.children = new Set<Effect>();
+	newEffect.status = 'active';
+	newEffect.effectId = randomId;
+	newEffect.destroy = () => {
+		newEffect.status = 'inactive';
+		cleanupChildEffects(newEffect);
+		parentCb?.children.delete(newEffect);
+	};
 
-  if (isEffectDebugEnabled) {
-    effectMap.set(randomId, {
-      signals: [],
-      // parent: (parentCb as any)?.effectId || null,
-      parent: null,
-    });
-  }
+	parentCb?.children.add(newEffect);
 
-  if(!isFake) cbStack.push(cb);
-  effectStack.push(cb);
-  cb();
-  if (!isFake) {
-    componentStackFunc[componentStackFunc.length - 1]?.((cb as any)[selfCleanupSet] || new Set());
-  }
-  effectStack.pop();
-  if(!isFake)cbStack.pop();
+	effectStack.push(newEffect);
+	newEffect();
+	effectStack.pop();
 
-  if (parentCb) {
-    if (!effectMetadata.has(parentCb)) { effectMetadata.set(parentCb, new Set()) }
-    effectMetadata.get(parentCb)?.add(() => {
-      const signals = effectSubscribers.get(cb);
-      signals?.forEach(s => {
-        signalSubscribers.get(s)?.delete(cb);
-      });
-      effectMetadata.get(cb)?.forEach(clean => clean());
-      effectMetadata.get(cb)?.clear();
-      effectMetadata.delete(cb);
-      
-      
-    });
-  }
+	return newEffect;
 }
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(
-  v: R | any,
+	v: R | any
 ): v is R =>
-  Boolean(v) &&
-  ["object", "function"].includes(typeof v) &&
-  "set" in v &&
-  "update" in v &&
-  "forceSet" in v;
+	Boolean(v) &&
+	['object', 'function'].includes(typeof v) &&
+	'set' in v &&
+	'update' in v &&
+	'forceSet' in v;
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.
@@ -233,66 +210,66 @@ export const isReactiveSignal = <R extends ReactiveSignal<any>>(
  * // log: "abc-test"
  */
 export function rs<T extends ReactiveSignal<any> | any>(
-  strings: TemplateStringsArray,
-  ...values: T[]
+	strings: TemplateStringsArray,
+	...values: T[]
 ): ReactiveSignal<string> {
-  const newSignal = signal("");
+	const newSignal = signal('');
 
-  effect(() => {
-    const newValues = values.map((v) =>
-      isReactiveSignal(v) ? String(v()) : String(v),
-    );
-    const result = [strings[0]];
-    newValues.forEach((value, i) => {
-      result.push(value, strings[i + 1]);
-    });
-    newSignal.set(result.join(""));
-  });
-  return newSignal;
+	effect(() => {
+		const newValues = values.map((v) =>
+			isReactiveSignal(v) ? String(v()) : String(v)
+		);
+		const result = [strings[0]];
+		newValues.forEach((value, i) => {
+			result.push(value, strings[i + 1]);
+		});
+		newSignal.set(result.join(''));
+	});
+	return newSignal;
 }
 
 // Функция createSignal с условными типами вместо перегрузок
 export function createSignal<
-  T extends Promise<any> | (() => any),
-  I extends
-  | UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
-  | undefined,
+	T extends Promise<any> | (() => any),
+	I extends
+		| UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
+		| undefined
 >(
-  cb: T,
-  initializeValue?: I,
+	cb: T,
+	initializeValue?: I
 ): // Если есть initializeValue
-  I extends undefined
-  ? // Если нет initializeValue, проверяем, возвращает ли функция Promise
-  IsPromise<T> extends true
-  ? ReactiveSignal<UnwrapPromise<T> | null>
-  : IsPromiseFunction<T> extends true
-  ? ReactiveSignal<UnwrapPromise<
-    T extends () => infer R ? R : never
-  > | null>
-  : ReactiveSignal<
-    UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : never>
-  >
-  : ReactiveSignal<
-    UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
-  > {
-  const resultSignal = signal<any>(initializeValue ?? null);
+I extends undefined
+	? // Если нет initializeValue, проверяем, возвращает ли функция Promise
+	  IsPromise<T> extends true
+		? ReactiveSignal<UnwrapPromise<T> | null>
+		: IsPromiseFunction<T> extends true
+		? ReactiveSignal<UnwrapPromise<
+				T extends () => infer R ? R : never
+		  > | null>
+		: ReactiveSignal<
+				UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : never>
+		  >
+	: ReactiveSignal<
+			UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
+	  > {
+	const resultSignal = signal<any>(initializeValue ?? null);
 
-  const handleValue = (value: any) => resultSignal.set(value);
+	const handleValue = (value: any) => resultSignal.set(value);
 
-  if (cb instanceof Promise) {
-    cb.then(handleValue);
-  } else if (typeof cb === "function") {
-    effect(() => {
-      const res = cb();
-      if (res instanceof Promise) {
-        res.then(handleValue);
-      } else if (isReactiveSignal(res)) {
-        effect(() => handleValue(res()));
-      } else {
-        handleValue(res);
-      }
-    });
-  }
+	if (cb instanceof Promise) {
+		cb.then(handleValue);
+	} else if (typeof cb === 'function') {
+		effect(() => {
+			const res = cb();
+			if (res instanceof Promise) {
+				res.then(handleValue);
+			} else if (isReactiveSignal(res)) {
+				effect(() => handleValue(res()));
+			} else {
+				handleValue(res);
+			}
+		});
+	}
 
-  return resultSignal as any;
+	return resultSignal as any;
 }

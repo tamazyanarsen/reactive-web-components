@@ -3,11 +3,10 @@ import {
   ChildrenContent,
   CompFuncContent,
   ComponentConfig,
-  ComponentContent,
   ComponentInitConfig,
   CustomComponentConfig,
   ExtraHTMLElement,
-  HtmlTagName,
+  HtmlTagName
 } from "../../types/element";
 import { projectLog } from "../helpers";
 import { effect, isReactiveSignal, ReactiveSignal, signal } from "../signal";
@@ -52,20 +51,21 @@ export const createEl = <K extends HtmlTagName>(
   };
 };
 
-export const getSignalContent = (cb: CompFuncContent) =>
-  createElement("div")
+export const getSignalContent = (cb: CompFuncContent) => {
+  // const res = cb()
+  // const content = signal([])
+  // if(isComponentConfig(res) && res.hostElement instanceof BaseElement) {
+  //   res.addEffect(()=>{
+  //     const newContent = cb()
+  //   })
+  // }
+  return createElement("div")
     .addStyle({ display: "contents" })
     .addEffect((self) => {
-      const signalContent = cb();
-      const newContent: ComponentContent[] = [];
-      if (Array.isArray(signalContent)) {
-        newContent.push(...signalContent);
-      } else {
-        newContent.push(signalContent);
-      }
       self.clear();
-      appendContentItem(self, ...newContent);
+      appendContentItem(self, ...[cb()].flat());
     });
+}
 
 
 // type WrapFuncReturnType<Cb extends CompFuncContent> =

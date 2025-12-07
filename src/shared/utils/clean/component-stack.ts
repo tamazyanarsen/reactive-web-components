@@ -1,1 +1,3 @@
-export const componentStackFunc: ((e: Set<() => void>) => void)[] = [];
+import { BaseElement } from "../html-elements";
+
+export const componentStack: BaseElement[] = [];
