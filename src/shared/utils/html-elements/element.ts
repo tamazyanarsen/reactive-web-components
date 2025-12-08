@@ -21,20 +21,7 @@ export const createElement = <K extends HtmlTagName>(
   config?: ComponentInitConfig<HTMLElementTagNameMap[K]>,
 ): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName);
-  const component = initComponent(elementHelpers(wrapper), config);
-  console.log('createElement', tagName, wrapper.parentElement);
-  new MutationObserver(mutations => {
-    mutations.forEach(mut => {
-      mut.removedNodes.forEach(node => {
-        if(node instanceof HTMLElement) {
-          const extraElement = node as ExtraHTMLElement;
-          extraElement.effectSet?.forEach(eff => eff.deref() && eff.deref()?.destroy?.());
-          extraElement.effectSet?.clear();
-        }
-      })
-    })
-  }).observe(wrapper, { childList: true });
-  return component;
+  return initComponent(elementHelpers(wrapper), config);
 
 };
 

@@ -144,16 +144,15 @@ export function effect(
   projectLog("current effect", `%c${randomId}%c`);
 
   const effectCb: EffectCb = cb;
+  effectCb.children = new Set();
   effectCb.effectId = randomId;
   const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
   if (parentCb) {
     parentCb.children?.add(effectCb);
     effectCb.parent = new WeakRef(parentCb);
     effectCb.destroy = () => {
-      effectCb.cleanupSet?.forEach(clean => clean());
-      effectCb.cleanupSet?.clear();
+      removeEffect(effectCb);
       parentCb.children?.delete(effectCb);
-      effectCb.children?.forEach(child => child.destroy?.());
     };
   }
   effectCb.cleanupSet = new Set();

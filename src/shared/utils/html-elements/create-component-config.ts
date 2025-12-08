@@ -49,6 +49,9 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         this.wrapper = wrapper;
         this.wrapper.effectSet = new Set();
         this.hostElement = wrapper;
+        if(this.wrapper.parentElement) {
+            console.log('HtmlComponentConfig', this.wrapper.tagName, 'parent:', this.wrapper.parentElement);
+        }
     }
 
     append: ComponentConfig<T>["append"] = (...args) => {

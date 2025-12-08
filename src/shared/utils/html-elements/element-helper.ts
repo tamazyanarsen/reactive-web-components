@@ -93,6 +93,23 @@ export const initComponent = <
   setEffects(component, config.effects);
   setListeners(component, config.listeners);
   setListeners(component, config.customListeners);
+
+  new MutationObserver(mutations => {
+    mutations.forEach(mut => {
+      mut.removedNodes.forEach(node => {
+        const handleElement = (node: Node) => {
+          if (node instanceof HTMLElement) {
+            const extraElement = node as ExtraHTMLElement;
+            extraElement.effectSet?.forEach(eff => eff.deref()?.destroy?.());
+            extraElement.effectSet?.clear();
+          }
+          // node.childNodes.forEach(child => { handleElement(child) })
+        }
+        handleElement(node);
+      })
+    })
+  }).observe(component.hostElement, { childList: true });
+
   return component;
 };
 

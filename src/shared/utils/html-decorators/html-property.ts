@@ -8,7 +8,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { effect, isReactiveSignal, ReactiveSignal, removeEffect } from "../signal";
+import { effect, isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -312,7 +312,7 @@ export const component = (
       }
 
       disconnectedCallback() {
-        this.effectSet.forEach(eff => eff.deref() && removeEffect(eff.deref()!));
+        this.effectSet.forEach(eff => eff.deref()?.destroy?.());
         this.effectSet.clear();
 
         this.shadow.replaceChildren();
