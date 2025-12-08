@@ -412,18 +412,14 @@ export const showIf = (
   condition: boolean | ReactiveSignal<any> | (() => boolean),
   template: CompFuncContent,
 ) => {
-  const templateContent = getSignalContent(template);
-  if (typeof condition === "boolean") {
-    [templateContent].flat().forEach(e => {
-      e.hostElement.style.display = condition ? "block" : "none"
-    });
-  } else {
-    effect(() => {
+  return getSignalContent(template).addEffect((_, host) => {
+    if (typeof condition === "boolean") {
+      host.style.display = condition ? "block" : "none"
+    } else {
       const conditionRes = condition() ? "block" : "none";
-      [templateContent].flat().forEach(e => e.hostElement.style.display = conditionRes);
-    })
-  }
-  return templateContent;
+      host.style.display = conditionRes;
+    }
+  });
 };
 
 export const show = (
