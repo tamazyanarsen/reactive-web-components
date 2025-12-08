@@ -414,7 +414,9 @@ export const showIf = (
 ) => {
   const templateContent = getSignalContent(template);
   if (typeof condition === "boolean") {
-    [templateContent].flat().forEach(e => e.hostElement.style.display = condition ? "block" : "none");
+    [templateContent].flat().forEach(e => {
+      e.hostElement.style.display = condition ? "block" : "none"
+    });
   } else {
     effect(() => {
       const conditionRes = condition() ? "block" : "none";

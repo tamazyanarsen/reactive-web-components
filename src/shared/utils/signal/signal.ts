@@ -1,5 +1,4 @@
 import { projectLog } from "../helpers";
-import type { BaseElement } from "../html-elements";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import {
   CompareFn,
@@ -14,7 +13,7 @@ export type EffectCb = (() => void) & {
   children?: Set<EffectCb>;
   parent?: WeakRef<EffectCb>;
   cleanupSet?: Set<() => void>;
-  component?: WeakRef<BaseElement>;
+  component?: WeakRef<HTMLElement>;
   destroy?: () => void;
 }
 
@@ -153,6 +152,7 @@ export function effect(
     effectCb.destroy = () => {
       removeEffect(effectCb);
       parentCb.children?.delete(effectCb);
+      effectCb.destroy = undefined;
     };
   }
   effectCb.cleanupSet = new Set();

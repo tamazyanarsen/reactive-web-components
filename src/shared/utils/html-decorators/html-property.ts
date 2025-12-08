@@ -307,8 +307,9 @@ export const component = (
 
         }
         wrapperEffect.fake = true;
+        wrapperEffect.component = new WeakRef(this);
         this.effectSet.add(new WeakRef(wrapperEffect));
-        effect(wrapperEffect, {name:'FAKE_wrapperEffect'});
+        effect(wrapperEffect, { name: 'FAKE_wrapperEffect' });
       }
 
       disconnectedCallback() {

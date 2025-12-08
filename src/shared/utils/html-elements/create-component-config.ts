@@ -49,9 +49,6 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         this.wrapper = wrapper;
         this.wrapper.effectSet = new Set();
         this.hostElement = wrapper;
-        if(this.wrapper.parentElement) {
-            console.log('HtmlComponentConfig', this.wrapper.tagName, 'parent:', this.wrapper.parentElement);
-        }
     }
 
     append: ComponentConfig<T>["append"] = (...args) => {
@@ -251,16 +248,16 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     }
 
     addEffect: ComponentConfig<T>["addEffect"] = (cb, key?: string | symbol) => {
-        const effectCb = () => cb(this, this.wrapper);
+        const effectCb: EffectCb = () => cb(this, this.wrapper);
         if (key) {
             const eff = this.keyedEffects.get(key)?.deref()
             if (eff) {
-                console.log('remove old effect', key, eff);
                 removeEffect(eff);
             }
             // this.keyedEffects.set(key, new WeakRef(effectCb));
         }
         this.wrapper.effectSet?.add(new WeakRef(effectCb));
+        effectCb.component = new WeakRef(this.wrapper);
         effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
         return this;
     }
