@@ -1,6 +1,5 @@
 import { RootStyle } from "@shared/types";
 import { ComponentConfig, ContextEvent } from "../../types/element";
-import { componentStack } from "../clean";
 import {
   camelToKebab,
   checkCall,
@@ -308,10 +307,8 @@ export const component = (
 
         }
         wrapperEffect.fake = true;
-
-        componentStack.push(this);
+        this.effectSet.add(new WeakRef(wrapperEffect));
         effect(wrapperEffect, {name:'FAKE_wrapperEffect'});
-        componentStack.pop();
       }
 
       disconnectedCallback() {

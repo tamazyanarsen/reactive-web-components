@@ -1,4 +1,3 @@
-import { componentStack } from "../clean";
 import { projectLog } from "../helpers";
 import type { BaseElement } from "../html-elements";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
@@ -22,11 +21,10 @@ export type EffectCb = (() => void) & {
 const cbStack: EffectCb[] = [];
 
 export const removeEffect = (effectCb: EffectCb) => {
-  effectCb.children?.forEach(child => removeEffect(child));
+  effectCb.children?.forEach(child => child.destroy?.());
   effectCb.children?.clear();
   effectCb.cleanupSet?.forEach(clean => clean());
   effectCb.cleanupSet?.clear();
-  effectCb.destroy?.();
 }
 
 export function signal<T = unknown>(
@@ -151,15 +149,14 @@ export function effect(
   if (parentCb) {
     parentCb.children?.add(effectCb);
     effectCb.parent = new WeakRef(parentCb);
-    effectCb.destroy = () => parentCb.children?.delete(effectCb);
+    effectCb.destroy = () => {
+      effectCb.cleanupSet?.forEach(clean => clean());
+      effectCb.cleanupSet?.clear();
+      parentCb.children?.delete(effectCb);
+      effectCb.children?.forEach(child => child.destroy?.());
+    };
   }
   effectCb.cleanupSet = new Set();
-
-  const currComponent = componentStack[componentStack.length - 1];
-  if (currComponent) {
-    currComponent.effectSet.add(new WeakRef(effectCb));
-    effectCb.component = new WeakRef(currComponent);
-  }
 
   cbStack.push(effectCb);
   effectCb();

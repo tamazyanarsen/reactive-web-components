@@ -47,6 +47,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
 
     constructor(wrapper: T) {
         this.wrapper = wrapper;
+        this.wrapper.effectSet = new Set();
         this.hostElement = wrapper;
     }
 
@@ -254,8 +255,9 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
                 console.log('remove old effect', key, eff);
                 removeEffect(eff);
             }
-            this.keyedEffects.set(key, new WeakRef(effectCb));
+            // this.keyedEffects.set(key, new WeakRef(effectCb));
         }
+        this.wrapper.effectSet?.add(new WeakRef(effectCb));
         effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
         return this;
     }
