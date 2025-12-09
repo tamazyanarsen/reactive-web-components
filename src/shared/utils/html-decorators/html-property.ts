@@ -313,6 +313,10 @@ export const component = (
       }
 
       disconnectedCallback() {
+        this.allSlotContent = [];
+        this.init = undefined;
+        this.appendAllSlotContent = undefined;
+
         this.effectSet.forEach(eff => eff.deref()?.destroy?.());
         this.effectSet.clear();
 
