@@ -19,7 +19,7 @@ export type Join<T extends unknown[], D extends string> = T extends []
 export type HtmlTagName = keyof HTMLElementTagNameMap;
 
 export type ExtraHTMLElement = HTMLElement & {
-  render?: () => ComponentConfig<any>;
+  render?: () => ComponentConfig<ExtraHTMLElement>;
   effectSet?: Set<WeakRef<EffectCb>>;
   onConnected?: (
     self: ComponentConfig<ExtraHTMLElement>,
@@ -53,8 +53,8 @@ export type ComponentCallback<T extends ExtraHTMLElement> = (
 ) => void;
 
 export type AttrSignal<
-  T extends HTMLElement & { render?: () => ComponentConfig<any> },
-> = T["render"] extends () => ComponentConfig<any>
+  T extends HTMLElement & { render?: () => ComponentConfig<ExtraHTMLElement> },
+> = T["render"] extends () => ComponentConfig<ExtraHTMLElement>
   ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T &
   string]
   : keyof T & string;
@@ -65,7 +65,7 @@ export type EffectCallback<T extends HTMLElement> = (
 ) => void;
 
 export type ComponentContent =
-  | ComponentConfig<any>
+  | ComponentConfig<ExtraHTMLElement>
   | string
   | ReactiveSignal<any>;
 
@@ -84,15 +84,15 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
   /**
    * append child components
    */
-  append(...args: ComponentConfig<any>[]): ComponentConfig<T>;
+  append(...args: ComponentConfig<ExtraHTMLElement>[]): ComponentConfig<T>;
   /**
    * clear and append child components
    */
-  set(...args: ComponentConfig<any>[]): ComponentConfig<T>;
+  set(...args: ComponentConfig<ExtraHTMLElement>[]): ComponentConfig<T>;
   /**
    * remove child components
    */
-  removeChild(...args: ComponentConfig<any>[]): ComponentConfig<T>;
+  removeChild(...args: ComponentConfig<ExtraHTMLElement>[]): ComponentConfig<T>;
   /**
    * add html (string) content to host element
    */
@@ -109,7 +109,7 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
    * add event listener to component
    */
   addEventlistener<
-    K extends T["render"] extends () => ComponentConfig<any>
+    K extends T["render"] extends () => ComponentConfig<ExtraHTMLElement>
     ? never
     : keyof HTMLElementEventMap,
   >(
@@ -206,12 +206,12 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
   /**
    * host element
    */
-  hostElement: T;
+  get hostElement(): T | undefined;
 }
 
 export type SlotTemplate = Record<
   string,
-  (slotCtx: any) => ComponentConfig<any> | null
+  (slotCtx: any) => ComponentConfig<ExtraHTMLElement> | null
 >;
 
 export type CustomComponentConfig<T extends ExtraHTMLElement> = {

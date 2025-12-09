@@ -1,10 +1,12 @@
 import { ComponentConfig } from "@shared/types";
 import "./style.css";
 
-import { BaseElement, component, div, effect, property, signal, slot, useCustomComponent } from "@shared/utils";
+import { BaseElement, component, div, effect, property, signal, slot, useCustomComponent, when } from "@shared/utils";
 
 const appendToBody = (element: ComponentConfig<any>) => {
-  document.body.append(element.hostElement);
+  const hostValue = element.hostElement;
+  if (!hostValue) return;
+  document.body.append(hostValue);
 }
 
 // const formViewModel = signal({
@@ -44,9 +46,13 @@ export class TestComponent extends BaseElement {
   }
 
   render() {
-    // здесь эффект не создается заново, здесь перевызывается тот же эффект без какого-либо родительского эффекта
-    // а старый div(this.test().toString()) становится detached
-    return div('test', () => Test2(this.test().toString(), testSignal().toString()))
+    return div('test', () => Test2(this.test().toString(), testSignal().toString()),
+      when(
+        () => testSignal() < 3,
+        () => when(() => testSignal() % 2 === 0, () => div('test-even'), () => div('test-odd')),
+        () => div('test-default')
+      )
+    )
   }
 }
 const Test = useCustomComponent(TestComponent)

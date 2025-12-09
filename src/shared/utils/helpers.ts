@@ -66,3 +66,10 @@ export const disableLogs = () => {
 if (process.env.NODE_ENV === 'production') {
   disableLogs()
 }
+
+export const checkRef = <W extends HTMLElement | undefined>(
+  refs: W[],
+  cb: (item: (W extends undefined ? never : W)[]) => void
+): void => {
+  if (refs.every(Boolean)) cb(refs as (W extends undefined ? never : W)[]);
+};

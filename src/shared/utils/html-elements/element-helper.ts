@@ -23,12 +23,12 @@ export const eventEmitter = () => () => { };
 export const customElementHelpers = <T extends ExtraHTMLElement>(
   wrapper: T,
 ): CustomComponentConfig<T> => {
-  return new CustomHtmlComponentConfig(wrapper);
+  return new CustomHtmlComponentConfig(new WeakRef(wrapper));
 };
 
 export const elementHelpers = <T extends ExtraHTMLElement>(
   wrapper: T,
-): ComponentConfig<T> => new HtmlComponentConfig(wrapper);
+): ComponentConfig<T> => new HtmlComponentConfig(new WeakRef(wrapper));
 
 export const classList = (
   strings: TemplateStringsArray,

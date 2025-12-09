@@ -1,4 +1,4 @@
-import { ComponentConfig } from "@shared/types";
+import { ComponentConfig, ExtraHTMLElement } from "@shared/types";
 import { colorLog } from "../helpers";
 import { div } from "../html-fabric";
 
@@ -16,10 +16,10 @@ export const routes: RouterConfig = [
     }
 ];
 
-export const linkTo = (path: string, comp: ComponentConfig<any>) => {
+export const linkTo = (path: string, comp: ComponentConfig<ExtraHTMLElement>) => {
     history.pushState({}, '', path);
     comp.addEventlistener('click', () => {
-        comp.hostElement.dispatchEvent(new CustomEvent(ROUTE_CHANGE_EVENT, { detail: path }));
+        comp.hostElement?.dispatchEvent(new CustomEvent(ROUTE_CHANGE_EVENT, { detail: path }));
     });
 }
 

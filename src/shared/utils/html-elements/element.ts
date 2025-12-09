@@ -23,7 +23,6 @@ export const createElement = <K extends HtmlTagName>(
   const wrapper = document.createElement<K>(tagName);
   const component = elementHelpers(wrapper);
   return initComponent(new WeakRef(component), config) ?? component;
-
 };
 
 export const createEl = <K extends HtmlTagName>(
@@ -153,7 +152,7 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
       .map((e) => (typeof e === "string" ? e : e.toString())); // Преобразуем в строки
 
     // Получаем текущие дочерние элементы контейнера
-    const containerChildren = Array.from(container.hostElement.children);
+    const containerChildren = Array.from(container.hostElement?.children || []);
     projectLog("containerChildren", containerChildren, itemsKeyList);
 
     // Удаляем элементы, которых больше нет в новом списке
@@ -194,7 +193,7 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
         JSON.stringify(oldItems[itemsKeyList.indexOf(key)])
       ) {
         // Удаляем старый элемент из DOM
-        container.hostElement.querySelector(`[data-key="${key}"]`)?.remove();
+        container.hostElement?.querySelector(`[data-key="${key}"]`)?.remove();
 
         // Обновляем сигнал новым случайным значением для принудительного обновления
         currItemSignalMap
@@ -243,15 +242,19 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
             );
 
             // Вставляем элемент в правильную позицию
-            if (itemIndex <= container.hostElement.children.length - 1) {
+            const containerHost = container.hostElement
+            if (containerHost && itemIndex <= containerHost.children.length - 1) {
               // Если позиция в пределах существующих элементов - вставляем перед элементом в этой позиции
-              container.hostElement.insertBefore(
-                currComponent.hostElement,
-                container.hostElement.children[itemIndex],
+              containerHost.insertBefore(
+                containerHost,
+                containerHost.children[itemIndex],
               );
             } else {
               // Если позиция за пределами - добавляем в конец
-              container.hostElement.append(currComponent.hostElement);
+              const currComponentHost = currComponent.hostElement
+              if (currComponentHost) {
+                container.hostElement?.append(currComponentHost);
+              }
             }
           });
         }
@@ -311,7 +314,7 @@ export const signalComponent = <
       }))
       projectLog('currComponent[0].hostElement?.id', currComponent[0].hostElement?.id, currComponent)
       currComponent[0].hostElement?.replaceWith(
-        ...newReactiveComponent.map((e) => e.hostElement),
+        ...newReactiveComponent.map((e) => e.hostElement).filter(Boolean),
       );
       currComponent.slice(1).forEach((e) => e.hostElement?.remove());
       currComponent = newReactiveComponent as any;
@@ -330,7 +333,10 @@ export const isSlotTemplate = (item: Element): item is ExtraHTMLElement =>
 export const unsafeHtml = (html: string | ReactiveSignal<string>) => {
   const template = createEl("div")().addStyle({ display: "contents" });
   const setHtml = (htmlString: string) => {
-    template.hostElement.innerHTML = htmlString;
+    const templateHost = template.hostElement
+    if(templateHost) {
+      templateHost.innerHTML = htmlString;
+    }
     return template;
   };
   if (typeof html === "string") {

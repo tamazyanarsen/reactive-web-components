@@ -40,25 +40,31 @@ export const htmlEffectWrapper = (
 };
 
 export class HtmlComponentConfig<T extends ExtraHTMLElement> implements ComponentConfig<T> {
-    protected wrapper: T;
-    hostElement: T;
+    protected wrapper: WeakRef<T>;
+    get hostElement() {
+        return this.wrapper.deref();
+    };
 
     private keyedEffects: Map<string | symbol, WeakRef<EffectCb>> = new Map();
 
-    constructor(wrapper: T) {
+    constructor(wrapper: WeakRef<T>) {
         this.wrapper = wrapper;
-        this.wrapper.effectSet = new Set();
-        this.hostElement = wrapper;
+        const wrapperValue = wrapper.deref();
+        if (wrapperValue) {
+            wrapperValue.effectSet = new Set();
+        }
     }
 
     append: ComponentConfig<T>["append"] = (...args) => {
         args.forEach((element) => {
-            this.wrapper.appendChild(element.hostElement);
-            if (ON_CONNECTED_NAME in element.hostElement) {
+            const elValue = element.hostElement;
+            if (!elValue) return;
+            this.hostElement?.appendChild(elValue);
+            if (ON_CONNECTED_NAME in elValue) {
                 setTimeout(() => {
-                    (element.hostElement as unknown as ExtraHTMLElement).onConnected?.(
+                    (elValue as unknown as ExtraHTMLElement).onConnected?.(
                         element,
-                        element.hostElement,
+                        elValue,
                     );
                 });
             }
@@ -70,31 +76,41 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         this.clear();
         const fragment = document.createDocumentFragment();
         args.forEach((element) => {
-            fragment.appendChild(element.hostElement);
+            const elValue = element.hostElement;
+            if (!elValue) return;
+            fragment.appendChild(elValue);
         });
-        this.wrapper.appendChild(fragment);
+        this.hostElement?.appendChild(fragment);
         return this;
     }
 
     removeChild: ComponentConfig<T>["removeChild"] = (...args) => {
         args.forEach((node) => {
             if (
-                Array.from(this.wrapper.childNodes.values()).some(
+                Array.from(this.hostElement?.childNodes.values() || []).some(
                     (child) => child === node.hostElement,
                 )
-            )
-                this.wrapper.removeChild(node.hostElement);
+            ) {
+                const nodeHostValue = node.hostElement
+                if (nodeHostValue) {
+                    this.hostElement?.removeChild(nodeHostValue);
+                }
+            }
         });
         return this;
     }
 
     addHtmlContent: ComponentConfig<T>["addHtmlContent"] = (content) => {
-        addHtmlContent(this.wrapper, content);
+        const wrapperValue = this.hostElement;
+        if (!wrapperValue) return this;
+        addHtmlContent(wrapperValue, content);
         return this;
     }
 
     setHtmlContent: ComponentConfig<T>["setHtmlContent"] = (content) => {
-        setHtmlContent(this.wrapper, content);
+        const wrapperValue = this.hostElement;
+        if (!wrapperValue) return this;
+        setHtmlContent(wrapperValue, content);
         return this;
     }
 
@@ -103,31 +119,33 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         cb: any,
         options: boolean | AddEventListenerOptions = false,
     ) {
-        this.wrapper.addEventListener(eventName, (e) => cb(e, this, this.wrapper), options);
+        this.hostElement?.addEventListener(eventName, (e) => cb(e, this, this.hostElement), options);
         return this;
     }
 
     setAttribute: ComponentConfig<T>["setAttribute"] = (attrName, value) => {
+        const wrapperValue = this.hostElement;
+        if (!wrapperValue) return this;
         let newValue;
-        if (typeof value === "boolean" && !(this.wrapper instanceof BaseElement)) {
+        if (typeof value === "boolean" && !(wrapperValue instanceof BaseElement)) {
             if (value) {
                 newValue = "";
             } else {
                 this.removeAttribute(attrName as keyof T & string);
                 const attrNameLowerCase = attrName.toLowerCase();
-                if (attrNameLowerCase in this.wrapper) {
-                    this.wrapper[attrNameLowerCase as keyof typeof this.wrapper] = null as any;
+                if (attrNameLowerCase in wrapperValue) {
+                    wrapperValue[attrNameLowerCase as keyof typeof wrapperValue] = null as any;
                 }
                 return this;
             }
         } else if (typeof value !== "string") newValue = JSON.stringify(value);
         else newValue = value;
 
-        this.wrapper.setAttribute(camelToKebab(attrName as string), newValue);
-        if (!(this.wrapper instanceof BaseElement)) {
+        this.hostElement?.setAttribute(camelToKebab(attrName as string), newValue);
+        if (!(wrapperValue instanceof BaseElement)) {
             const attrNameLowerCase = attrName.toLowerCase();
-            if (attrNameLowerCase in this.wrapper) {
-                this.wrapper[attrNameLowerCase as keyof typeof this.wrapper] = value as any;
+            if (attrNameLowerCase in wrapperValue) {
+                wrapperValue[attrNameLowerCase as keyof typeof wrapperValue] = value as any;
             }
         }
         return this;
@@ -136,7 +154,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         let newValue;
         if (typeof value !== "string") newValue = JSON.stringify(value);
         else newValue = value;
-        this.wrapper.setAttribute(camelToKebab(attrName as string), newValue);
+        this.hostElement?.setAttribute(camelToKebab(attrName as string), newValue);
         return this;
     }
     setReactiveAttribute: ComponentConfig<T>["setReactiveAttribute"] = (attrName, valueSignal) => {
@@ -152,10 +170,13 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     removeAttribute: ComponentConfig<T>["removeAttribute"] = (attrName) => {
-        this.wrapper.removeAttribute(camelToKebab(attrName));
+        this.hostElement?.removeAttribute(camelToKebab(attrName));
         return this;
     }
     addStyle: ComponentConfig<T>["addStyle"] = (style) => {
+        const wrapperValue = this.hostElement;
+        if (!wrapperValue) return this;
+
         Object.entries(style).forEach(([cssKey, value]) => {
             const isCustomProperty = cssKey.startsWith("--");
 
@@ -164,25 +185,26 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
                     if (isCustomProperty) {
                         // @ts-expect-error: value некорректно типизирован
                         const cssValue = String(value() || "");
-                        this.wrapper.style.setProperty(cssKey, cssValue);
+                        wrapperValue.style.setProperty(cssKey, cssValue);
                     } else {
                         // @ts-expect-error index string
-                        this.wrapper.style[cssKey] = value();
+                        wrapperValue.style[cssKey] = value();
                     }
                 });
             } else if (typeof value === "string") {
                 if (isCustomProperty) {
-                    this.wrapper.style.setProperty(cssKey, value);
+                    wrapperValue.style.setProperty(cssKey, value);
                 } else {
                     // @ts-expect-error index string
-                    this.wrapper.style[cssKey] = value;
+                    wrapperValue.style[cssKey] = value;
                 }
             }
         });
         return this;
     }
     onConnected: ComponentConfig<T>["onConnected"] = (cb) => {
-        Reflect.defineProperty(this.wrapper, ON_CONNECTED_NAME, {
+        if(!this.hostElement) return this;
+        Reflect.defineProperty(this.hostElement, ON_CONNECTED_NAME, {
             get() {
                 return cb;
             },
@@ -192,7 +214,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     addClass: ComponentConfig<T>["addClass"] = (...className) => {
         className.forEach((cls) => {
             if (typeof cls === "string") {
-                this.wrapper.classList.add(
+                this.hostElement?.classList.add(
                     ...cls
                         .split(" ")
                         .flatMap((e) => e.split("\n"))
@@ -221,8 +243,8 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     setClass: ComponentConfig<T>["setClass"] = (...className) => {
-        this.wrapper.classList.remove(...this.wrapper.classList);
-        this.wrapper.classList.add(...className);
+        this.hostElement?.classList.remove(...(this.hostElement?.classList || []));
+        this.hostElement?.classList.add(...className);
         return this;
     }
     addReactiveClass: ComponentConfig<T>["addReactiveClass"] = (classConfig) => {
@@ -239,16 +261,18 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
         return this;
     }
     removeClass: ComponentConfig<T>["removeClass"] = (...className) => {
-        this.wrapper.classList.remove(...className);
+        this.hostElement?.classList.remove(...className);
         return this;
     }
     replaceClass: ComponentConfig<T>["replaceClass"] = (oldClass, newClass) => {
-        this.wrapper.classList.replace(oldClass, newClass);
+        this.hostElement?.classList.replace(oldClass, newClass);
         return this;
     }
 
     addEffect: ComponentConfig<T>["addEffect"] = (cb, key?: string | symbol) => {
-        const effectCb = () => cb(this, this.wrapper);
+        const wrapperValue = this.hostElement;
+        if (!wrapperValue) return this;
+        const effectCb = () => cb(this, wrapperValue);
         if (key) {
             const eff = this.keyedEffects.get(key)?.deref()
             if (eff) {
@@ -256,33 +280,33 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
             }
             // this.keyedEffects.set(key, new WeakRef(effectCb));
         }
-        this.wrapper.effectSet?.add(new WeakRef(effectCb as unknown as EffectCb));
-        effectCb.component = new WeakRef(this.wrapper);
-        effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
+        wrapperValue.effectSet?.add(new WeakRef(effectCb as unknown as EffectCb));
+        effectCb.component = this.wrapper;
+        effect(effectCb, { name: key?.toString() || wrapperValue.tagName });
         return this;
     }
     addReactiveContent: ComponentConfig<T>["addReactiveContent"] = (content) => {
-        this.wrapper.appendChild(htmlEffectWrapper(content));
+        this.hostElement?.appendChild(htmlEffectWrapper(content));
         return this;
     }
     setReactiveContent: ComponentConfig<T>["setReactiveContent"] = (content) => {
         this.clear();
-        this.wrapper.appendChild(htmlEffectWrapper(content));
+        this.hostElement?.appendChild(htmlEffectWrapper(content));
         return this;
     }
     clear: ComponentConfig<T>["clear"] = () => {
-        this.wrapper.replaceChildren();
+        this.hostElement?.replaceChildren();
         return this;
     }
 }
 
 export class CustomHtmlComponentConfig<T extends ExtraHTMLElement> extends HtmlComponentConfig<T> implements CustomComponentConfig<T> {
     setReactiveValue: CustomComponentConfig<T>["setReactiveValue"] = (value) => {
-        if (this.wrapper instanceof BaseElement) this.wrapper.setReactiveValue(value);
+        if (this.hostElement instanceof BaseElement) this.hostElement.setReactiveValue(value);
         return this;
     }
     setSlotTemplate: CustomComponentConfig<T>["setSlotTemplate"] = (templateConfig) => {
-        const wrapperSlotTemplate = this.wrapper.slotTemplate;
+        const wrapperSlotTemplate = this.hostElement?.slotTemplate;
         if (wrapperSlotTemplate) {
             Object.entries(templateConfig).forEach(([slotKey, slotTmpl]) => {
                 wrapperSlotTemplate[slotKey] =

@@ -95,16 +95,9 @@ export const component = (
 
       static renderTagName = selector;
 
-      // effectCleanupHandleEvent = (e: Set<() => void>) => {
-      //   this.effects.add(e);
-      // }
-
-      // effects = new Set<Set<() => void>>();
-
       constructor(...params: any[]) {
         projectLog("constructor", `%c${selector}%c`);
         super(isClosed, ...params);
-        colorLog("@osheet", sheet);
         if (sheet.length > 0) {
           this.shadow.adoptedStyleSheets.push(...sheet);
         }
@@ -221,7 +214,10 @@ export const component = (
           const insertRenderTemplate = () => {
             projectLog('rwc: insertRenderTemplate');
             const renderComponent = this.render() as ComponentConfig<any>;
-            this.shadow.appendChild(renderComponent.hostElement);
+            const renderHostElement = renderComponent.hostElement;
+            if(renderHostElement) {
+              this.shadow.appendChild(renderHostElement);
+            }
             checkCall(this, target.prototype.connectedCallback);
             this.appendSlotContent();
           };

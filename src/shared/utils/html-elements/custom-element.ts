@@ -8,7 +8,7 @@ import {
   isComponentInitConfig,
   SlotTemplate
 } from "../../types/element";
-import { colorLog, projectLog } from "../helpers";
+import { projectLog } from "../helpers";
 import { isReactiveSignal } from "../signal";
 import { BaseElement, BaseElementConstructor } from "./base-element";
 import { getSignalContent } from "./element";
@@ -25,7 +25,7 @@ export const createCustomElement = <T extends BaseElement>(
   projectLog("createCustomElement", tagName);
   const wrapper = document.createElement(tagName) as T;
   const component = customElementHelpers(wrapper);
-  wrapper.init = () => {initComponent(new WeakRef(component), config);}
+  wrapper.init = () => { initComponent(new WeakRef(component), config); }
   return component;
 };
 
@@ -57,7 +57,6 @@ export const createCustomEl = <T extends BaseElement>(
     comp.addClass(...classList);
   }
   return (...content: ChildrenContent<T>[]) => {
-    colorLog("@rcreateCustomEl content", tagName, content);
     const newContent = content
       .filter(Boolean)
       .flat()
@@ -67,11 +66,14 @@ export const createCustomEl = <T extends BaseElement>(
           : e,
       );
 
-    comp.hostElement.allSlotContent = newContent;
+    const componentHost = comp.hostElement
+    if (!componentHost) return comp;
+    
+    componentHost.allSlotContent = newContent;
 
-    comp.hostElement.slotContent = newContent.filter(isComponentConfig).reduce(
+    componentHost.slotContent = newContent.filter(isComponentConfig).reduce(
       (acc, item) => {
-        const currSlotName = item.hostElement.getAttribute("slot") || "default";
+        const currSlotName = item.hostElement?.getAttribute("slot") || "default";
         if (!acc[currSlotName]) {
           acc[currSlotName] = [];
         }
@@ -81,7 +83,7 @@ export const createCustomEl = <T extends BaseElement>(
       {} as Record<string, ComponentConfig<any>[]>,
     );
 
-    comp.hostElement.appendAllSlotContent = () => {
+    componentHost.appendAllSlotContent = () => {
       appendContentItem(new WeakRef(comp), ...newContent);
     };
 
