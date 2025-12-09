@@ -14,6 +14,7 @@ export type EffectCb = (() => void) & {
   parent?: WeakRef<EffectCb>;
   cleanupSet?: Set<() => void>;
   component?: WeakRef<HTMLElement>;
+  status: 'active' | 'inactive';
   destroy?: () => void;
 }
 
@@ -39,7 +40,7 @@ export function signal<T = unknown>(
 
   function result() {
     const currCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
-    if (currCb && !currCb.fake && !signalSubscribers.has(currCb)) {
+    if (currCb && !currCb.fake && !signalSubscribers.has(currCb) && currCb.status === 'active') {
       signalSubscribers.add(currCb);
       currCb.cleanupSet?.add(() => signalSubscribers.delete(currCb));
     };
@@ -142,7 +143,8 @@ export function effect(
   const randomId = `${config?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
   projectLog("current effect", `%c${randomId}%c`);
 
-  const effectCb: EffectCb = cb;
+  const effectCb: EffectCb = cb as EffectCb;
+  effectCb.status = 'active';
   effectCb.children = new Set();
   effectCb.effectId = randomId;
   const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
@@ -153,6 +155,7 @@ export function effect(
       removeEffect(effectCb);
       parentCb.children?.delete(effectCb);
       effectCb.destroy = undefined;
+      effectCb.status = 'inactive';
     };
   }
   effectCb.cleanupSet = new Set();

@@ -48,10 +48,10 @@ export const initComponent = <
   T extends ExtraHTMLElement,
   K extends ComponentConfig<T> | CustomComponentConfig<T>,
 >(
-  component: K,
+  currComponent: WeakRef<K>,
   config?: ComponentInitConfig<T>,
 ) => {
-  if (!config) return component;
+  if (!config || !currComponent.deref()) return;
 
   const additionalFields = Object.keys(config || {}).filter(
     (key) => key.startsWith(".") || key.startsWith("@") || key.startsWith("$"),
@@ -83,6 +83,9 @@ export const initComponent = <
       if (!config?.effects) config.effects = [];
       config.effects.push(config[key as keyof ComponentInitConfig<T>] as any);
     });
+
+  const component = currComponent.deref()
+  if (!component) return;
 
   addClassList(component, config.classList);
   addStyleList(component, config.style);
@@ -117,7 +120,9 @@ export const setEffects = <T extends ExtraHTMLElement>(
 export const setChildren = <T extends ExtraHTMLElement>(
   comp: ComponentConfig<T>,
   children?: ConfigChildren,
-) => appendContentItem(comp, ...(children || []));
+) => {
+  return appendContentItem(new WeakRef(comp), ...(children || [])) ?? comp
+};
 
 export const addCustomAttributes = <T extends ExtraHTMLElement>(
   comp: ComponentConfig<T>,
@@ -185,9 +190,11 @@ export const appendContentItem = <
   T extends ExtraHTMLElement,
   Component extends ComponentConfig<T> | CustomComponentConfig<T>,
 >(
-  comp: Component,
+  component: WeakRef<Component>,
   ...items: ComponentContent[]
 ) => {
+  const comp = component.deref()
+  if (!comp) return;
   items.forEach((item) => {
     // если условия объединить, то ломается типизация для последнего условия
     if (typeof item === "string") {

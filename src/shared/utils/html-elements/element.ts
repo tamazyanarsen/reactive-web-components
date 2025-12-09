@@ -21,7 +21,8 @@ export const createElement = <K extends HtmlTagName>(
   config?: ComponentInitConfig<HTMLElementTagNameMap[K]>,
 ): ComponentConfig<HTMLElementTagNameMap[K]> => {
   const wrapper = document.createElement<K>(tagName);
-  return initComponent(elementHelpers(wrapper), config);
+  const component = elementHelpers(wrapper);
+  return initComponent(new WeakRef(component), config) ?? component;
 
 };
 
@@ -38,7 +39,7 @@ export const createEl = <K extends HtmlTagName>(
 
   return (...content: ChildrenContent<HTMLElementTagNameMap[K]>[]) => {
     return appendContentItem(
-      element,
+      new WeakRef(element),
       ...content
         .filter(Boolean)
         .flat()
@@ -47,7 +48,7 @@ export const createEl = <K extends HtmlTagName>(
             ? getSignalContent(() => e(element))
             : e,
         ),
-    );
+    ) ?? element;
   };
 };
 
@@ -57,7 +58,7 @@ export const getSignalContent = (cb: CompFuncContent) => {
     .addStyle({ display: "contents" })
     .addEffect((self) => {
       self.clear();
-      appendContentItem(self, ...[cb()].flat());
+      appendContentItem(new WeakRef(self), ...[cb()].flat());
     }, effectId);
 }
 

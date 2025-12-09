@@ -31,7 +31,7 @@ export abstract class BaseElement extends HTMLElement {
 
   effectSet = new Set<WeakRef<EffectCb>>();
 
-  appendAllSlotContent?: () => ComponentConfig<any>;
+  appendAllSlotContent?: () => void;
 
   allSlotContent?: ComponentContent[] = [];
 

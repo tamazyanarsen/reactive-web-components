@@ -8,7 +8,7 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { effect, isReactiveSignal, ReactiveSignal } from "../signal";
+import { effect, EffectCb, isReactiveSignal, ReactiveSignal } from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -308,14 +308,16 @@ export const component = (
         }
         wrapperEffect.fake = true;
         wrapperEffect.component = new WeakRef(this);
-        this.effectSet.add(new WeakRef(wrapperEffect));
+        this.effectSet.add(new WeakRef(wrapperEffect as unknown as EffectCb));
         effect(wrapperEffect, { name: 'FAKE_wrapperEffect' });
       }
 
       disconnectedCallback() {
         this.allSlotContent = [];
-        this.init = undefined;
-        this.appendAllSlotContent = undefined;
+        this.slotContent = {};
+        this.htmlSlotContent = {};
+        // this.init = undefined;
+        // this.appendAllSlotContent = undefined;
 
         this.effectSet.forEach(eff => eff.deref()?.destroy?.());
         this.effectSet.clear();

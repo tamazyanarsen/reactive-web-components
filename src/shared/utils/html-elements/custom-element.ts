@@ -25,7 +25,7 @@ export const createCustomElement = <T extends BaseElement>(
   projectLog("createCustomElement", tagName);
   const wrapper = document.createElement(tagName) as T;
   const component = customElementHelpers(wrapper);
-  wrapper.init = () => {initComponent(component, config);}
+  wrapper.init = () => {initComponent(new WeakRef(component), config);}
   return component;
 };
 
@@ -82,7 +82,7 @@ export const createCustomEl = <T extends BaseElement>(
     );
 
     comp.hostElement.appendAllSlotContent = () => {
-      return appendContentItem(comp, ...newContent);
+      appendContentItem(new WeakRef(comp), ...newContent);
     };
 
     return comp;

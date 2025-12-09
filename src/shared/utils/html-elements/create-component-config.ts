@@ -248,7 +248,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
     }
 
     addEffect: ComponentConfig<T>["addEffect"] = (cb, key?: string | symbol) => {
-        const effectCb: EffectCb = () => cb(this, this.wrapper);
+        const effectCb = () => cb(this, this.wrapper);
         if (key) {
             const eff = this.keyedEffects.get(key)?.deref()
             if (eff) {
@@ -256,7 +256,7 @@ export class HtmlComponentConfig<T extends ExtraHTMLElement> implements Componen
             }
             // this.keyedEffects.set(key, new WeakRef(effectCb));
         }
-        this.wrapper.effectSet?.add(new WeakRef(effectCb));
+        this.wrapper.effectSet?.add(new WeakRef(effectCb as unknown as EffectCb));
         effectCb.component = new WeakRef(this.wrapper);
         effect(effectCb, { name: key?.toString() || this.wrapper.tagName });
         return this;
