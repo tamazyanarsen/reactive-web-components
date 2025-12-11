@@ -18,6 +18,48 @@ export type EffectCb = (() => void) & {
   destroy?: () => void;
 }
 
+const pendingEffects = new Set<EffectCb>();
+let isScheduled = false;
+
+const flushEffects = () => {
+  // 1. Сбрасываем флаг в начале, чтобы можно было запланировать новый флаш
+  isScheduled = false;
+
+  // 2. Если нет эффектов, выходим
+  if (pendingEffects.size === 0) {
+    return;
+  }
+
+  // 3. Копируем эффекты и очищаем очередь
+  const effectsToRun = Array.from(pendingEffects);
+  pendingEffects.clear();
+
+  // 4. Выполняем все эффекты
+  effectsToRun.forEach(cb => {
+    if (cb.status === 'active') {
+      removeEffect(cb);
+      cbStack.push(cb);
+      cb();
+      cbStack.pop();
+    }
+  });
+
+  // 5. Если во время выполнения появились новые эффекты, планируем еще один флаш
+  if (pendingEffects.size > 0) {
+    isScheduled = true;
+    Promise.resolve().then(flushEffects);
+  }
+};
+
+const scheduleEffect = (cb: EffectCb) => {
+  pendingEffects.add(cb);
+  // 6. Если еще не запланирован флаш, планируем его
+  if (!isScheduled) {
+    isScheduled = true;
+    Promise.resolve().then(flushEffects);
+  }
+};
+
 const cbStack: EffectCb[] = [];
 
 export const removeEffect = (effectCb: EffectCb) => {
@@ -78,13 +120,10 @@ export function signal<T = unknown>(
   result.forceSet = function (value: T) {
     initValue = value;
     signalSubscribers.forEach(cb => {
-      removeEffect(cb);
-      Promise.resolve().then(() => {
-        cbStack.push(cb);
-        cb();
-        cbStack.pop();
-      });
+      scheduleEffect(cb);
     });
+    // signalSubscribers.forEach(cb => {
+    // });
   };
 
   result.set = function (
