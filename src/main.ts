@@ -1,7 +1,7 @@
 import { ComponentConfig } from "@shared/types";
 import "./style.css";
 
-import { BaseElement, component, div, effect, getList, property, signal, slot, useCustomComponent, when } from "@shared/utils";
+import { BaseElement, component, div, effect, getSignalContent, property, ReactiveSignal, signal, slot, useCustomComponent, when } from "@shared/utils";
 
 const appendToBody = (element: ComponentConfig<any>) => {
   const hostValue = element.hostElement;
@@ -96,49 +96,60 @@ const itemsSignal = signal([
   { id: 4, value: 'Item 4', color: '#ff9800' }
 ]).setName('dndItems')
 
+
+export const ddList = <
+  Item extends Record<string, any>
+>(
+  items: ReactiveSignal<Item[]>,
+  template: (item: Item, index: number, items: Item[]) => ComponentConfig<HTMLElement>
+) => {
+  return getSignalContent(() => {
+    const itemsValue = items();
+    // const itemsKey = itemsValue.map(keyFn);
+    let currHost: HTMLElement | null = null;
+    return itemsValue.map((item, index) => div(
+      {
+        "@dragstart": (e, _self, host) => {
+          console.log('dragstart', e)
+          currHost = host;
+        },
+        "@dragend": (_e, _, host) => {
+          console.log('dragend curr items', host)
+          host.style.transform = '';
+          host.removeAttribute('draggable');
+        },
+        '@mousedown': (_e, _self, host) => {
+          host.style.transform = 'translateZ(0)';
+          host.setAttribute('draggable', 'true');
+        },
+        '@dragover': (e) => { e.preventDefault() },
+        '@dragenter': throttle((e, _self, host) => {
+          e.preventDefault();
+          if (currHost) {
+            let first:HTMLElement = currHost
+            let second:HTMLElement = host;
+            const currHostY = currHost.getClientRects().item(0)?.y ?? 0;
+            const hostY = host.getClientRects().item(0)?.y ?? 0;
+            if(currHostY < hostY) {
+              [first, second] = [host, currHost];
+            }
+            // можно попробовать replaceWith с временной переменной для обмена
+            host.parentElement?.insertBefore(first, second);
+          }
+        }, 200)
+      },
+      template(item, index, [...items.peek()])
+    )
+    )
+  })
+}
+
 appendToBody(useCustomComponent(class extends BaseElement {
   render() {
-    let changeFunc = (index: number) => { console.log('changeFunc', index) };
-    const itemsKey = itemsSignal.pipe(items => items.map(item => {
-      return item.id
-    }))
     return div(
-      'test-dnd', getList(
+      'test-dnd', ddList(
         itemsSignal,
-        (item) => item.id,
-        (item) => div(
-          {
-            ".draggable": true,
-            "@dragstart": (e) => {
-              console.log('dragstart', e)
-            },
-            "@dragend": (_e, _, host) => {
-              console.log('dragend curr items', host, itemsKey.peek())
-              const dragIndex = itemsKey.peek().findIndex(e => String(e) === host.dataset.key)
-              if (dragIndex !== undefined) {
-                changeFunc(dragIndex);
-              }
-            },
-            '@dragover': (e) => { e.preventDefault() },
-            '@dragenter': throttle((e, _self, host) => {
-              e.preventDefault();
-              console.log('dragenter curr items', host, itemsKey.peek())
-              const toIndex = itemsKey.peek().findIndex(e => String(e) === host.dataset.key)
-              if (toIndex !== undefined) {
-                changeFunc = (fromIndex: number) => {
-                  console.log('changeFunc', fromIndex, toIndex)
-                  const items = [...itemsSignal.peek()];
-                  const tmp = items[fromIndex];
-                  items[fromIndex] = items[toIndex];
-                  items[toIndex] = tmp;
-                  console.log('new items', items)
-                  itemsSignal.set(items);
-                }
-              }
-            }, 200)
-          },
-          item.value
-        )
+        (item) => div(item.value)
       )
     )
   }
