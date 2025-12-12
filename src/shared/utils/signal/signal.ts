@@ -14,9 +14,9 @@ export type EffectCb = (() => void) & {
   parent?: WeakRef<EffectCb>;
   cleanupSet?: Set<() => void>;
   component?: WeakRef<HTMLElement>;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   destroy?: () => void;
-}
+};
 
 const pendingEffects = new Set<EffectCb>();
 let isScheduled = false;
@@ -35,8 +35,8 @@ const flushEffects = () => {
   pendingEffects.clear();
 
   // 4. Выполняем все эффекты
-  effectsToRun.forEach(cb => {
-    if (cb.status === 'active') {
+  effectsToRun.forEach((cb) => {
+    if (cb.status === "active") {
       removeEffect(cb);
       cbStack.push(cb);
       cb();
@@ -63,11 +63,11 @@ const scheduleEffect = (cb: EffectCb) => {
 const cbStack: EffectCb[] = [];
 
 export const removeEffect = (effectCb: EffectCb) => {
-  effectCb.children?.forEach(child => child.destroy?.());
+  effectCb.children?.forEach((child) => child.destroy?.());
   effectCb.children?.clear();
-  effectCb.cleanupSet?.forEach(clean => clean());
+  effectCb.cleanupSet?.forEach((clean) => clean());
   effectCb.cleanupSet?.clear();
-}
+};
 
 export function signal<T = unknown>(
   initValue: T,
@@ -82,11 +82,17 @@ export function signal<T = unknown>(
 
   function result() {
     const currCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
-    if (currCb && !currCb.fake && !signalSubscribers.has(currCb) && currCb.status === 'active') {
+    if (
+      currCb &&
+      !currCb.fake &&
+      !signalSubscribers.has(currCb) &&
+      currCb.status === "active"
+    ) {
       signalSubscribers.add(currCb);
       currCb.cleanupSet?.add(() => signalSubscribers.delete(currCb));
-    };
-    if (!signalConfig?.name && currCb?.effectId) result.setName(currCb.effectId as string);
+    }
+    if (!signalConfig?.name && currCb?.effectId)
+      result.setName(currCb.effectId as string);
 
     return initValue;
   }
@@ -119,7 +125,7 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    signalSubscribers.forEach(cb => {
+    signalSubscribers.forEach((cb) => {
       scheduleEffect(cb);
     });
     // signalSubscribers.forEach(cb => {
@@ -150,23 +156,31 @@ export function signal<T = unknown>(
       R extends Promise<any> ? UnwrapPromise<R> : UnwrapSignal<R>
     >(null as any);
 
-    effect(() => {
-      const signalRes = result();
-      const effectId = 'pipe_effect';
-      effect(() => {
-        const fnResult = fn(signalRes);
-        const innerEffectId = 'pipe_effect_inner';
-        if (fnResult instanceof Promise) {
-          fnResult.then((v) => resSignal.set(v));
-        } else {
-          if (isReactiveSignal(fnResult)) {
-            effect(() => resSignal.set(fnResult()), { name: innerEffectId });
-          } else {
-            resSignal.set(fnResult as any);
-          }
-        }
-      }, { name: effectId });
-    }, { name: pipeConfig?.name || `pipe_${result.signalId}` });
+    effect(
+      () => {
+        const signalRes = result();
+        const effectId = "pipe_effect";
+        effect(
+          () => {
+            const fnResult = fn(signalRes);
+            const innerEffectId = "pipe_effect_inner";
+            if (fnResult instanceof Promise) {
+              fnResult.then((v) => resSignal.set(v));
+            } else {
+              if (isReactiveSignal(fnResult)) {
+                effect(() => resSignal.set(fnResult()), {
+                  name: innerEffectId,
+                });
+              } else {
+                resSignal.set(fnResult as any);
+              }
+            }
+          },
+          { name: effectId },
+        );
+      },
+      { name: pipeConfig?.name || `pipe_${result.signalId}` },
+    );
     return resSignal;
   };
 
@@ -183,7 +197,7 @@ export function effect(
   projectLog("current effect", `%c${randomId}%c`);
 
   const effectCb: EffectCb = cb as EffectCb;
-  effectCb.status = 'active';
+  effectCb.status = "active";
   effectCb.children = new Set();
   effectCb.effectId = randomId;
   const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
@@ -194,7 +208,7 @@ export function effect(
       removeEffect(effectCb);
       parentCb.children?.delete(effectCb);
       effectCb.destroy = undefined;
-      effectCb.status = 'inactive';
+      effectCb.status = "inactive";
     };
   }
   effectCb.cleanupSet = new Set();
@@ -211,7 +225,8 @@ export const isReactiveSignal = <R extends ReactiveSignal<any>>(
   ["object", "function"].includes(typeof v) &&
   "set" in v &&
   "update" in v &&
-  "forceSet" in v && 'signalId' in v;
+  "forceSet" in v &&
+  "signalId" in v;
 
 /**
  * Reactive String (rs). Создаёт зависимый string сигнал от источника.
@@ -247,26 +262,26 @@ export function rs<T extends ReactiveSignal<any> | any>(
 export function createSignal<
   T extends Promise<any> | (() => any),
   I extends
-  | UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
-  | undefined,
+    | UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
+    | undefined,
 >(
   cb: T,
   initializeValue?: I,
 ): // Если есть initializeValue
-  I extends undefined
+I extends undefined
   ? // Если нет initializeValue, проверяем, возвращает ли функция Promise
-  IsPromise<T> extends true
-  ? ReactiveSignal<UnwrapPromise<T> | null>
-  : IsPromiseFunction<T> extends true
-  ? ReactiveSignal<UnwrapPromise<
-    T extends () => infer R ? R : never
-  > | null>
+    IsPromise<T> extends true
+    ? ReactiveSignal<UnwrapPromise<T> | null>
+    : IsPromiseFunction<T> extends true
+      ? ReactiveSignal<UnwrapPromise<
+          T extends () => infer R ? R : never
+        > | null>
+      : ReactiveSignal<
+          UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : never>
+        >
   : ReactiveSignal<
-    UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : never>
-  >
-  : ReactiveSignal<
-    UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
-  > {
+      UnwrapPromise<T extends () => infer R ? UnwrapSignal<R> : T>
+    > {
   const resultSignal = signal<any>(initializeValue ?? null);
 
   const handleValue = (value: any) => resultSignal.set(value);
