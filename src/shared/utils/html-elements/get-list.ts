@@ -9,7 +9,7 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
 ) => {
   let itemsValue: I[] = [];
   let itemsKey: (I[K] | string)[] = [];
-  const container = createElement("div");
+  const container = createElement("div").addStyle({ display: "contents" });
   const itemKeyComponentMap = new Map<
     ReturnType<typeof keyFn>,
     () => ComponentConfig<HTMLElement>
