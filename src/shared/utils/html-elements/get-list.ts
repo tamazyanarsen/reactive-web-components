@@ -2,7 +2,7 @@ import { ComponentConfig } from "@shared/types";
 import { ReactiveSignal, effect, signal } from "../signal";
 import { createElement } from "./element";
 
-export const newGetList = <I extends Record<string, any>, K extends keyof I>(
+export const getList = <I extends Record<string, any>, K extends keyof I>(
   items: ReactiveSignal<I[]>,
   keyFn: (item: I) => I[K] | string,
   cb: (item: I, index: number, items: I[]) => ComponentConfig<HTMLElement>,

@@ -7,7 +7,7 @@ import {
   ddList,
   div,
   effect,
-  newGetList,
+  getList,
   property,
   signal,
   slot,
@@ -120,7 +120,7 @@ appendToBody(
       render() {
         return div(
           "colored-list",
-          newGetList(
+          getList(
             coloredItemsSignal,
             (item) => item.id.toString(), // ключ - строковое представление id
             (item, index, items) =>
@@ -174,4 +174,3 @@ setTimeout(() => {
   colorSignal.set("orange");
   console.log("coloredItemsSignal updated");
 }, 6000);
-
