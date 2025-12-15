@@ -7,7 +7,6 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
   keyFn: (item: I) => I[K] | string,
   cb: (item: I, index: number, items: I[]) => ComponentConfig<HTMLElement>,
 ) => {
-  console.log("newGetList", items.peek(), keyFn, cb);
   let itemsValue: I[] = [];
   let itemsKey: (I[K] | string)[] = [];
   const container = createElement("div");
@@ -30,8 +29,6 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
     const newItems = items();
     const newItemsKey = newItems.map(keyFn);
 
-    console.log("start getlist");
-
     itemsKey
       .filter((key) => !newItemsKey.includes(key))
       .forEach((key) => {
@@ -51,12 +48,10 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
 
     newItemsKey.forEach((key, index) => {
       if (itemsKey.includes(key)) {
-        console.log("key was found", key);
         if (
           JSON.stringify(itemsValue[itemsKey.indexOf(key)]) !==
           JSON.stringify(newItems[index])
         ) {
-          console.log("items not equal");
           signalMap.get(key)?.set({
             templateFunc: () => cb(newItems[index], index, newItems),
             items: newItems,
@@ -75,12 +70,9 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
           index,
         }),
       );
-      console.log("start queueMicrotask");
       queueMicrotask(() => {
         effect(() => {
-          const { templateFunc, items, itemsKey, index } =
-            signalMap.get(key)?.() ?? {};
-          console.log(templateFunc, itemsKey, items, index);
+          const { templateFunc, index } = signalMap.get(key)?.() ?? {};
           const findElement = container.hostElement?.querySelector(
             `[data-key="${key}"]`,
           );
@@ -88,15 +80,12 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
             templateFunc?.().setCustomAttribute("data-key", key).hostElement ??
             document.createElement("div");
           if (!findElement) {
-            console.log("find element", findElement);
             insertElement(index ?? 0, container.hostElement, newElement);
           } else {
-            console.log("NOT find element");
             container.hostElement?.childNodes.forEach((node, oldIndex) => {
               if (node instanceof HTMLElement) {
                 if (node.getAttribute("data-key") === key) {
                   if (index === oldIndex) {
-                    console.log("start replaceWith", key, index, newElement);
                     insertElement(
                       index ?? 0,
                       container.hostElement,
@@ -124,7 +113,7 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
       el?: HTMLElement | null,
     ) => {
       if (!(el && parent)) return;
-      console.log("insertElement", index, parent, el);
+
       if (index < parent.children.length) {
         parent.insertBefore(el, parent.children[index]);
       } else {
@@ -138,4 +127,3 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
 
   return container;
 };
-
