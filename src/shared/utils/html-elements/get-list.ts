@@ -15,7 +15,6 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
     ReturnType<typeof keyFn>,
     () => ComponentConfig<HTMLElement>
   >();
-  const currElementsMap = new Map<number, WeakRef<HTMLElement>>();
 
   const signalMap = new Map<
     string,
@@ -31,11 +30,7 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
     const newItems = items();
     const newItemsKey = newItems.map(keyFn);
 
-    container.hostElement?.childNodes.forEach((node, index) => {
-      if (node instanceof HTMLElement && node.dataset.key) {
-        currElementsMap.set(index, new WeakRef(node));
-      }
-    });
+    console.log("start getlist");
 
     itemsKey
       .filter((key) => !newItemsKey.includes(key))
@@ -55,7 +50,22 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
     });
 
     newItemsKey.forEach((key, index) => {
-      if (itemsKey.includes(key)) return;
+      if (itemsKey.includes(key)) {
+        console.log("key was found", key);
+        if (
+          JSON.stringify(itemsValue[itemsKey.indexOf(key)]) !==
+          JSON.stringify(newItems[index])
+        ) {
+          console.log("items not equal");
+          signalMap.get(key)?.set({
+            templateFunc: () => cb(newItems[index], index, newItems),
+            items: newItems,
+            itemsKey: newItemsKey,
+            index,
+          });
+        }
+        return;
+      }
       signalMap.set(
         key,
         signal({
@@ -65,17 +75,45 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
           index,
         }),
       );
+      console.log("start queueMicrotask");
       queueMicrotask(() => {
         effect(() => {
           const { templateFunc, items, itemsKey, index } =
             signalMap.get(key)?.() ?? {};
           console.log(templateFunc, itemsKey, items, index);
-          container.hostElement?.childNodes.forEach((node) => {
-            if (node instanceof HTMLElement) {
-              if (node.getAttribute("data-key") === key) {
+          const findElement = container.hostElement?.querySelector(
+            `[data-key="${key}"]`,
+          );
+          const newElement =
+            templateFunc?.().setCustomAttribute("data-key", key).hostElement ??
+            document.createElement("div");
+          if (!findElement) {
+            console.log("find element", findElement);
+            insertElement(index ?? 0, container.hostElement, newElement);
+          } else {
+            console.log("NOT find element");
+            container.hostElement?.childNodes.forEach((node, oldIndex) => {
+              if (node instanceof HTMLElement) {
+                if (node.getAttribute("data-key") === key) {
+                  if (index === oldIndex) {
+                    console.log("start replaceWith", key, index, newElement);
+                    insertElement(
+                      index ?? 0,
+                      container.hostElement,
+                      newElement,
+                    );
+                    node.remove();
+                  } else {
+                    insertElement(
+                      index ?? 0,
+                      container.hostElement,
+                      newElement,
+                    );
+                  }
+                }
               }
-            }
-          });
+            });
+          }
         });
       });
     });
@@ -93,60 +131,6 @@ export const newGetList = <I extends Record<string, any>, K extends keyof I>(
         parent.appendChild(el);
       }
     };
-
-    newItemsKey.forEach((key, index) => {
-      if (itemsKey.includes(key)) {
-        console.log(
-          "find element",
-          key,
-          itemsValue[itemsKey.indexOf(key)],
-          newItems[index],
-        );
-        if (
-          JSON.stringify(itemsValue[itemsKey.indexOf(key)]) !==
-          JSON.stringify(newItems[index])
-        ) {
-          itemKeyComponentMap.set(key, () =>
-            cb(newItems[index], index, newItems).setCustomAttribute(
-              "data-key",
-              key,
-            ),
-          );
-          console.log(
-            "update element",
-            key,
-            itemsValue[itemsKey.indexOf(key)],
-            newItems[index],
-          );
-          container.hostElement
-            ?.querySelector(`[data-key="${key}"]`)
-            ?.replaceWith(
-              itemKeyComponentMap.get(key)?.().hostElement ??
-                document.createElement("div"),
-            );
-        }
-        if (itemsKey.indexOf(key) !== index) {
-          console.log(
-            "insert element",
-            key,
-            itemsValue[itemsKey.indexOf(key)],
-            newItems[index],
-          );
-          insertElement(
-            index,
-            container.hostElement,
-            container.hostElement?.querySelector(`[data-key="${key}"]`),
-          );
-        }
-      } else {
-        console.log("new element", key, newItems[index]);
-        insertElement(
-          index,
-          container.hostElement,
-          itemKeyComponentMap.get(key)?.().hostElement,
-        );
-      }
-    });
 
     itemsKey = newItemsKey;
     itemsValue = [...newItems];

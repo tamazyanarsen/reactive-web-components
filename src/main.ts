@@ -106,43 +106,6 @@ appendToBody(
 
 // Примеры использования newGetList
 
-// Пример 1: Простой список задач с использованием newGetList
-const todosSignal = signal([
-  { id: "1", text: "Купить молоко", completed: false },
-  { id: "2", text: "Выучить TypeScript", completed: true },
-  { id: "3", text: "Создать компонент", completed: false },
-]).setName("todos");
-
-appendToBody(
-  useCustomComponent(
-    class extends BaseElement {
-      render() {
-        return div(
-          "todos-list",
-          newGetList(
-            todosSignal,
-            (item) => item.id, // ключ - id элемента
-            (item, index) =>
-              div(
-                {
-                  classList: [`todo-item-${item.id}`],
-                  style: {
-                    textDecoration: item.completed ? "line-through" : "none",
-                    padding: "8px",
-                    margin: "4px",
-                    border: "1px solid #ccc",
-                  },
-                },
-                `${index + 1}. ${item.text}`,
-              ),
-          ),
-        );
-      }
-    },
-    "app-todos",
-  )(),
-);
-
 const colorSignal = signal("red");
 // Пример 2: Список с цветными элементами и динамическим обновлением
 const coloredItemsSignal = signal([
@@ -182,46 +145,8 @@ appendToBody(
   )(),
 );
 
-// Пример 3: Использование с существующим itemsSignal
-appendToBody(
-  useCustomComponent(
-    class extends BaseElement {
-      render() {
-        return div(
-          "new-get-list-example",
-          newGetList(
-            itemsSignal,
-            (item) => item.id, // ключ по id
-            (item) =>
-              div(
-                {
-                  classList: [`item-${item.id}`],
-                  style: {
-                    backgroundColor: item.color,
-                    padding: "10px",
-                    margin: "5px",
-                    borderRadius: "4px",
-                    color: "white",
-                  },
-                },
-                `${item.value} (ID: ${item.id})`,
-              ),
-          ),
-        );
-      }
-    },
-    "app-new-get-list",
-  )(),
-);
-
 // Демонстрация динамического обновления списка
 setTimeout(() => {
-  // Добавляем новый элемент в todos
-  todosSignal.set([
-    ...todosSignal.peek(),
-    { id: "4", text: "Протестировать newGetList", completed: false },
-  ]);
-
   // Обновляем элемент в coloredItems
   coloredItemsSignal.set([
     { ...coloredItemsSignal.peek()[0], id: 1, name: "Красный 2" },
