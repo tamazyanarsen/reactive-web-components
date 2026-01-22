@@ -16,9 +16,12 @@ import {
   ExtraHTMLElement,
 } from "../../types/element";
 import { isReactiveSignal } from "../signal";
-import { CustomHtmlComponentConfig, HtmlComponentConfig } from "./create-component-config";
+import {
+  CustomHtmlComponentConfig,
+  HtmlComponentConfig,
+} from "./create-component-config";
 
-export const eventEmitter = () => () => { };
+export const eventEmitter = () => () => {};
 
 export const customElementHelpers = <T extends ExtraHTMLElement>(
   wrapper: T,
@@ -84,7 +87,7 @@ export const initComponent = <
       config.effects.push(config[key as keyof ComponentInitConfig<T>] as any);
     });
 
-  const component = currComponent.deref()
+  const component = currComponent.deref();
   if (!component) return;
 
   addClassList(component, config.classList);
@@ -121,7 +124,7 @@ export const setChildren = <T extends ExtraHTMLElement>(
   comp: ComponentConfig<T>,
   children?: ConfigChildren,
 ) => {
-  return appendContentItem(new WeakRef(comp), ...(children || [])) ?? comp
+  return appendContentItem(new WeakRef(comp), ...(children || [])) ?? comp;
 };
 
 export const addCustomAttributes = <T extends ExtraHTMLElement>(
@@ -167,7 +170,7 @@ export const addAttributeList = <T extends ExtraHTMLElement>(
     attrName: AttrSignal<T>,
     attrValue?: AttributeValue<T, AttrSignal<T>>,
   ) => {
-    if (!attrValue) return;
+    if (attrValue === undefined) return;
     if (isReactiveSignal(attrValue)) {
       comp.setReactiveAttribute(attrName as AttrSignal<T>, attrValue);
     } else if (typeof attrValue === "function") {
@@ -193,7 +196,7 @@ export const appendContentItem = <
   component: WeakRef<Component>,
   ...items: ComponentContent[]
 ) => {
-  const comp = component.deref()
+  const comp = component.deref();
   if (!comp) return;
   items.forEach((item) => {
     // если условия объединить, то ломается типизация для последнего условия
