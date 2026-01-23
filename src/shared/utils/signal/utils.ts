@@ -8,7 +8,7 @@ import { ReactiveSignal, UnwrapSignal } from "./signal.type";
  */
 export function bindReactiveSignals<T>(
   signalA: ReactiveSignal<T>,
-  signalB: ReactiveSignal<T>
+  signalB: ReactiveSignal<T>,
 ): void {
   let prevA = signalA();
   let prevB = signalB();
@@ -37,7 +37,8 @@ export function forkJoin<T extends readonly ReactiveSignal<unknown>[]>(
 
   signals.forEach((signal, index) => {
     effect(() => {
-      const newValuesLength = (): number => newValues.filter((el) => el !== undefined).length;
+      const newValuesLength = (): number =>
+        newValues.filter((el) => el !== undefined).length;
       if (newValuesLength() === signals.length) {
         newValues = Array.from(newValues).fill(undefined);
       }
@@ -55,7 +56,28 @@ export const combineLatest = <T extends readonly ReactiveSignal<any>[]>(
 ): ReactiveSignal<{ [K in keyof T]: UnwrapSignal<T[K]> }> => {
   const resSignal = signal<{ [K in keyof T]: UnwrapSignal<T[K]> }>([] as any);
   effect(() => {
-    resSignal.set(signals.map(sig => sig()) as { [K in keyof T]: UnwrapSignal<T[K]> });
-  })
-  return resSignal
-}
+    resSignal.set(
+      signals.map((sig) => sig()) as { [K in keyof T]: UnwrapSignal<T[K]> },
+    );
+  });
+  return resSignal;
+};
+
+/**
+ * Обработка первого обновления сигнала
+ * @param sgn сигнал
+ * @param cb функция обратного вызова после первого обновления сигнала
+ */
+export const firstUpdate = <T extends ReactiveSignal<any>>(
+  sgn: T,
+  cb: (value: UnwrapSignal<T>) => void,
+) => {
+  let isFirstUpdate = true;
+  const effectCb = effect(() => {
+    if (isFirstUpdate) {
+      isFirstUpdate = false;
+      cb(sgn());
+      effectCb.destroy?.();
+    }
+  });
+};

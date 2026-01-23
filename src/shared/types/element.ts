@@ -3,18 +3,18 @@ import { EffectCb, ReactiveSignal } from "../utils/signal";
 export type Split<S extends string, D extends string> = string extends S
   ? string[]
   : S extends ""
-  ? []
-  : S extends `${infer T}${D}${infer U}`
-  ? [T, ...Split<U, D>]
-  : [S];
+    ? []
+    : S extends `${infer T}${D}${infer U}`
+      ? [T, ...Split<U, D>]
+      : [S];
 
 export type Join<T extends unknown[], D extends string> = T extends []
   ? ""
   : T extends [string | number | boolean | bigint]
-  ? `${T[0]}`
-  : T extends [string | number | boolean | bigint, ...infer U]
-  ? `${T[0]}${D}${Join<U, D>}`
-  : string;
+    ? `${T[0]}`
+    : T extends [string | number | boolean | bigint, ...infer U]
+      ? `${T[0]}${D}${Join<U, D>}`
+      : string;
 
 export type HtmlTagName = keyof HTMLElementTagNameMap;
 
@@ -56,7 +56,7 @@ export type AttrSignal<
   T extends HTMLElement & { render?: () => ComponentConfig<ExtraHTMLElement> },
 > = T["render"] extends () => ComponentConfig<ExtraHTMLElement>
   ? { [k in keyof T]: T[k] extends ReactiveSignal<any> ? k : never }[keyof T &
-  string]
+      string]
   : keyof T & string;
 
 export type EffectCallback<T extends HTMLElement> = (
@@ -110,8 +110,8 @@ export interface ComponentConfig<T extends ExtraHTMLElement> {
    */
   addEventlistener<
     K extends T["render"] extends () => ComponentConfig<ExtraHTMLElement>
-    ? never
-    : keyof HTMLElementEventMap,
+      ? never
+      : keyof HTMLElementEventMap,
   >(
     eventName: K,
     cb: ComponentEventListener<T, HTMLElementEventMap[K]>,
@@ -282,6 +282,7 @@ export type ConfigStyle = Partial<{
 
 export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
   classList: ConfigClassList;
+  ref: ReactiveSignal<ComponentConfig<T>>;
   style: ConfigStyle;
   attributes: ConfigAttribute<T>;
   customAttributes: ConfigCustomAttribute;
@@ -296,7 +297,7 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
       [key in AttrSignal<T> as `.${key}`]?: AttributeValue<T, key>;
     } & {
       [K in keyof HTMLElementEventMap as `@${string &
-      K}`]?: ComponentEventListener<T, HTMLElementEventMap[K]>;
+        K}`]?: ComponentEventListener<T, HTMLElementEventMap[K]>;
     } & {
       [K in EventKeys<T> as `@${string & K}`]?: CustomEventListener<
         CustomEventValue<T[K]>,
@@ -320,6 +321,7 @@ export const isComponentInitConfig = (
     "customListeners" in item ||
     "children" in item ||
     "effects" in item ||
+    "ref" in item ||
     "style" in item ||
     Object.keys(item).some(
       (key) =>

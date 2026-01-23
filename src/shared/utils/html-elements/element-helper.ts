@@ -15,6 +15,7 @@ import {
   CustomComponentConfig,
   ExtraHTMLElement,
 } from "../../types/element";
+import { projectLog } from "../helpers";
 import { isReactiveSignal } from "../signal";
 import {
   CustomHtmlComponentConfig,
@@ -100,6 +101,8 @@ export const initComponent = <
   setListeners(component, config.listeners);
   setListeners(component, config.customListeners);
 
+  config.ref?.set(component);
+
   return component;
 };
 
@@ -171,6 +174,7 @@ export const addAttributeList = <T extends ExtraHTMLElement>(
     attrValue?: AttributeValue<T, AttrSignal<T>>,
   ) => {
     if (attrValue === undefined) return;
+    projectLog("addAttribute", attrName, attrValue);
     if (isReactiveSignal(attrValue)) {
       comp.setReactiveAttribute(attrName as AttrSignal<T>, attrValue);
     } else if (typeof attrValue === "function") {

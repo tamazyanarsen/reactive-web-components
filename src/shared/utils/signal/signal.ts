@@ -238,6 +238,8 @@ export function effect(
   cbStack.push(effectCb);
   effectCb();
   cbStack.pop();
+
+  return effectCb;
 }
 
 export const isReactiveSignal = <R extends ReactiveSignal<any>>(

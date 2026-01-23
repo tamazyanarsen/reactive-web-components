@@ -16,18 +16,24 @@ export class TestComponent extends BaseElement {
   testProperty = signal(true);
 
   render() {
-    return div("test-component", this.testProperty() + "");
+    return div("test-component", () => this.testProperty() + "");
   }
 }
 const Test = useCustomComponent(TestComponent, "test-component");
 
 useCustomComponent(
   class extends BaseElement {
+    testSignal = signal(true);
+
     render() {
+      setTimeout(() => {
+        console.log("testSignal set to false");
+        this.testSignal.set(false);
+      }, 3000);
       return div(
         "wrapper",
         Test({
-          ".testProperty": false,
+          ".testProperty": this.testSignal,
         }),
       );
     }

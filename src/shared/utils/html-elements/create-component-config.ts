@@ -5,7 +5,7 @@ import {
   ExtraHTMLElement,
   SlotTemplate,
 } from "@shared/types/element";
-import { camelToKebab } from "../helpers";
+import { camelToKebab, projectLog } from "../helpers";
 import { effect, type EffectCb, ReactiveSignal, removeEffect } from "../signal";
 import { BaseElement } from "./base-element";
 
@@ -136,6 +136,7 @@ export class HtmlComponentConfig<
   }
 
   setAttribute: ComponentConfig<T>["setAttribute"] = (attrName, value) => {
+    projectLog("setAttribute", attrName, value);
     const wrapperValue = this.hostElement;
     if (!wrapperValue) return this;
     let newValue;
@@ -182,6 +183,7 @@ export class HtmlComponentConfig<
     valueSignal,
   ) => {
     this.addEffect((self) => {
+      projectLog("setReactiveAttribute effect", attrName, valueSignal);
       self.setAttribute(attrName, valueSignal());
     }, attrName);
     return this;

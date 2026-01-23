@@ -243,6 +243,31 @@ city.set('SPB');   // userData немедленно обновится до ['Ja
 - **`forkJoin`** — ждет обновления всех сигналов перед эмитом нового значения. Полезно, когда нужно, чтобы все значения обновились вместе.
 - **`combineLatest`** — эмитит новое значение немедленно при изменении любого сигнала. Полезно для обновлений в реальном времени и реактивных вычислений.
 
+  #### firstUpdate
+
+  Выполняет callback после первого обновления реактивного сигнала. Полезно для выполнения одноразовых действий, когда сигнал получает свое первое не-начальное значение.
+
+  ```typescript
+  import { firstUpdate, signal } from '@shared/utils';
+
+  const userSignal = signal(null);
+
+  // Этот callback будет вызван только один раз при первом обновлении userSignal
+  firstUpdate(userSignal, (user) => {
+    console.log('Пользователь загружен впервые:', user);
+    // Выполняем логику инициализации
+  });
+
+  // Позже, когда userSignal обновится:
+  userSignal.set({ name: 'John', age: 30 }); // Callback выполнится
+  userSignal.set({ name: 'Jane', age: 25 }); // Callback НЕ выполнится снова
+  ```
+
+  **Применение:**
+  - Выполнение одноразовой инициализации при первом появлении данных
+  - Запуск побочных эффектов только при первом обновлении
+  - Обработка сценариев начальной загрузки данных
+
   ### Функция как дочерний контент (рекомендуемый стиль для динамических списков и условного рендера)
 
 Функции, переданные в качестве дочернего контента в `el` или `customEl`, автоматически преобразуются в реактивный контент. Это позволяет удобно создавать динамический контент, который будет обновляться при изменении зависимых сигналов. Функция-контент получает контекст (ссылку на свой компонент) в качестве первого аргумента.
@@ -536,6 +561,7 @@ div({ classList: ['container'] },
 ```typescript
 export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
   classList: ConfigClassList;
+  ref: ReactiveSignal<ComponentConfig<T>>;
   style: ConfigStyle;
   attributes: ConfigAttribute<T>;
   customAttributes: ConfigCustomAttribute;
@@ -558,6 +584,7 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
 #### Основные возможности
 
 - **classList** — массив классов (строки или функции/сигналы)
+- **ref** — реактивный сигнал для получения ссылки на экземпляр компонента
 - **style** — объект CSS-стилей; поддерживает как обычные свойства, так и CSS Custom Properties (`--var`), значения могут быть функциями/сигналами
 - **attributes** — объект с HTML-атрибутами
 - **customAttributes** — объект с кастомными атрибутами
@@ -661,6 +688,30 @@ div(
   span('Text'),
   button('Click me')
 )
+```
+
+**7. Получение ссылки на компонент с помощью ref**
+
+```typescript
+const buttonRef = signal<ComponentConfig<HTMLButtonElement>>(null);
+
+// Позже, используем ссылку
+button({
+  ref: buttonRef,
+  listeners: {
+    click: () => console.log('Кнопка нажата')
+  }
+}, 'Нажми меня');
+
+// Доступ к компоненту позже
+effect(() => {
+  const buttonComponent = buttonRef();
+  if (buttonComponent) {
+    console.log('Компонент кнопки доступен:', buttonComponent);
+    // Можно вызывать методы компонента:
+    // buttonComponent.addClass('active');
+  }
+});
 ```
 
 ---

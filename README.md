@@ -243,7 +243,32 @@ city.set('SPB');   // userData immediately updates to ['Jane', 30, 'SPB']
 - **`forkJoin`** — waits for all signals to update before emitting a new value. Useful when you need all values to be updated together.
 - **`combineLatest`** — emits a new value immediately when any signal changes. Useful for real-time updates and reactive computations.
 
-  ### Function as Child Content (recommended style for dynamic lists and conditional render)
+#### firstUpdate
+
+Executes a callback after the first update of a reactive signal. Useful for performing one-time actions when a signal receives its first non-initial value.
+
+```typescript
+import { firstUpdate, signal } from '@shared/utils';
+
+const userSignal = signal(null);
+
+// This callback will be called only once when userSignal is first updated
+firstUpdate(userSignal, (user) => {
+  console.log('User loaded for the first time:', user);
+  // Perform initialization logic
+});
+
+// Later, when userSignal is updated:
+userSignal.set({ name: 'John', age: 30 }); // Callback executes
+userSignal.set({ name: 'Jane', age: 25 }); // Callback does NOT execute again
+```
+
+**Application:**
+- Performing one-time initialization when data first arrives
+- Triggering side effects only on the first update
+- Handling initial data loading scenarios
+
+### Function as Child Content (recommended style for dynamic lists and conditional render)
 
 Functions passed as child content to `el` or `customEl` are automatically converted to reactive content. This allows convenient creation of dynamic content that will update when dependent signals change. The content function receives context (a reference to its component) as the first argument.
 
@@ -536,6 +561,7 @@ To set properties, attributes, classes, events, and effects for elements and com
 ```typescript
 export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
   classList: ConfigClassList;
+  ref: ReactiveSignal<ComponentConfig<T>>;
   style: ConfigStyle;
   attributes: ConfigAttribute<T>;
   customAttributes: ConfigCustomAttribute;
@@ -558,6 +584,7 @@ export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
 #### Main Features
 
 - **classList** — array of classes (strings or functions/signals)
+- **ref** — reactive signal to get a reference to the component instance
 - **style** — CSS styles object; supports both regular properties and CSS Custom Properties (`--var`), values can be functions/signals
 - **attributes** — object with HTML attributes
 - **customAttributes** — object with custom attributes
@@ -661,6 +688,30 @@ div(
   span('Text'),
   button('Click me')
 )
+```
+
+**7. Getting component reference with ref**
+
+```typescript
+const buttonRef = signal<ComponentConfig<HTMLButtonElement>>(null);
+
+// Later, use the reference
+button({
+  ref: buttonRef,
+  listeners: {
+    click: () => console.log('Button clicked')
+  }
+}, 'Click me');
+
+// Access the component later
+effect(() => {
+  const buttonComponent = buttonRef();
+  if (buttonComponent) {
+    console.log('Button component available:', buttonComponent);
+    // You can call component methods:
+    // buttonComponent.addClass('active');
+  }
+});
 ```
 
 ---
