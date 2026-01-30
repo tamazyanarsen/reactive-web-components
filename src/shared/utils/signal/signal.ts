@@ -19,69 +19,38 @@ export type EffectCb = (() => void) & {
 };
 
 const pendingEffects = new Set<EffectCb>();
-let isScheduled = false;
-let isFlushing = false;
+let isPending = false;
 
-const flushEffects = () => {
-  // Защита от рекурсивных вызовов flushEffects
-  if (isFlushing) return;
+const sheduleEffect = (effectCb: EffectCb) => {
+  if (effectCb.status === "active") {
+    pendingEffects.add(effectCb);
+  }
+  if (!isPending) {
+    isPending = true;
+    queueMicrotask(() => {
+      isPending = false;
+      projectLog("pendingEffects.size", pendingEffects.size);
+      const effectList = Array.from(pendingEffects);
+      pendingEffects.clear();
 
-  isFlushing = true;
-
-  try {
-    // 1. Сбрасываем флаг в начале, чтобы можно было запланировать новый флаш
-    isScheduled = false;
-
-    // 2. Если нет эффектов, выходим
-    if (pendingEffects.size === 0) {
-      return;
-    }
-
-    // 3. Копируем эффекты и очищаем очередь
-    const effectsToRun = Array.from(pendingEffects);
-    pendingEffects.clear();
-
-    // 4. Выполняем все эффекты с обработкой ошибок
-    effectsToRun.forEach((cb) => {
-      if (cb.status === "active") {
-        removeEffect(cb);
-        cbStack.push(cb);
-        try {
-          cb();
-        } catch (error) {
-          // Логируем ошибку, но продолжаем выполнение остальных эффектов
-          console.error("Error in effect:", error);
-        } finally {
-          cbStack.pop();
+      effectList.forEach((cb) => {
+        if (cb.status === "active") {
+          removeEffect(cb);
+          cbStack.push(cb);
+          try {
+            cb();
+          } catch (error) {
+            // Логируем ошибку, но продолжаем выполнение остальных эффектов
+            console.error("Error in effect:", error);
+          } finally {
+            cbStack.pop();
+          }
         }
-      }
+      });
+
+      projectLog("after ------ pendingEffects.size", pendingEffects.size);
     });
-
-    // 5. Если во время выполнения появились новые эффекты, планируем еще один флаш
-    if (pendingEffects.size > 0) {
-      scheduleFlush();
-    }
-  } finally {
-    // 6. Гарантированно сбрасываем флаг flushing, даже если произошла ошибка
-    isFlushing = false;
   }
-};
-
-function startEffectsPromise() {
-  queueMicrotask(flushEffects);
-}
-
-const scheduleFlush = () => {
-  if (!isScheduled) {
-    isScheduled = true;
-    startEffectsPromise();
-  }
-};
-
-const scheduleEffect = (cb: EffectCb) => {
-  pendingEffects.add(cb);
-  // 7. Если еще не запланирован флаш и не выполняем flush, планируем его
-  scheduleFlush();
 };
 
 const cbStack: EffectCb[] = [];
@@ -149,9 +118,7 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    signalSubscribers.forEach((cb) => {
-      scheduleEffect(cb);
-    });
+    signalSubscribers.forEach((cb) => sheduleEffect(cb));
   };
 
   result.set = function (
