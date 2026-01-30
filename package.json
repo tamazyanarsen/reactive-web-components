@@ -1,6 +1,6 @@
 {
   "name": "@reactive-web-components/rwc",
-  "version": "2.63.2",
+  "version": "2.63.3",
   "description": "Modern library for creating reactive web components with declarative syntax and strict typing",
   "type": "module",
   "keywords": [
