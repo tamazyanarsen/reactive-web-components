@@ -18,6 +18,21 @@ export type EffectCb = (() => void) & {
   destroy?: () => void;
 };
 
+const callCb = (cb: EffectCb) => {
+  if (cb.status === "active") {
+    removeEffect(cb);
+    cbStack.push(cb);
+    try {
+      cb();
+    } catch (error) {
+      // Логируем ошибку, но продолжаем выполнение остальных эффектов
+      console.error("Error in effect:", error);
+    } finally {
+      cbStack.pop();
+    }
+  }
+};
+
 const pendingEffects = new Set<EffectCb>();
 let isPending = false;
 
@@ -34,18 +49,7 @@ const sheduleEffect = (effectCb: EffectCb) => {
       pendingEffects.clear();
 
       effectList.forEach((cb) => {
-        if (cb.status === "active") {
-          removeEffect(cb);
-          cbStack.push(cb);
-          try {
-            cb();
-          } catch (error) {
-            // Логируем ошибку, но продолжаем выполнение остальных эффектов
-            console.error("Error in effect:", error);
-          } finally {
-            cbStack.pop();
-          }
-        }
+        callCb(cb);
       });
 
       projectLog("after ------ pendingEffects.size", pendingEffects.size);
