@@ -36,7 +36,10 @@ const callCb = (cb: EffectCb) => {
 const pendingEffects = new Set<EffectCb>();
 let isPending = false;
 
-const sheduleEffect = (effectCb: EffectCb) => {
+/**
+ * @deprecated
+ */
+export const sheduleEffect = (effectCb: EffectCb) => {
   if (effectCb.status === "active") {
     pendingEffects.add(effectCb);
   }
@@ -122,7 +125,7 @@ export function signal<T = unknown>(
 
   result.forceSet = function (value: T) {
     initValue = value;
-    signalSubscribers.forEach((cb) => sheduleEffect(cb));
+    signalSubscribers.forEach((cb) => queueMicrotask(() => callCb(cb)));
   };
 
   result.set = function (
