@@ -282,7 +282,7 @@ export type ConfigStyle = Partial<{
 
 export type ComponentInitConfig<T extends ExtraHTMLElement> = Partial<{
   classList: ConfigClassList;
-  ref: ReactiveSignal<ComponentConfig<T>>;
+  ref: ReactiveSignal<ComponentConfig<T> | null>;
   style: ConfigStyle;
   attributes: ConfigAttribute<T>;
   customAttributes: ConfigCustomAttribute;
