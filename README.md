@@ -173,7 +173,8 @@ ItemListComp({ '.items': data })
 
 | Resource | Description |
 |----------|-------------|
-| [README.ru.md](./README.ru.md) | Full documentation in Russian — complete API reference with examples |
+| [docs.ru.md](./docs/docs.ru.md) | Full documentation in Russian — complete API reference with examples |
+| [docs.en.md](./docs/docs.en.md) | Full documentation in English — complete API reference with examples |
 | `src/` | Source code and usage examples |
 
 ## Project Status
