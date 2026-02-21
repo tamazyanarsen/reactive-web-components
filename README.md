@@ -1,7 +1,5 @@
 # Reactive Web Components (RWC)
 
-[
-
 [🇷🇺 Документация на русском](./docs/docs.ru.md)
 
 **RWC** is a lightweight runtime for building reactive [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_Components) without depending on a specific framework. It combines fine-grained signals, effects, and a declarative TypeScript-first HTML factory to compose UI from strongly-typed primitives — no templates, no JSX, just TypeScript.
@@ -186,3 +184,23 @@ Contributions, issues, and pull requests are welcome!
 ## License
 
 [MIT](./LICENSE)
+
+---
+
+## References
+
+1. [Signals in Angular: Building Blocks](https://www.angulararchitects.io/blog/angular-signals/) - Several building blocks for Signals such as effect can only be used in an injection context. This is...
+
+2. [Side effects for non-reactives APIs](https://angular.dev/guide/signals/effect) - Injection context link. By default, you can only create an effect() within an injection context (whe...
+
+3. [runWithOwner](https://docs.solidjs.com/reference/reactive-utilities/run-with-owner) - Execute code under a specific owner in SolidJS for proper cleanup and context access, especially in ...
+
+4. [Using signal outside of component. · solidjs solid · Discussion #397](https://github.com/solidjs/solid/discussions/397) - The basic of it is while it isn't restricted to components, Solid's reactivity is built with framewo...
+
+5. [Effects and InjectionContext in Angular(v21) - DEV Community](https://dev.to/pckalyan/effects-and-injectioncontext-in-angularv21-20ib) - Mastering the Life of an Effect: Injection Context and Beyond To understand why an...
+
+6. [SolidJS: "computations created outside a `createRoot` or `render` will never be disposed" messages in the console log](https://stackoverflow.com/questions/70373659/solidjs-computations-created-outside-a-createroot-or-render-will-never-be) - When working on a SolidJS project you might start seeing the following warning message in your JS co...
+
+7. [reactive-web-components/rwc 2.51.8 on npm](https://libraries.io/npm/@reactive-web-components%2Frwc) - Modern library for creating reactive web components with declarative syntax and strict typing
+
+8. [effect() should have an option to run outside of an injection ...](https://github.com/angular/angular/issues/56357) - Which @angular/* package(s) are relevant/related to the feature request? core Description Angular's ...
