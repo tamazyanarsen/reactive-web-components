@@ -1,4 +1,4 @@
-## [unreleased]
+## [2.64.0] - 2026-02-22
 
 ### 🚀 Features
 
@@ -7,6 +7,10 @@
 ### 📚 Documentation
 
 - Добавить документацию на русском и английском языках
+
+### ⚙️ Miscellaneous Tasks
+
+- Add commitlint and husky hooks
 ## [2.63.11] - 2026-02-12
 
 ### 🚀 Features
