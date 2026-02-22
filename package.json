@@ -34,7 +34,7 @@
     "docs": "npx typedoc --exclude \"**/index.ts\" --entryPointStrategy Expand ./src/shared/",
     "lint": "npx eslint ./src/",
     "upload": "npm publish ./dist --access public",
-    "build:upload": "npm run build && npm run upload",
+    "build:upload": "npm run build && npm run upload && npm run changelog",
     "release": "npm version $npm_config_type && npm run build:upload && git push",
     "release:patch": "npm version patch && npm run build:upload && git push",
     "release:minor": "npm version minor && npm run build:upload && git push",
