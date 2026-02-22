@@ -1,3 +1,12 @@
+## [2.64.1] - 2026-02-22
+
+### 🚀 Features
+
+- Добавлен запуск changelog в скрипт build:upload
+
+### ⚙️ Miscellaneous Tasks
+
+- Обновить CHANGELOG.md для версии 2.64.0
 ## [2.64.0] - 2026-02-22
 
 ### 🚀 Features
