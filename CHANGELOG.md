@@ -1,3 +1,8 @@
+## [2.64.2] - 2026-02-22
+
+### ⚙️ Miscellaneous Tasks
+
+- Добавить коммит changelog в скрипт build:upload
 ## [2.64.1] - 2026-02-22
 
 ### 🚀 Features
