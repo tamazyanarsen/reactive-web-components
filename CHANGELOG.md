@@ -1,3 +1,8 @@
+## [2.64.5] - 2026-02-22
+
+### 🐛 Bug Fixes
+
+- Исправить команду коммита changelog в скрипте build:upload
 ## [2.64.4] - 2026-02-22
 
 ### ⚙️ Miscellaneous Tasks
