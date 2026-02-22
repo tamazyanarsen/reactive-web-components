@@ -1,6 +1,6 @@
 # Reactive Web Components (RWC)
 
-[🇷🇺 Документация на русском](./docs/docs.ru.md)
+[🇷🇺 Документация на русском](./docs_readme/docs.ru.md)
 
 **RWC** is a lightweight runtime for building reactive [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_Components) without depending on a specific framework. It combines fine-grained signals, effects, and a declarative TypeScript-first HTML factory to compose UI from strongly-typed primitives — no templates, no JSX, just TypeScript.
 
@@ -171,8 +171,8 @@ ItemListComp({ '.items': data })
 
 | Resource | Description |
 |----------|-------------|
-| [docs.ru.md](./docs/docs.ru.md) | Full documentation in Russian — complete API reference with examples |
-| [docs.en.md](./docs/docs.en.md) | Full documentation in English — complete API reference with examples |
+| [docs.ru.md](./docs_readme/docs.ru.md) | Full documentation in Russian — complete API reference with examples |
+| [docs.en.md](./docs_readme/docs.en.md) | Full documentation in English — complete API reference with examples |
 | `src/` | Source code and usage examples |
 
 ## Project Status

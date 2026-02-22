@@ -41,14 +41,20 @@
     "release:major": "npm version major && npm run build:upload && git push",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "prepare": "husky",
+    "changelog": "npx git-cliff -o"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
     "@eslint/js": "^9.19.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.7.5",
     "eslint": "^9.19.0",
+    "git-cliff": "^2.12.0",
     "globals": "^15.14.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "sass-embedded": "^1.83.0",
     "ts-jest": "^29.3.1",
