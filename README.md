@@ -13,16 +13,16 @@ Signals and effects in RWC are **independent primitives** — they work anywhere
 | | Signals anywhere | Effects anywhere | Needs special context |
 |---|:---:|:---:|:---:|
 | **RWC** | ✅ | ✅ | No |
-| **Angular** | ✅ | ❌ | `effect()` requires injection context (constructor, factory, `runInInjectionContext`) [1][2] |
-| **Solid.js** | ✅ | ⚠️ | `createEffect` needs a reactive owner (`createRoot` / `render` / `runWithOwner`) — effects outside a root will never be disposed [3][4] |
+| **Angular** | ✅ | ❌ | `effect()` requires injection context (constructor, factory, `runInInjectionContext`)  |
+| **Solid.js** | ✅ | ⚠️ | `createEffect` needs a reactive owner (`createRoot` / `render` / `runWithOwner`) — effects outside a root will never be disposed  |
 
-In Angular, calling `effect()` in `ngOnInit`, in a regular method, or outside a component throws `NG0203`. The workaround is to inject an `Injector` and wrap code in `runInInjectionContext`. In Solid.js, `createEffect` outside a tracking scope (e.g. in `setTimeout`, async code, or global scope) either leaks memory or requires manual `getOwner` / `runWithOwner` plumbing.[1][5][2][6][4]
+In Angular, calling `effect()` in `ngOnInit`, in a regular method, or outside a component throws `NG0203`. The workaround is to inject an `Injector` and wrap code in `runInInjectionContext`. In Solid.js, `createEffect` outside a tracking scope (e.g. in `setTimeout`, async code, or global scope) either leaks memory or requires manual `getOwner` / `runWithOwner` plumbing.
 
-**RWC has none of these limitations.** Signals and effects are first-class citizens that work in any context — inside components, outside components, in utility functions, in async code, everywhere.[7]
+**RWC has none of these limitations.** Signals and effects are first-class citizens that work in any context — inside components, outside components, in utility functions, in async code, everywhere.
 
 ### TypeScript all the way down
 
-RWC takes a **no-HTML** approach: all markup is built through TypeScript factory functions (`div`, `button`, `input`, …). This means:[7]
+RWC takes a **no-HTML** approach: all markup is built through TypeScript factory functions (`div`, `button`, `input`, …). This means:
 
 - **Full type-checking in templates** — props, attributes, events, slots, and children are all typed.
 - **Autocomplete everywhere** — IDE suggestions for every config option, event name, and attribute.
@@ -30,18 +30,18 @@ RWC takes a **no-HTML** approach: all markup is built through TypeScript factory
 
 ### Typed slots
 
-Slots in RWC are fully typed via `slotTemplate`. The parent component defines what templates it expects, and the child component consumes them with typed context — similar to scoped slots in Vue, but with compile-time guarantees.[7]
+Slots in RWC are fully typed via `slotTemplate`. The parent component defines what templates it expects, and the child component consumes them with typed context — similar to scoped slots in Vue, but with compile-time guarantees.
 
 ## Features
 
-- **Reactivity** — `signal`, `effect`, `createSignal`, `rs`, `computed`, `pipe`, `forkJoin`, `combineLatest`.[7]
-- **Class components** — decorators (`@component`, `@property`, `@event`) with lifecycle hooks.[7]
-- **Functional components** — lightweight alternative via `createComponent`.[7]
-- **HTML factory** — declarative element creation with typed config (`ComponentInitConfig`).[7]
-- **Shorthand config** — `.attr` for attributes, `@event` for listeners, `$name` for effects.[7]
-- **Control flow** — `getList` (keyed efficient lists), `when` (conditional render), `show` (CSS toggle).[7]
-- **Slots** — typed `slotTemplate` with scoped context.[7]
-- **DI & styling** — context via providers/injects, reactive refs, reactive `classList` and `style`.[7]
+- **Reactivity** — `signal`, `effect`, `createSignal`, `rs`, `computed`, `pipe`, `forkJoin`, `combineLatest`.
+- **Class components** — decorators (`@component`, `@property`, `@event`) with lifecycle hooks.
+- **Functional components** — lightweight alternative via `createComponent`.
+- **HTML factory** — declarative element creation with typed config (`ComponentInitConfig`).
+- **Shorthand config** — `.attr` for attributes, `@event` for listeners, `$name` for effects.
+- **Control flow** — `getList` (keyed efficient lists), `when` (conditional render), `show` (CSS toggle).
+- **Slots** — typed `slotTemplate` with scoped context.
+- **DI & styling** — context via providers/injects, reactive refs, reactive `classList` and `style`.
 
 ## Installation
 
@@ -105,7 +105,7 @@ Or directly in HTML:
 
 ## Config Shorthand Syntax
 
-RWC supports a concise config notation alongside the standard one:[7]
+RWC supports a concise config notation alongside the standard one:
 
 ```ts
 // Shorthand — less boilerplate, same type safety
@@ -163,7 +163,7 @@ ItemListComp({ '.items': data })
 ## When to Use RWC
 
 - Low-level but type-safe layer for Web Components without a heavy framework.
-- Signal-based reactivity (like Solid or Angular Signals) on top of the native DOM — but without their context restrictions.[8][6]
+- Signal-based reactivity (like Solid or Angular Signals) on top of the native DOM — but without their context restrictions.
 - Shared runtime across projects — vanilla apps, microfrontends, or integration into Angular/React via wrappers.
 - Compile-time safety in templates, slots, and event handlers.
 
@@ -177,30 +177,10 @@ ItemListComp({ '.items': data })
 
 ## Project Status
 
-The library is under active development. The core API is stable and used in production prototypes, but minor changes to typings and helper utilities may still occur.[7]
+The library is under active development. The core API is stable and used in production prototypes, but minor changes to typings and helper utilities may still occur.
 
 Contributions, issues, and pull requests are welcome!
 
 ## License
 
 [MIT](./LICENSE)
-
----
-
-## References
-
-1. [Signals in Angular: Building Blocks](https://www.angulararchitects.io/blog/angular-signals/) - Several building blocks for Signals such as effect can only be used in an injection context. This is...
-
-2. [Side effects for non-reactives APIs](https://angular.dev/guide/signals/effect) - Injection context link. By default, you can only create an effect() within an injection context (whe...
-
-3. [runWithOwner](https://docs.solidjs.com/reference/reactive-utilities/run-with-owner) - Execute code under a specific owner in SolidJS for proper cleanup and context access, especially in ...
-
-4. [Using signal outside of component. · solidjs solid · Discussion #397](https://github.com/solidjs/solid/discussions/397) - The basic of it is while it isn't restricted to components, Solid's reactivity is built with framewo...
-
-5. [Effects and InjectionContext in Angular(v21) - DEV Community](https://dev.to/pckalyan/effects-and-injectioncontext-in-angularv21-20ib) - Mastering the Life of an Effect: Injection Context and Beyond To understand why an...
-
-6. [SolidJS: "computations created outside a `createRoot` or `render` will never be disposed" messages in the console log](https://stackoverflow.com/questions/70373659/solidjs-computations-created-outside-a-createroot-or-render-will-never-be) - When working on a SolidJS project you might start seeing the following warning message in your JS co...
-
-7. [reactive-web-components/rwc 2.51.8 on npm](https://libraries.io/npm/@reactive-web-components%2Frwc) - Modern library for creating reactive web components with declarative syntax and strict typing
-
-8. [effect() should have an option to run outside of an injection ...](https://github.com/angular/angular/issues/56357) - Which @angular/* package(s) are relevant/related to the feature request? core Description Angular's ...
