@@ -1,8 +1,10 @@
 import {
   BaseElement,
+  cls,
   div,
   property,
   signal,
+  slot,
   useCustomComponent,
 } from "@shared/utils";
 import "./style.css";
@@ -15,26 +17,37 @@ export class TestComponent extends BaseElement {
   @property()
   testProperty = signal(true);
 
+  notProperty = signal(12);
+
   render() {
-    return div("test-component", () => this.testProperty() + "");
+    return div(
+      "test-component",
+      // () => this.testProperty() + "",
+      slot(),
+    );
   }
 }
 const Test = useCustomComponent(TestComponent, "test-component");
 
+const testSignal = signal(0);
+setInterval(() => {
+  testSignal.update((prev) => prev + 1);
+}, 1000);
+
 useCustomComponent(
   class extends BaseElement {
-    testSignal = signal(true);
+    testSignalInternal = signal(true);
 
     render() {
       setTimeout(() => {
         console.log("testSignal set to false");
-        this.testSignal.set(false);
+        this.testSignalInternal.set(false);
       }, 3000);
       return div(
         "wrapper",
         Test({
-          ".testProperty": this.testSignal,
-        }),
+          // ".testProperty": this.testSignalInternal,
+        }).addEffect(() => console.log(testSignal())),
       );
     }
   },

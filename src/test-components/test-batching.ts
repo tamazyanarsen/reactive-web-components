@@ -401,10 +401,10 @@ export function runAllBatchingTests() {
 }
 
 // Автоматический запуск при импорте в dev-режиме
-if (import.meta.env?.DEV) {
-  setTimeout(() => {
-    console.log(
-      "🔍 Batching tests module loaded. Call runAllBatchingTests() to run tests.",
-    );
-  }, 100);
-}
+// if (import.meta.env?.DEV) {
+//   setTimeout(() => {
+//     console.log(
+//       "🔍 Batching tests module loaded. Call runAllBatchingTests() to run tests.",
+//     );
+//   }, 100);
+// }

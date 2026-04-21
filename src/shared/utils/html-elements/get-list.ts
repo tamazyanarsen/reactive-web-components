@@ -33,6 +33,7 @@ export const getList = <I extends Record<string, any>, K extends keyof I>(
       .filter((key) => !newItemsKey.includes(key))
       .forEach((key) => {
         itemKeyComponentMap.delete(key);
+        signalMap.delete(key);
         container.hostElement?.querySelector(`[data-key="${key}"]`)?.remove();
       });
 

@@ -1,4 +1,4 @@
-import { EffectCb, ReactiveSignal } from "../utils/signal";
+import { ReactiveSignal } from "../utils/signal";
 
 export type Split<S extends string, D extends string> = string extends S
   ? string[]
@@ -20,7 +20,7 @@ export type HtmlTagName = keyof HTMLElementTagNameMap;
 
 export type ExtraHTMLElement = HTMLElement & {
   render?: () => ComponentConfig<ExtraHTMLElement>;
-  effectSet?: Set<WeakRef<EffectCb>>;
+  componentEffect?: (cb: () => void) => void;
   onConnected?: (
     self: ComponentConfig<ExtraHTMLElement>,
     host: ExtraHTMLElement,

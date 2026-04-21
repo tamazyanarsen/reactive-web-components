@@ -22,6 +22,7 @@ class CounterComponent extends BaseElement {
   }
 
   render() {
+    this.componentEffect(() => {});
     return div(
       classList`counter`,
       p(`Count: ${this.count()}`),

@@ -1,65 +1,139 @@
 # Reactive Web Components (RWC)
 
-[🇷🇺 Документация на русском](./docs_readme/docs.ru.md)
+[Подробная документация](./DOCUMENTATION.md)
 
-**RWC** is a lightweight runtime for building reactive [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_Components) without depending on a specific framework. It combines fine-grained signals, effects, and a declarative TypeScript-first HTML factory to compose UI from strongly-typed primitives — no templates, no JSX, just TypeScript.
+**RWC** — легковесная библиотека для создания реактивных [веб-компонентов](https://developer.mozilla.org/ru/docs/Web/API/Web_components) без привязки к конкретному фреймворку. Сочетает в себе fine-grained сигналы, эффекты и декларативную TypeScript-first HTML-фабрику для построения UI из строго типизированных примитивов — без шаблонов, без JSX, только TypeScript.
 
-## Why RWC
+## Зачем нужна RWC
 
-### Framework-free signals & effects
+### Безболезненная миграция версий UI-кита и бизнес-модулей
 
-Signals and effects in RWC are **independent primitives** — they work anywhere in your code with zero restrictions. This is a fundamental difference from existing frameworks:
+RWC спроектирована как **фундаментный слой** для построения UI-китов и бизнес-модулей, которые могут развиваться независимо друг от друга. Ключевая архитектурная особенность — **система постфиксной регистрации**: компоненты UI-кита можно регистрировать с разными суффиксами, что позволяет нескольким версиям сосуществовать в одном DOM без конфликтов.
 
-| | Signals anywhere | Effects anywhere | Needs special context |
+```
+┌─────────────────────────────────────────────────┐
+│  RWC (Фундамент)                                │
+│  Сигналы, BaseElement, Декораторы, HTML-фабрика │
+└──────────┬──────────────────────┬───────────────┘
+           │                      │
+    ┌──────▼──────┐        ┌──────▼──────┐
+    │  UI Kit v1  │        │  UI Kit v2  │
+    │  uwc-button │        │  uwc-button │
+    └──────┬──────┘        └──────┬──────┘
+           │                      │
+    ┌──────▼──────┐        ┌──────▼──────┐
+    │  Модуль A   │        │  Модуль B   │
+    │  postfix:a  │        │  postfix:b  │
+    │  uwc-btn-a  │        │  uwc-btn-b  │
+    └─────────────┘        └─────────────┘
+```
+
+**Как это работает:**
+
+1. UI-кит (например, `@hrcrm/web-ui-kit`) создаёт компоненты через `configCustomComponent` из RWC, который возвращает кортеж `[useComponent, registerComponent]` — разделяя **JS-фабрику** и **регистрацию Custom Element**.
+
+2. Каждый бизнес-модуль при старте вызывает `registerAllComponents({ postfix: 'myModule' })`, регистрируя компоненты как `uwc-button-myModule`, `uwc-modal-myModule` и т.д.
+
+3. **JS-код не меняется** — `UwcButton({ '.disabled': true })` работает одинаково независимо от постфикса. Меняется только селектор Custom Element.
+
+4. Несколько модулей могут использовать **разные версии** UI-кита на одной странице, потому что каждый регистрирует свой набор Custom Elements с уникальным постфиксом.
+
+```typescript
+// UI Kit: определение компонента (не меняется между версиями)
+export const [UwcButton, registerUwcButton] = configCustomComponent(UwcButtonComponent);
+
+// Бизнес-модуль A: использует UI kit v1.7
+import { registerAllComponents } from '@hrcrm/web-ui-kit@1.7';
+registerAllComponents({ postfix: 'moduleA' });
+// Регистрирует: uwc-button-moduleA, uwc-alert-moduleA, ...
+
+// Бизнес-модуль B: использует UI kit v1.8
+import { registerAllComponents } from '@hrcrm/web-ui-kit@1.8';
+registerAllComponents({ postfix: 'moduleB' });
+// Регистрирует: uwc-button-moduleB, uwc-alert-moduleB, ...
+
+// Оба модуля используют одинаковый JS API:
+UwcButton({ '.type': ButtonType.PRIMARY }, 'Нажми')
+```
+
+Это позволяет выполнять **поэтапную миграцию** — обновлять один модуль за раз, не трогая остальные.
+
+### Сигналы и эффекты без привязки к фреймворку
+
+Сигналы и эффекты в RWC — **независимые примитивы**, которые работают в любом месте кода без ограничений:
+
+| | Сигналы везде | Эффекты везде | Требуется контекст |
 |---|:---:|:---:|:---:|
-| **RWC** | ✅ | ✅ | No |
-| **Angular** | ✅ | ❌ | `effect()` requires injection context (constructor, factory, `runInInjectionContext`)  |
-| **Solid.js** | ✅ | ⚠️ | `createEffect` needs a reactive owner (`createRoot` / `render` / `runWithOwner`) — effects outside a root will never be disposed  |
+| **RWC** | ✅ | ✅ | Нет |
+| **Angular** | ✅ | ❌ | `effect()` требует injection context |
+| **Solid.js** | ✅ | ⚠️ | `createEffect` требует reactive owner |
 
-In Angular, calling `effect()` in `ngOnInit`, in a regular method, or outside a component throws `NG0203`. The workaround is to inject an `Injector` and wrap code in `runInInjectionContext`. In Solid.js, `createEffect` outside a tracking scope (e.g. in `setTimeout`, async code, or global scope) either leaks memory or requires manual `getOwner` / `runWithOwner` plumbing.
+В Angular вызов `effect()` вне конструктора или фабрики бросает `NG0203`. В Solid.js `createEffect` вне tracking scope утекает в памяти или требует ручного `runWithOwner`.
 
-**RWC has none of these limitations.** Signals and effects are first-class citizens that work in any context — inside components, outside components, in utility functions, in async code, everywhere.
+**У RWC нет этих ограничений.** Сигналы и эффекты работают в любом контексте — внутри компонентов, вне компонентов, в утилитарных функциях, в асинхронном коде, где угодно.
 
-### TypeScript all the way down
+### Иерархическая очистка эффектов
 
-RWC takes a **no-HTML** approach: all markup is built through TypeScript factory functions (`div`, `button`, `input`, …). This means:
+Эффекты в RWC образуют **дерево parent-child**, привязанное к жизненному циклу компонента. При удалении компонента из DOM его корневой `wrapperEffect` уничтожается, что **каскадно** уничтожает все дочерние эффекты — ручная очистка не нужна.
 
-- **Full type-checking in templates** — props, attributes, events, slots, and children are all typed.
-- **Autocomplete everywhere** — IDE suggestions for every config option, event name, and attribute.
-- **Compile-time errors** — typos in attribute names or wrong event handler signatures are caught before runtime.
+```
+@component('my-app')
+└── wrapperEffect (корень)
+    ├── эффект из render()
+    │   ├── эффект из div().addEffect()
+    │   └── эффект из setReactiveAttribute()
+    └── эффект из init()
 
-### Typed slots
+// При disconnectedCallback:
+// wrapperEffect.destroy() → каскадно уничтожает ВСЕ дочерние эффекты
+```
 
-Slots in RWC are fully typed via `slotTemplate`. The parent component defines what templates it expects, and the child component consumes them with typed context — similar to scoped slots in Vue, but with compile-time guarantees.
+Обычные HTML-элементы автоматически ищут ближайший веб-компонент вверх по DOM-дереву (включая границы ShadowRoot) и привязывают свои эффекты к нему через `componentEffect`.
 
-## Features
+### TypeScript на всех уровнях
 
-- **Reactivity** — `signal`, `effect`, `createSignal`, `rs`, `computed`, `pipe`, `forkJoin`, `combineLatest`.
-- **Class components** — decorators (`@component`, `@property`, `@event`) with lifecycle hooks.
-- **Functional components** — lightweight alternative via `createComponent`.
-- **HTML factory** — declarative element creation with typed config (`ComponentInitConfig`).
-- **Shorthand config** — `.attr` for attributes, `@event` for listeners, `$name` for effects.
-- **Control flow** — `getList` (keyed efficient lists), `when` (conditional render), `show` (CSS toggle).
-- **Slots** — typed `slotTemplate` with scoped context.
-- **DI & styling** — context via providers/injects, reactive refs, reactive `classList` and `style`.
+Вся разметка строится через TypeScript-фабрики (`div`, `button`, `input`, ...):
 
-## Installation
+- **Полная проверка типов в шаблонах** — props, атрибуты, события, слоты и дочерние элементы типизированы
+- **Автодополнение везде** — подсказки IDE для каждой опции конфига, имени события и атрибута
+- **Ошибки на этапе компиляции** — опечатки в именах атрибутов или неправильные сигнатуры обработчиков событий ловятся до runtime
+
+### Типизированные слоты
+
+Слоты полностью типизированы через `slotTemplate`. Родительский компонент определяет ожидаемые шаблоны, а дочерний компонент потребляет их с типизированным контекстом — аналогично scoped slots в Vue, но с гарантиями на этапе компиляции.
+
+## Возможности
+
+- **Реактивность** — `signal`, `effect`, `onCleanup`, `createSignal`, `rs`, `pipe`, `forkJoin`, `combineLatest`, `firstUpdate`
+- **Классовые компоненты** — декораторы (`@component`, `@property`, `@event`) с хуками жизненного цикла
+- **Функциональные компоненты** — легковесная альтернатива через `createComponent`
+- **HTML-фабрика** — декларативное создание элементов с типизированным конфигом (`ComponentInitConfig`)
+- **Краткий синтаксис** — `.attr` для атрибутов, `@event` для обработчиков, `$name` для эффектов
+- **Управление потоком** — `getList` (эффективные списки с ключами), `when` (условный рендер), `show` (переключение через CSS)
+- **Слоты** — типизированный `slotTemplate` с контекстом
+- **DI** — контекст через providers/injects (без пробрасывания props)
+- **Стилизация** — `static styles` через `adoptedStyleSheets`, реактивные `classList` и `style`, CSS Custom Properties
+- **Версионирование** — кортеж `configCustomComponent` + постфиксная регистрация для сосуществования нескольких версий
+
+## Установка
 
 ```bash
 npm install @reactive-web-components/rwc
 ```
 
-> Requires TypeScript and a modern browser with [Custom Elements](https://caniuse.com/custom-elementsv1) support.
+> Требуется TypeScript 5+ и современный браузер с поддержкой [Custom Elements v1](https://caniuse.com/custom-elementsv1).
 
-## Quick Start
+## Быстрый старт
 
-A minimal reactive counter using shorthand config syntax:
+Минимальный реактивный счётчик:
 
-```ts
-import { component, property, event } from '@reactive-web-components/rwc';
-import { BaseElement } from '@reactive-web-components/rwc';
-import { div, button } from '@reactive-web-components/rwc';
-import { signal, rs, newEventEmitter, useCustomComponent } from '@reactive-web-components/rwc';
+```typescript
+import {
+  component, property, event,
+  BaseElement,
+  div, button,
+  signal, rs, newEventEmitter, useCustomComponent
+} from '@reactive-web-components/rwc';
 
 @component('rwc-counter')
 class Counter extends BaseElement {
@@ -71,16 +145,14 @@ class Counter extends BaseElement {
 
   render() {
     return div(
-      button(
-        {
-          "@click": () => {
-            this.count.update((v) => v + 1);
-            this.onCountChange(this.count());
-          },
+      button({
+        '@click': () => {
+          this.count.update(v => v + 1);
+          this.onCountChange(this.count());
         },
-        rs`Count: ${this.count}`, // using rs`...`
-        () => `Count: ${this.count()}`, // using function with signall call
-      );
+      },
+        rs`Счётчик: ${this.count}`
+      )
     );
   }
 }
@@ -88,54 +160,88 @@ class Counter extends BaseElement {
 export const CounterComp = useCustomComponent(Counter);
 ```
 
-Usage in another component:
+Использование в другом компоненте:
 
-```ts
+```typescript
 CounterComp({
-  '.count': signal(10),                    // typed attribute via shorthand
-  '@onCountChange': (v) => console.log(v), // typed event via shorthand
+  '.count': signal(10),                            // типизированный атрибут
+  '@onCountChange': (e) => console.log(e.detail),  // типизированное событие
 })
 ```
 
-Or directly in HTML:
+Или напрямую в HTML:
 
 ```html
-<rwc-counter></rwc-counter>
+<rwc-counter count="10"></rwc-counter>
 ```
 
-## Config Shorthand Syntax
+## Краткий синтаксис конфига
 
-RWC supports a concise config notation alongside the standard one:
-
-```ts
-// Shorthand — less boilerplate, same type safety
+```typescript
+// Краткая нотация — меньше кода, та же типизация
 div({
   '.id': 'main',
   '.tabIndex': 0,
   '@click': (e) => console.log('clicked', e),
-  '$onMount': (el) => console.log('element created', el),
-}, 'Content')
+  '$onMount': (self, host) => console.log('создан', host),
+}, 'Контент')
 
-// Equivalent standard config
+// Эквивалентная стандартная нотация
 div({
   attributes: { id: 'main', tabIndex: 0 },
   listeners: { click: (e) => console.log('clicked', e) },
-  effects: [(el) => console.log('element created', el)],
-}, 'Content')
+  effects: [(self, host) => console.log('создан', host)],
+}, 'Контент')
 ```
 
-| Prefix | Meaning | Example |
-|--------|---------|---------|
-| `.` | Attribute / property | `'.disabled': true` |
-| `@` | Event listener (DOM or custom) | `'@click': handler` |
-| `$` | Effect (runs on element creation) | `'$init': (el) => ...` |
+| Префикс | Значение | Пример |
+|---------|----------|--------|
+| `.` | Атрибут / свойство | `'.disabled': true` |
+| `@` | Обработчик события (DOM или кастомное) | `'@click': handler` |
+| `$` | Эффект (выполняется при создании элемента) | `'$init': (self, host) => ...` |
 
-## Typed Slot Templates
+## Построение UI-кита с постфиксным версионированием
 
-```ts
+Функция `configCustomComponent` возвращает кортеж `[factory, register]`, разделяя JS API и регистрацию Custom Element:
+
+```typescript
+// ui-kit/src/components/button.ts
+import { configCustomComponent, BaseElement, signal, property, div, slot } from '@reactive-web-components/rwc';
+
+class UwcButtonComponent extends BaseElement {
+  @property() disabled = signal(false);
+  render() { return div({ classList: ['uwc-button'] }, slot()); }
+}
+
+export const [UwcButton, registerUwcButton] = configCustomComponent(UwcButtonComponent);
+
+// ui-kit/src/index.ts
+export const registerAllComponents = ({ postfix = '' } = {}) => {
+  const wrap = (name: `${string}-${string}`): `${string}-${string}` =>
+    postfix ? `${name}-${postfix}` : name;
+
+  registerUwcButton(wrap('uwc-button'));
+  registerUwcAlert(wrap('uwc-alert'));
+  // ... остальные компоненты
+};
+```
+
+Бизнес-модули регистрируются со своим постфиксом:
+
+```typescript
+// eok-module/src/index.ts
+import { registerAllComponents } from '@hrcrm/web-ui-kit';
+
+registerAllComponents({ postfix: 'eok' });
+// Теперь доступны uwc-button-eok, uwc-alert-eok и т.д.
+```
+
+## Типизированные шаблоны слотов
+
+```typescript
 @component('item-list')
 class ItemList extends BaseElement {
-  public slotTemplate = defineSlotTemplate<{
+  slotTemplate = defineSlotTemplate<{
     item: (ctx: { id: number; name: string }) => ComponentConfig<any>;
   }>();
 
@@ -145,42 +251,47 @@ class ItemList extends BaseElement {
   render() {
     return div(getList(
       this.items,
-      (item) => item.id,
+      (i) => i.id,
       (item) => this.slotTemplate.item?.(item) || div(item.name)
     ));
   }
 }
-
 export const ItemListComp = useCustomComponent(ItemList);
 
-// Consumer — fully typed context in the slot
+// Потребитель — полностью типизированный контекст
 ItemListComp({ '.items': data })
   .setSlotTemplate({
-    item: (ctx) => div(`${ctx.name} (#${ctx.id})`), // ctx is typed!
+    item: (ctx) => div(`${ctx.name} (#${ctx.id})`),  // ctx типизирован!
   })
 ```
 
-## When to Use RWC
+## Когда использовать RWC
 
-- Low-level but type-safe layer for Web Components without a heavy framework.
-- Signal-based reactivity (like Solid or Angular Signals) on top of the native DOM — but without their context restrictions.
-- Shared runtime across projects — vanilla apps, microfrontends, or integration into Angular/React via wrappers.
-- Compile-time safety in templates, slots, and event handlers.
+- **Фундамент для UI-кита** — построить общую библиотеку компонентов с поддержкой сосуществования нескольких версий через постфиксную регистрацию
+- **Микрофронтенды** — каждое микро-приложение регистрирует свою версию UI-кита, без конфликтов в глобальном реестре Custom Elements
+- **Типобезопасные веб-компоненты** — безопасность на этапе компиляции для шаблонов, слотов и обработчиков событий без тяжёлого фреймворка
+- **Реактивность на сигналах** — как в Solid или Angular Signals, но без ограничений контекста
+- **Поэтапная миграция** — обновлять один бизнес-модуль за раз, пока остальные остаются на старой версии UI-кита
 
-## Documentation
+## Документация
 
-| Resource | Description |
-|----------|-------------|
-| [docs.ru.md](./docs_readme/docs.ru.md) | Full documentation in Russian — complete API reference with examples |
-| [docs.en.md](./docs_readme/docs.en.md) | Full documentation in English — complete API reference with examples |
-| `src/` | Source code and usage examples |
+| Ресурс | Описание |
+|--------|----------|
+| [DOCUMENTATION.md](./DOCUMENTATION.md) | Полная документация — справочник API с примерами |
 
-## Project Status
+## Разработка
 
-The library is under active development. The core API is stable and used in production prototypes, but minor changes to typings and helper utilities may still occur.
+```bash
+# Установка зависимостей
+npm install
 
-Contributions, issues, and pull requests are welcome!
+# Сборка библиотеки
+npm run build
 
-## License
+# Сборка в режиме watch
+npm run dev
+```
+
+## Лицензия
 
 [MIT](./LICENSE)

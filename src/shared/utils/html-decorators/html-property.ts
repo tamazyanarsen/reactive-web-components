@@ -8,7 +8,12 @@ import {
   projectLog,
 } from "../helpers";
 import { BaseElementConstructor } from "../html-elements";
-import { effect, EffectCb, isReactiveSignal, ReactiveSignal } from "../signal";
+import {
+  effect,
+  type EffectCb,
+  isReactiveSignal,
+  ReactiveSignal,
+} from "../signal";
 
 const eventFieldName = "eventProps";
 const EVENT_CONFIG = "EVENT_CONFIG";
@@ -22,16 +27,16 @@ export const property =
     target: T,
     propName: K,
   ) => void) =>
-    (target, propName) => {
-      if (!Reflect.get(target, observedAttrFieldName)) {
-        Reflect.defineProperty(target, observedAttrFieldName, {
-          value: [],
-        });
-      }
-      (Reflect.get(target, observedAttrFieldName) as string[]).push(
-        camelToKebab(propName as string),
-      );
-    };
+  (target, propName) => {
+    if (!Reflect.get(target, observedAttrFieldName)) {
+      Reflect.defineProperty(target, observedAttrFieldName, {
+        value: [],
+      });
+    }
+    (Reflect.get(target, observedAttrFieldName) as string[]).push(
+      camelToKebab(propName as string),
+    );
+  };
 
 export const event =
   (
@@ -40,24 +45,48 @@ export const event =
     target: T,
     propName: K,
   ) => void) =>
-    (target, propName) => {
-      if (!Reflect.get(target, eventFieldName)) {
-        Reflect.defineProperty(target, eventFieldName, {
-          value: [],
-        });
-      }
-      if (!Reflect.get(target, EVENT_CONFIG)) {
-        Reflect.defineProperty(target, EVENT_CONFIG, {
-          value: {} as EventConfigObj,
-        });
-      }
-      (Reflect.get(target, EVENT_CONFIG) as EventConfigObj)[propName as string] =
+  (target, propName) => {
+    if (!Reflect.get(target, eventFieldName)) {
+      Reflect.defineProperty(target, eventFieldName, {
+        value: [],
+      });
+    }
+    if (!Reflect.get(target, EVENT_CONFIG)) {
+      Reflect.defineProperty(target, EVENT_CONFIG, {
+        value: {} as EventConfigObj,
+      });
+    }
+    (Reflect.get(target, EVENT_CONFIG) as EventConfigObj)[propName as string] =
       {
         bubbles: config?.bubbles ?? false,
         composed: config?.composed ?? false,
       };
-      (Reflect.get(target, eventFieldName) as string[]).push(propName as string);
-    };
+    (Reflect.get(target, eventFieldName) as string[]).push(propName as string);
+  };
+
+const sheetCache = new Map<string, CSSStyleSheet>();
+const registeredPropertyStyles = new Set<string>();
+
+const getOrCreateSheet = (css: string): CSSStyleSheet => {
+  let sheet = sheetCache.get(css);
+  if (!sheet) {
+    sheet = new CSSStyleSheet();
+    sheet.replaceSync(css);
+    sheetCache.set(css, sheet);
+  }
+  return sheet;
+};
+
+const extractAndRegisterPropertyStyles = (css: string) => {
+  const propertyIndex = css.indexOf("@property");
+  if (propertyIndex === -1) return;
+  const propertyCssText = css.slice(propertyIndex);
+  if (registeredPropertyStyles.has(propertyCssText)) return;
+  registeredPropertyStyles.add(propertyCssText);
+  const propertyCss = new CSSStyleSheet();
+  propertyCss.replaceSync(propertyCssText);
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, propertyCss];
+};
 
 export const component = (
   selector: `${string}-${string}`,
@@ -80,13 +109,8 @@ export const component = (
         styles.push(currStyle);
       }
       styles.forEach((css) => {
-        const currSheet = new CSSStyleSheet();
-        currSheet.replaceSync(css);
-        sheet.push(currSheet);
-
-        const propertyCss = new CSSStyleSheet();
-        propertyCss.replaceSync(css.slice(css.indexOf("@property")));
-        document.adoptedStyleSheets.push(propertyCss);
+        sheet.push(getOrCreateSheet(css));
+        extractAndRegisterPropertyStyles(css);
       });
     }
 
@@ -101,57 +125,9 @@ export const component = (
         if (sheet.length > 0) {
           this.shadow.adoptedStyleSheets.push(...sheet);
         }
-      }
 
-      render(): ComponentConfig<any> {
-        projectLog('rwc: render from new class');
-        return target.prototype.render.call(this);
-      }
-
-      attributeChangedCallback(
-        attrName: string,
-        oldValue: string,
-        newValue: string,
-      ) {
-        projectLog(
-          `%cAttribute has changed.%c`,
-          `%c${attrName}%c`,
-          `oldValue: ${oldValue}, newValue: ${newValue}`,
-          `%c${selector}%c`,
-        );
-        try {
-          newValue = JSON.parse(newValue);
-        } catch {
-          // console.warn("json parse error");
-        }
-        const propName = kebabToCamel(attrName);
-        if (
-          propName in this &&
-          isReactiveSignal(this[propName as keyof this])
-        ) {
-          const propSignal = this[
-            propName as keyof this
-          ] as ReactiveSignal<any>;
-          propSignal.setName(attrName);
-          if (newValue === null) {
-            propSignal.set(propSignal.initValue);
-            this.removeAttribute(attrName);
-          } else {
-            propSignal.set(newValue);
-          }
-        }
-        checkCall(
-          this,
-          target.prototype.attributeChangedCallback,
-          attrName,
-          oldValue,
-          newValue,
-        );
-      }
-
-      connectedCallback() {
         const wrapperEffect = () => {
-          projectLog('rwc: connectedCallback');
+          projectLog("rwc: connectedCallback");
           projectLog("connectedCallback", `%c${selector}%c`, this);
 
           this.init?.();
@@ -180,9 +156,9 @@ export const component = (
             (fieldName) => {
               // @ts-expect-error index string
               this[fieldName] = (value: unknown) => {
-                const config = (target.prototype[EVENT_CONFIG] as EventConfigObj)[
-                  fieldName
-                ];
+                const config = (
+                  target.prototype[EVENT_CONFIG] as EventConfigObj
+                )[fieldName];
                 const { bubbles, composed } = config;
                 if (isReactiveSignal(value)) {
                   effect(() => {
@@ -212,10 +188,10 @@ export const component = (
           projectLog("start render", `%c${selector}%c`, selector);
 
           const insertRenderTemplate = () => {
-            projectLog('rwc: insertRenderTemplate');
+            projectLog("rwc: insertRenderTemplate");
             const renderComponent = this.render() as ComponentConfig<any>;
             const renderHostElement = renderComponent.hostElement;
-            if(renderHostElement) {
+            if (renderHostElement) {
               this.shadow.appendChild(renderHostElement);
             }
             checkCall(this, target.prototype.connectedCallback);
@@ -229,7 +205,8 @@ export const component = (
               | Promise<typeof import("*?inline")>
               | Promise<typeof import("*?inline")>[] =>
               value instanceof Promise ||
-              (Array.isArray(value) && value.every((v) => v instanceof Promise));
+              (Array.isArray(value) &&
+                value.every((v) => v instanceof Promise));
 
             const styleValue = this.rootStyle;
 
@@ -300,27 +277,73 @@ export const component = (
               });
             });
           }
-
-        }
+        };
         wrapperEffect.fake = true;
         wrapperEffect.component = new WeakRef(this);
-        this.effectSet.add(new WeakRef(wrapperEffect as unknown as EffectCb));
-        effect(wrapperEffect, { name: 'FAKE_wrapperEffect' });
+        this.wrapperEffect = wrapperEffect as unknown as EffectCb;
+      }
+
+      render(): ComponentConfig<any> {
+        projectLog("rwc: render from new class");
+        return target.prototype.render.call(this);
+      }
+
+      attributeChangedCallback(
+        attrName: string,
+        oldValue: string,
+        newValue: string,
+      ) {
+        projectLog(
+          `%cAttribute has changed.%c`,
+          `%c${attrName}%c`,
+          `oldValue: ${oldValue}, newValue: ${newValue}`,
+          `%c${selector}%c`,
+        );
+        try {
+          newValue = JSON.parse(newValue);
+        } catch {
+          // console.warn("json parse error");
+        }
+        const propName = kebabToCamel(attrName);
+        if (
+          propName in this &&
+          isReactiveSignal(this[propName as keyof this])
+        ) {
+          const propSignal = this[
+            propName as keyof this
+          ] as ReactiveSignal<any>;
+          propSignal.setName(attrName);
+          if (newValue === null) {
+            propSignal.set(propSignal.initValue);
+            this.removeAttribute(attrName);
+          } else {
+            propSignal.set(newValue);
+          }
+        }
+        checkCall(
+          this,
+          target.prototype.attributeChangedCallback,
+          attrName,
+          oldValue,
+          newValue,
+        );
+      }
+
+      connectedCallback() {
+        effect(this.wrapperEffect!, { name: "FAKE_wrapperEffect" });
       }
 
       disconnectedCallback() {
         this.allSlotContent = [];
         this.slotContent = {};
         this.htmlSlotContent = {};
-        // this.init = undefined;
-        // this.appendAllSlotContent = undefined;
 
-        this.effectSet.forEach(eff => eff.deref()?.destroy?.());
-        this.effectSet.clear();
+        // Destroy wrapper effect — cascades to all child effects
+        this.wrapperEffect?.destroy?.();
+        // this.wrapperEffect = null;
 
         this.shadow.replaceChildren();
         this.replaceChildren();
-
 
         checkCall(this, target.prototype.disconnectedCallback);
       }
@@ -334,7 +357,7 @@ export const component = (
         `название тега ${selector} повторяется, компонент ${target.name} не зарегистрирован`,
       );
     }
-    target.renderTagName = selector
+    target.renderTagName = selector;
     return target;
   };
 };

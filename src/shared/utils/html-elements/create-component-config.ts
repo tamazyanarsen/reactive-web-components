@@ -57,9 +57,32 @@ export class HtmlComponentConfig<
 
   constructor(wrapper: WeakRef<T>) {
     this.wrapper = wrapper;
-    const wrapperValue = wrapper.deref();
-    if (wrapperValue) {
-      wrapperValue.effectSet = new Set();
+  }
+
+  private findComponentEffect(): ((cb: () => void) => void) | undefined {
+    let curr: HTMLElement | null | undefined = this.hostElement;
+    while (curr && curr !== document.body) {
+      if (
+        "componentEffect" in curr &&
+        typeof (curr as any).componentEffect === "function"
+      ) {
+        return (curr as any).componentEffect.bind(curr);
+      }
+      if (!curr.parentElement && curr.getRootNode() instanceof ShadowRoot) {
+        curr = (curr.getRootNode() as ShadowRoot).host as HTMLElement;
+      } else {
+        curr = curr.parentElement;
+      }
+    }
+  }
+
+  private createEffect(cb: () => void, key?: string | symbol): void {
+    const componentEffect = this.findComponentEffect();
+    if (componentEffect) {
+      componentEffect(cb);
+    } else {
+      (cb as any).component = this.wrapper;
+      effect(cb, { name: key?.toString() || this.hostElement?.tagName });
     }
   }
 
@@ -304,11 +327,8 @@ export class HtmlComponentConfig<
       if (eff) {
         removeEffect(eff);
       }
-      // this.keyedEffects.set(key, new WeakRef(effectCb));
     }
-    wrapperValue.effectSet?.add(new WeakRef(effectCb as unknown as EffectCb));
-    effectCb.component = this.wrapper;
-    effect(effectCb, { name: key?.toString() || wrapperValue.tagName });
+    this.createEffect(effectCb, key);
     return this;
   };
   addReactiveContent: ComponentConfig<T>["addReactiveContent"] = (content) => {

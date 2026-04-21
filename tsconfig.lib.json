@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "noEmit": true,
+    "types": ["@rsbuild/core/types"],
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+    "useDefineForClassFields": true,
+    "allowImportingTsExtensions": true,
+    "rootDir": "./src/shared",
+    "baseUrl": "./src/",
+    "paths": {
+      "@shared/*": ["./shared/*"],
+      "@/*": ["*"],
+    },
+  },
+  "include": ["src/shared"],
+}

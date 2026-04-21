@@ -1,11 +1,13 @@
 import { projectLog } from "../helpers";
 import { IsPromise, IsPromiseFunction, UnwrapPromise } from "./helpers.types";
 import {
-  CompareFn,
+  ShouldUpdateFn,
   ReactiveSignal,
   SignalUpdateFunc,
   UnwrapSignal,
 } from "./signal.type";
+
+export const REACTIVE_SIGNAL_MARKER = Symbol.for("reactive-signal");
 
 export type EffectCb = (() => void) & {
   fake?: boolean;
@@ -16,45 +18,6 @@ export type EffectCb = (() => void) & {
   component?: WeakRef<HTMLElement>;
   status: "active" | "inactive";
   destroy?: () => void;
-};
-
-const callCb = (cb: EffectCb) => {
-  if (cb.status === "active") {
-    removeEffect(cb);
-    cbStack.push(cb);
-    try {
-      cb();
-    } catch (error) {
-      // Логируем ошибку, но продолжаем выполнение остальных эффектов
-      console.error("Error in effect:", error);
-    } finally {
-      cbStack.pop();
-    }
-  }
-};
-
-const pendingEffects = new Set<EffectCb>();
-let isPending = false;
-
-export const sheduleEffect = (effectCb: EffectCb) => {
-  if (effectCb.status === "active") {
-    pendingEffects.add(effectCb);
-  }
-  if (!isPending) {
-    isPending = true;
-    queueMicrotask(() => {
-      isPending = false;
-      projectLog("pendingEffects.size", pendingEffects.size);
-      const effectList = Array.from(pendingEffects);
-      pendingEffects.clear();
-
-      effectList.forEach((cb) => {
-        callCb(cb);
-      });
-
-      projectLog("after ------ pendingEffects.size", pendingEffects.size);
-    });
-  }
 };
 
 const cbStack: EffectCb[] = [];
@@ -69,11 +32,12 @@ export const removeEffect = (effectCb: EffectCb) => {
 export function signal<T = unknown>(
   initValue: T,
   signalConfig?: {
-    signalCompareFn?: CompareFn<T>;
+    shouldUpdateFn?: ShouldUpdateFn<T>;
     name?: string;
   },
 ): ReactiveSignal<T> {
-  let globalCompareFn = signalConfig?.signalCompareFn || (() => true);
+  let currentValue = initValue;
+  let globalShouldUpdateFn = signalConfig?.shouldUpdateFn || (() => true);
 
   const signalSubscribers = new Set<EffectCb>();
 
@@ -91,8 +55,10 @@ export function signal<T = unknown>(
     if (!signalConfig?.name && currCb?.effectId)
       result.setName(currCb.effectId as string);
 
-    return initValue;
+    return currentValue;
   }
+
+  (result as any)[REACTIVE_SIGNAL_MARKER] = true;
 
   result.signalId = `${signalConfig?.name || ""}_${Math.random().toString(36).substring(2, 15)}`;
 
@@ -101,13 +67,9 @@ export function signal<T = unknown>(
     return result;
   };
 
-  result.setCompareFn = function (compareFn: CompareFn<T>) {
-    globalCompareFn = compareFn;
+  result.setShouldUpdateFn = function (shouldUpdateFn: ShouldUpdateFn<T>) {
+    globalShouldUpdateFn = shouldUpdateFn;
     return result;
-  };
-
-  result.clearSubscribers = function () {
-    signalSubscribers.clear();
   };
 
   result.getSubscribers = function () {
@@ -115,36 +77,29 @@ export function signal<T = unknown>(
   };
 
   result.peek = function () {
-    return Object.freeze(initValue);
+    return Object.freeze(currentValue);
   };
 
   result.initValue = Object.freeze(initValue);
 
   result.forceSet = function (value: T) {
-    initValue = value;
-    signalSubscribers.forEach((cb) => sheduleEffect(cb));
-    // signalSubscribers.forEach((cb) => queueMicrotask(() => callCb(cb)));
-    // signalSubscribers.forEach((cb) => {
-    //   removeEffect(cb);
-    //   Promise.resolve().then(() => {
-    //     cbStack.push(cb);
-    //     cb();
-    //     cbStack.pop();
-    //   });
-    // });
+    currentValue = value;
+    const subs = [...signalSubscribers];
+    subs.forEach((s) => s.destroy?.());
+    queueMicrotask(() => subs.forEach((s) => effect(s)));
   };
 
   result.set = function (
     value: T,
-    setCompareFn: CompareFn<T> = globalCompareFn,
+    shouldUpdateFn: ShouldUpdateFn<T> = globalShouldUpdateFn,
   ) {
-    if (initValue !== value && setCompareFn(initValue, value)) {
+    if (currentValue !== value && shouldUpdateFn(currentValue, value)) {
       result.forceSet(value);
     }
   };
 
   result.update = function (cb: SignalUpdateFunc<T>) {
-    result.set(cb(initValue));
+    result.set(cb(currentValue));
   };
 
   result.pipe = <R>(
@@ -167,7 +122,16 @@ export function signal<T = unknown>(
             const fnResult = fn(signalRes);
             const innerEffectId = "pipe_effect_inner";
             if (fnResult instanceof Promise) {
-              fnResult.then((v) => resSignal.set(v));
+              let stale = false;
+              const currCb = cbStack[cbStack.length - 1] as
+                | EffectCb
+                | undefined;
+              currCb?.cleanupSet?.add(() => {
+                stale = true;
+              });
+              fnResult.then((v) => {
+                if (!stale) resSignal.set(v);
+              });
             } else {
               if (isReactiveSignal(fnResult)) {
                 effect(() => resSignal.set(fnResult()), {
@@ -202,22 +166,30 @@ export function effect(
   effectCb.status = "active";
   effectCb.children = new Set();
   effectCb.effectId = randomId;
-  const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
-  if (parentCb) {
-    parentCb.children?.add(effectCb);
-    effectCb.parent = new WeakRef(parentCb);
-    effectCb.destroy = () => {
-      removeEffect(effectCb);
-      parentCb.children?.delete(effectCb);
-      effectCb.destroy = undefined;
-      effectCb.status = "inactive";
-    };
-  }
   effectCb.cleanupSet = new Set();
 
+  const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
+  if (effectCb.parent) {
+    effectCb.parent?.deref()?.children?.add(effectCb);
+  } else if (parentCb) {
+    parentCb.children?.add(effectCb);
+    effectCb.parent = new WeakRef(parentCb);
+  }
+
+  effectCb.destroy = () => {
+    removeEffect(effectCb);
+    effectCb.parent?.deref()?.children?.delete(effectCb);
+    effectCb.status = "inactive";
+  };
+
   cbStack.push(effectCb);
-  effectCb();
-  cbStack.pop();
+  try {
+    effectCb();
+  } catch (error) {
+    console.error("Error in effect:", error);
+  } finally {
+    cbStack.pop();
+  }
 
   return effectCb;
 }
@@ -227,13 +199,10 @@ export const isReactiveSignal = <R extends ReactiveSignal<any>>(
 ): v is R =>
   Boolean(v) &&
   ["object", "function"].includes(typeof v) &&
-  "set" in v &&
-  "update" in v &&
-  "forceSet" in v &&
-  "signalId" in v;
+  REACTIVE_SIGNAL_MARKER in v;
 
 /**
- * Reactive String (rs). Создаёт зависимый string сигнал от источника.
+ * Reactive String (rs). Creates a dependent string signal from a source.
  * @param strings
  * @param values
  * @returns
@@ -262,7 +231,7 @@ export function rs<T extends ReactiveSignal<any> | any>(
   return newSignal;
 }
 
-// Функция createSignal с условными типами вместо перегрузок
+// createSignal with conditional types instead of overloads
 export function createSignal<
   T extends Promise<any> | (() => any),
   I extends
@@ -271,10 +240,8 @@ export function createSignal<
 >(
   cb: T,
   initializeValue?: I,
-): // Если есть initializeValue
-I extends undefined
-  ? // Если нет initializeValue, проверяем, возвращает ли функция Promise
-    IsPromise<T> extends true
+): I extends undefined
+  ? IsPromise<T> extends true
     ? ReactiveSignal<UnwrapPromise<T> | null>
     : IsPromiseFunction<T> extends true
       ? ReactiveSignal<UnwrapPromise<
@@ -306,4 +273,9 @@ I extends undefined
   }
 
   return resultSignal as any;
+}
+
+export function onCleanup(fn: () => void): void {
+  const parentCb = cbStack[cbStack.length - 1] as EffectCb | undefined;
+  parentCb?.cleanupSet?.add(fn);
 }

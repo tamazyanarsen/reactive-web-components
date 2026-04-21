@@ -9,7 +9,13 @@ import {
   HtmlTagName,
 } from "../../types/element";
 import { projectLog } from "../helpers";
-import { effect, isReactiveSignal, ReactiveSignal, signal } from "../signal";
+import {
+  effect,
+  type EffectCb,
+  isReactiveSignal,
+  ReactiveSignal,
+  signal,
+} from "../signal";
 import {
   appendContentItem,
   elementHelpers,
@@ -137,6 +143,9 @@ export const oldGetList = <I extends Record<string, any>, K extends keyof I>(
   // Множество зарегистрированных эффектов (для предотвращения дублирования)
   const currRegisteredEffects = new Set<string>();
 
+  // Карта эффектов для очистки при удалении элементов
+  const effectMap = new Map<string, EffectCb>();
+
   // Сохраняем предыдущее состояние массива для сравнения изменений
   let oldItems = items.peek();
 
@@ -145,6 +154,8 @@ export const oldGetList = <I extends Record<string, any>, K extends keyof I>(
    * @param key - Уникальный ключ элемента
    */
   const deleteKey = (key: string) => {
+    effectMap.get(key)?.destroy?.();
+    effectMap.delete(key);
     currRegisteredEffects.delete(key); // Удаляем из зарегистрированных эффектов
     currItemSignalMap.delete(key); // Удаляем сигнал элемента
     currItemComponentMap.delete(key); // Удаляем функцию создания компонента
@@ -294,7 +305,7 @@ export const oldGetList = <I extends Record<string, any>, K extends keyof I>(
           currRegisteredEffects.add(key); // Помечаем как зарегистрированный
 
           // Создаем эффект для рендеринга элемента
-          effect(() => {
+          const eff = effect(() => {
             signalTrigger(); // Читаем сигнал для подписки на изменения
 
             const itemIndex = getItemIndex(key); // Получаем индекс элемента (с кэшированием)
@@ -353,6 +364,7 @@ export const oldGetList = <I extends Record<string, any>, K extends keyof I>(
               }
             }
           });
+          effectMap.set(key, eff);
         }
       });
     };
@@ -478,13 +490,6 @@ export const rxRenderIf = (
  *
  * @template T1 - Тип HTML-элемента для основного контента
  * @template T2 - Тип HTML-элемента для альтернативного контента
- *
- * @param {boolean | ReactiveSignal<boolean> | (() => boolean)} condition - Условие для рендеринга.
- *        Может быть статическим boolean, реактивным сигналом или функцией, возвращающей boolean.
- * @param {() => ComponentConfig<T1>} content - Функция, возвращающая компонент для отображения при истинном условии
- * @param {() => ComponentConfig<T2>} [elseContent] - Опциональная функция, возвращающая компонент для отображения при ложном условии
- *
- * @returns {ComponentConfig<T1> | ComponentConfig<T2> | ''} Компонент, соответствующий условию, или пустая строка
  *
  * @example
  * // Статическое условие

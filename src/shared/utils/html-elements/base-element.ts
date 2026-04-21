@@ -4,7 +4,7 @@ import {
   ContextEvent,
   RootStyle,
   SlotContext,
-  SlotTemplate
+  SlotTemplate,
 } from "@shared/types";
 import { projectLog } from "../helpers";
 import { effect, EffectCb, ReactiveSignal, signal } from "../signal";
@@ -23,13 +23,24 @@ export abstract class BaseElement extends HTMLElement {
 
   public slotContext?: SlotContext;
 
+  /**
+   * @deprecated Use `static styles` instead.
+   */
   public rootStyle?: RootStyle;
 
   public modelValue?: ReactiveSignal<unknown>;
 
   public providers?: Record<string, ReactiveSignal<any>>;
 
-  effectSet = new Set<WeakRef<EffectCb>>();
+  wrapperEffect: EffectCb | null = null;
+
+  componentEffect(cb: () => void) {
+    console.log(cb);
+    debugger;
+    if (!this.wrapperEffect) return;
+    (cb as EffectCb).parent = new WeakRef(this.wrapperEffect);
+    effect(cb);
+  }
 
   appendAllSlotContent?: () => void;
 
@@ -86,21 +97,24 @@ export abstract class BaseElement extends HTMLElement {
             context: contextKey,
             callback: <
               T extends typeof injectSignal extends ReactiveSignal<infer V>
-              ? Exclude<V, null>
-              : never,
+                ? Exclude<V, null>
+                : never,
             >(
               providerSignal: ReactiveSignal<T>,
             ) =>
-              effect(() => {
-                injectSignal.set(providerSignal());
-              }, {name: contextKey}),
+              effect(
+                () => {
+                  injectSignal.set(providerSignal());
+                },
+                { name: contextKey },
+              ),
           },
           bubbles: true,
           composed: true,
         }) as ContextEvent<
           typeof injectSignal extends ReactiveSignal<infer V>
-          ? Exclude<V, null>
-          : never
+            ? Exclude<V, null>
+            : never
         >,
       );
     });
@@ -114,7 +128,7 @@ export abstract class BaseElement extends HTMLElement {
 }
 
 export interface BaseElementConstructor {
-  new(...params: any[]): BaseElement;
+  new (...params: any[]): BaseElement;
   renderTagName: string;
   styles?: string | string[];
   observedAttributes: string[];
