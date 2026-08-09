@@ -1,12 +1,9 @@
-import {
-  event,
-  property,
-} from "../../shared/utils/html-decorators/html-property";
+import { event, property } from "../../shared/utils/html-decorators/html-property";
 import { BaseElement } from "../../shared/utils/html-elements/base-element";
 import { classList } from "../../shared/utils/html-elements/element-helper";
-import { signal } from "../../shared/utils/signal";
 import { useCustomComponent } from "../../shared/utils/html-fabric/custom-fabric";
 import { button, div, p } from "../../shared/utils/html-fabric/fabric";
+import { signal } from "../../shared/utils/signal";
 
 // Example 1: Basic custom component
 class CounterComponent extends BaseElement {
@@ -17,7 +14,7 @@ class CounterComponent extends BaseElement {
   onCountChange = new Event("count-change");
 
   increment() {
-    this.count.set(this.count() + 1);
+    this.count.update((e) => e + 1);
     this.dispatchEvent(this.onCountChange);
   }
 
@@ -43,19 +40,12 @@ class UserCardComponent extends BaseElement {
   age = signal(0);
 
   render() {
-    return div(
-      classList`user-card`,
-      p(`Name: ${this.name()}`),
-      p(`Age: ${this.age()}`),
-    );
+    return div(classList`user-card`, p(`Name: ${this.name()}`), p(`Age: ${this.age()}`));
   }
 }
 
 // Create a custom component with a specific selector
-export const UserCard = useCustomComponent(
-  UserCardComponent,
-  "custom-user-card",
-);
+export const UserCard = useCustomComponent(UserCardComponent, "custom-user-card");
 
 // Example 3: Custom component with message
 class SecretComponent extends BaseElement {

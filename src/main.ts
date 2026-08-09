@@ -1,12 +1,4 @@
-import {
-  BaseElement,
-  cls,
-  div,
-  property,
-  signal,
-  slot,
-  useCustomComponent,
-} from "@shared/utils";
+import { BaseElement, div, property, signal, slot, useCustomComponent } from "@shared/utils";
 import "./style.css";
 
 // import { runAllBatchingTests } from "./test-components/test-batching";

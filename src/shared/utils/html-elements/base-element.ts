@@ -1,4 +1,4 @@
-import {
+import type {
   ComponentConfig,
   ComponentContent,
   ContextEvent,
@@ -7,7 +7,7 @@ import {
   SlotTemplate,
 } from "@shared/types";
 import { projectLog } from "../helpers";
-import { effect, EffectCb, ReactiveSignal, signal } from "../signal";
+import { type EffectCb, effect, type ReactiveSignal, signal } from "../signal";
 
 export abstract class BaseElement extends HTMLElement {
   static observedAttributes: string[] = [];
@@ -36,7 +36,6 @@ export abstract class BaseElement extends HTMLElement {
 
   componentEffect(cb: () => void) {
     console.log(cb);
-    debugger;
     if (!this.wrapperEffect) return;
     (cb as EffectCb).parent = new WeakRef(this.wrapperEffect);
     effect(cb);
@@ -86,11 +85,7 @@ export abstract class BaseElement extends HTMLElement {
 
   public checkInjects() {
     Object.entries(this.injects).forEach(([contextKey, injectSignal]) => {
-      projectLog(
-        "%cinject%c",
-        `%c${contextKey}%c`,
-        "from BaseElement (dispatch event)",
-      );
+      projectLog("%cinject%c", `%c${contextKey}%c`, "from BaseElement (dispatch event)");
       this.shadow.dispatchEvent(
         new CustomEvent(contextKey, {
           detail: {
@@ -112,9 +107,7 @@ export abstract class BaseElement extends HTMLElement {
           bubbles: true,
           composed: true,
         }) as ContextEvent<
-          typeof injectSignal extends ReactiveSignal<infer V>
-            ? Exclude<V, null>
-            : never
+          typeof injectSignal extends ReactiveSignal<infer V> ? Exclude<V, null> : never
         >,
       );
     });
