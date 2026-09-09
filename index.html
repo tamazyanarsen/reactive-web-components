@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rwc — playground</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #16181d;
+        --panel: #1e2127;
+        --panel-2: #23262d;
+        --border: #2f343d;
+        --text: #e6e8ec;
+        --muted: #8b93a1;
+        --accent: #6ea8fe;
+        --ok: #6ee7a8;
+        --err: #ff8b8b;
+        --warn: #ffd479;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 60px;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.6 ui-sans-serif, system-ui, sans-serif;
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        display: grid;
+        gap: 18px;
+      }
+      header h1 {
+        font-size: 20px;
+        margin: 0 0 6px;
+      }
+      header p {
+        margin: 0;
+        color: var(--muted);
+      }
+      section,
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 18px;
+        display: block;
+      }
+      .section > h2 {
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+      .hint {
+        color: var(--muted);
+        margin: 0 0 16px;
+      }
+      code {
+        font-family: ui-monospace, monospace;
+        background: #2a2f38;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 0.92em;
+      }
+      button {
+        background: #2a2f38;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 14px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      input {
+        background: var(--panel-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 7px 10px;
+        font: inherit;
+        min-width: 220px;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .row + .row {
+        margin-top: 10px;
+      }
+      .counter {
+        font: 600 28px/1 ui-monospace, monospace;
+        color: var(--accent);
+        min-width: 4ch;
+        text-align: center;
+      }
+      .mono {
+        font-family: ui-monospace, monospace;
+        color: var(--accent);
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .card {
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+      }
+      .card .label {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .card .num {
+        font: 600 22px/1.2 ui-monospace, monospace;
+        color: var(--accent);
+        margin: 6px 0;
+      }
+      .card .why {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .verdict {
+        border-left: 3px solid var(--muted);
+        padding: 12px 14px;
+        border-radius: 6px;
+        background: var(--panel-2);
+        margin-top: 16px;
+      }
+      .verdict.ok {
+        border-left-color: var(--ok);
+      }
+      .verdict.err {
+        border-left-color: var(--err);
+      }
+      .verdict.wait {
+        border-left-color: var(--warn);
+      }
+      .verdict-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .verdict-text {
+        color: var(--muted);
+      }
+
+      /* Хосты компонентов стилизуются снаружи: они в светлом DOM */
+      playground-app {
+        display: grid;
+        gap: 18px;
+      }
+      counter-card {
+        display: block;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      /* Класс на хосте компонента: он в светлом DOM, поэтому стилизуется отсюда */
+      .demo-host {
+        display: block;
+        border-left: 3px solid transparent;
+        padding-left: 10px;
+      }
+      .demo-host.theme-blue {
+        border-left-color: var(--accent);
+      }
+      .demo-host.theme-green {
+        border-left-color: var(--ok);
+      }
+
+      /* Лог живёт вне компонента, поэтому переживает размонтирование */
+      #log {
+        display: grid;
+        gap: 2px;
+        max-height: 280px;
+        overflow: auto;
+        margin: 0;
+      }
+      .entry {
+        display: grid;
+        grid-template-columns: 62px 92px 1fr;
+        gap: 10px;
+        padding: 5px 0;
+        border-bottom: 1px solid #262a31;
+        align-items: baseline;
+      }
+      .entry .time {
+        color: #666d79;
+        font: 11px ui-monospace, monospace;
+      }
+      .entry .tag {
+        font: 600 10px ui-monospace, monospace;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border: 1px solid currentColor;
+        border-radius: 4px;
+        padding: 1px 0;
+        text-align: center;
+        opacity: 0.9;
+      }
+      .entry .msg {
+        color: var(--text);
+      }
+      .t-click {
+        color: var(--accent);
+      }
+      .t-set {
+        color: var(--warn);
+      }
+      .t-effect {
+        color: var(--ok);
+      }
+      .t-life {
+        color: #c39bff;
+      }
+      .t-event {
+        color: #7ee0d0;
+      }
+      .t-error {
+        color: var(--err);
+      }
+      .entry.bad .msg {
+        color: var(--err);
+      }
+      @media (max-width: 560px) {
+        .entry {
+          grid-template-columns: 1fr;
+          gap: 2px;
+        }
+        .entry .tag {
+          justify-self: start;
+          padding: 1px 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Разметку целиком собирает playground.ts фабриками библиотеки -->
+    <main id="app"></main>
+    <script type="module" src="./playground.ts"></script>
+  </body>
+</html>

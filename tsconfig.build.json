@@ -1,0 +1,11 @@
+{
+  // Конфиг публикации: сам JS собирает bun build, типы — dts-bundle-generator.
+  // Отличия от рабочего конфига: в пакет не должны попасть ни стенд с примерами,
+  // ни тесты, ни типы bun — потребителю всё это не нужно.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": []
+  },
+  "include": ["index.ts", "src/**/*.ts"],
+  "exclude": ["test", "examples", "playground.ts", "dist"]
+}

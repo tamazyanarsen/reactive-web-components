@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rwc — примеры компонентов</title>
+    <style>
+      /*
+        Токены темы — CSS-переменные: правила страницы внутрь shadow root не попадают,
+        а переменные наследуются и потому доходят до компонентов.
+      */
+      :root {
+        color-scheme: dark;
+        --rwc-accent: #6ea8fe;
+        --rwc-ok: #6ee7a8;
+        --rwc-warn: #ffd479;
+        --rwc-err: #ff8b8b;
+        --rwc-text: #e6e8ec;
+        --rwc-muted: #8b93a1;
+        --rwc-surface: #23262d;
+        --rwc-raised: #2a2f38;
+        --rwc-border: #2f343d;
+
+        --bg: #16181d;
+        --panel: #1e2127;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px 16px 60px;
+        background: var(--bg);
+        color: var(--rwc-text);
+        font: 14px/1.6 ui-sans-serif, system-ui, sans-serif;
+      }
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        display: grid;
+        gap: 18px;
+      }
+      header h1 {
+        font-size: 20px;
+        margin: 0 0 6px;
+      }
+      header p {
+        margin: 0;
+        max-width: 62ch;
+        color: var(--rwc-muted);
+      }
+      .section {
+        background: var(--panel);
+        border: 1px solid var(--rwc-border);
+        border-radius: 10px;
+        padding: 18px;
+      }
+      .head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .head h2 {
+        font-size: 15px;
+        margin: 0;
+      }
+      .file {
+        font: 12px ui-monospace, monospace;
+        color: var(--rwc-muted);
+      }
+      .hint {
+        margin: 4px 0 16px;
+        max-width: 68ch;
+        color: var(--rwc-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Разметку целиком собирает index.ts фабриками библиотеки -->
+    <main id="app"></main>
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>
