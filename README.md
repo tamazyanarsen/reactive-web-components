@@ -7,13 +7,13 @@ no template strings, no JSX — so the whole UI is checked by the TypeScript
 compiler. Effects belong to a component and die together with it.
 
 ```bash
-npm install @reactive-web-components/rwc
+npm install @rwcjs/core
 ```
 
 ## What it looks like
 
 ```ts
-import { button, cls, css, defineComponent, div, payload, span, useCustomComponent } from "@reactive-web-components/rwc";
+import { button, cls, css, defineComponent, div, payload, span, useCustomComponent } from "@rwcjs/core";
 
 class Counter extends defineComponent({
   props: { value: 0, step: 1 },

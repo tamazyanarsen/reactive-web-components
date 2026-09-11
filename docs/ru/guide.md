@@ -22,7 +22,7 @@
 ## Установка
 
 ```bash
-npm install @reactive-web-components/rwc
+npm install @rwcjs/core
 ```
 
 Пакет — ESM. Собирается любым бандлером (Vite, Rspack, webpack, esbuild, bun).
@@ -32,7 +32,7 @@ npm install @reactive-web-components/rwc
 ## Первый компонент
 
 ```ts
-import { defineComponent, div, span, useCustomComponent } from "@reactive-web-components/rwc";
+import { defineComponent, div, span, useCustomComponent } from "@rwcjs/core";
 
 class Hello extends defineComponent({
   props: { name: "мир" },
@@ -62,7 +62,7 @@ document.body.append(hello({ ".name": "rwc" }));
 Сигнал — функция-значение с методом записи.
 
 ```ts
-import { signal } from "@reactive-web-components/rwc";
+import { signal } from "@rwcjs/core";
 
 const count = signal(0);
 
@@ -92,7 +92,7 @@ const point = signal({ x: 0, y: 0 }, { equals: (a, b) => a.x === b.x && a.y === 
 их в один прогон:
 
 ```ts
-import { batch } from "@reactive-web-components/rwc";
+import { batch } from "@rwcjs/core";
 
 batch(() => {
   firstName.set("Ада");
@@ -108,7 +108,7 @@ batch(() => {
 Зависимости собираются автоматически и пересобираются на каждом прогоне.
 
 ```ts
-import { effect, onCleanup, signal } from "@reactive-web-components/rwc";
+import { effect, onCleanup, signal } from "@rwcjs/core";
 
 const seconds = signal(0);
 
@@ -198,7 +198,7 @@ effect(() => count.set(count() + 1));
 Два способа, оба возвращают источник, который можно читать и передавать дальше.
 
 ```ts
-import { computed, derived } from "@reactive-web-components/rwc";
+import { computed, derived } from "@rwcjs/core";
 
 // Запоминает результат, пересчитывается при изменении зависимостей.
 // Живёт на эффекте, который принадлежит текущему компоненту.
@@ -215,7 +215,7 @@ const label = derived(() => `${price()} ₽`);
 Дополнительно:
 
 ```ts
-import { combine, rs } from "@reactive-web-components/rwc";
+import { combine, rs } from "@rwcjs/core";
 
 const size = rs`btn btn-${sizeSignal}`;      // реактивная строка
 const both = combine(width, height);          // кортеж значений
@@ -228,7 +228,7 @@ const [w, h] = both();
 дальше идут дети.
 
 ```ts
-import { a, button, div, input, span } from "@reactive-web-components/rwc";
+import { a, button, div, input, span } from "@rwcjs/core";
 
 div(
   { class: "card" },
@@ -305,7 +305,7 @@ div({}, "счёт: ", count, isAdmin() && span("админ"));
 ### Классы
 
 ```ts
-import { cls } from "@reactive-web-components/rwc";
+import { cls } from "@rwcjs/core";
 
 div({ class: "card" });
 div({ class: ["card", "wide"] });
@@ -333,7 +333,7 @@ div({ ...cls`card`, ".id": "main" });        // вместе с другими �
 Условный рендер. Ветка пересобирается только при смене истинности условия.
 
 ```ts
-import { when } from "@reactive-web-components/rwc";
+import { when } from "@rwcjs/core";
 
 div(
   {},
@@ -360,7 +360,7 @@ div({ show: isOpen }, heavyContent());
 элемента и индекса:
 
 ```ts
-import { each } from "@reactive-web-components/rwc";
+import { each } from "@rwcjs/core";
 
 ul(
   {},
@@ -386,7 +386,7 @@ ul(
 прочитанного прямо в теле.
 
 ```ts
-import { dynamic } from "@reactive-web-components/rwc";
+import { dynamic } from "@rwcjs/core";
 
 div({}, dynamic(() => (user() ? profile(user()) : loginForm())));
 ```
@@ -492,7 +492,7 @@ CSS объявляется на классе и разбирается один 
 делят один `CSSStyleSheet` через `adoptedStyleSheets`:
 
 ```ts
-import { css } from "@reactive-web-components/rwc";
+import { css } from "@rwcjs/core";
 
 class Card extends defineComponent({ props: {} }) {
   static override styles = css`
@@ -583,7 +583,7 @@ table({
 Значение, доступное всему поддереву без проброса пропсов.
 
 ```ts
-import { createContext } from "@reactive-web-components/rwc";
+import { createContext } from "@rwcjs/core";
 
 export const ThemeKey = createContext<"light" | "dark">("theme", "light");
 ```
@@ -617,7 +617,7 @@ class Toolbar extends defineComponent({ props: {} }) {
 ## Асинхронность
 
 ```ts
-import { resource } from "@reactive-web-components/rwc";
+import { resource } from "@rwcjs/core";
 
 class Search extends defineComponent({ props: { query: "" } }) {
   render() {
@@ -646,7 +646,7 @@ class Search extends defineComponent({ props: { query: "" } }) {
 Есть и одноразовая реакция на первое изменение:
 
 ```ts
-import { firstUpdate } from "@reactive-web-components/rwc";
+import { firstUpdate } from "@rwcjs/core";
 
 // Начальное значение пропускается, срабатывает один раз и отписывается.
 firstUpdate(this.props.value, (value) => this.events.touched(value));
@@ -657,7 +657,7 @@ firstUpdate(this.props.value, (value) => this.events.touched(value));
 Кусок разметки, которому не нужны ни свой тег, ни теневой корень, ни атрибуты:
 
 ```ts
-import { createComponent } from "@reactive-web-components/rwc";
+import { createComponent } from "@rwcjs/core";
 
 const Card = createComponent<{ title: string }, HTMLElement>((props, ...children) =>
   section(cls`card`, h3(props.title), ...children),
@@ -677,7 +677,7 @@ Card({ title: "Отчёт", class: ["wide"] }, p("тело"));
 владелец:
 
 ```ts
-import { createRoot } from "@reactive-web-components/rwc";
+import { createRoot } from "@rwcjs/core";
 
 const app = createRoot(() => div({}, header(), counter({ ".value": total })));
 document.getElementById("app")!.append(app);
@@ -698,7 +698,7 @@ const app = createRoot((dispose) => {
 разделите объявление и регистрацию:
 
 ```ts
-import { configCustomComponent } from "@reactive-web-components/rwc";
+import { configCustomComponent } from "@rwcjs/core";
 
 export const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
 ```

@@ -5,7 +5,7 @@
 Всё импортируется из корня пакета:
 
 ```ts
-import { signal, effect, div, defineComponent } from "@reactive-web-components/rwc";
+import { signal, effect, div, defineComponent } from "@rwcjs/core";
 ```
 
 - [Сигналы](#сигналы)

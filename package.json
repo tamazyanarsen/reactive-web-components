@@ -1,6 +1,6 @@
 {
-  "name": "@reactive-web-components/rwc",
-  "version": "3.0.0",
+  "name": "@rwcjs/core",
+  "version": "3.0.1",
   "description": "Реактивные веб-компоненты на сигналах: фабрики тегов вместо шаблонов, эффекты живут и умирают вместе с компонентом",
   "type": "module",
   "license": "MIT",

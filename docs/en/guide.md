@@ -22,7 +22,7 @@
 ## Installation
 
 ```bash
-npm install @reactive-web-components/rwc
+npm install @rwcjs/core
 ```
 
 The package is ESM. Any bundler works (Vite, Rspack, webpack, esbuild, bun). No
@@ -31,7 +31,7 @@ template compiler and no editor plugin are needed: markup is ordinary TypeScript
 ## Your first component
 
 ```ts
-import { defineComponent, div, span, useCustomComponent } from "@reactive-web-components/rwc";
+import { defineComponent, div, span, useCustomComponent } from "@rwcjs/core";
 
 class Hello extends defineComponent({
   props: { name: "world" },
@@ -61,7 +61,7 @@ document.body.append(hello({ ".name": "rwc" }));
 A signal is a value-function with a write method.
 
 ```ts
-import { signal } from "@reactive-web-components/rwc";
+import { signal } from "@rwcjs/core";
 
 const count = signal(0);
 
@@ -91,7 +91,7 @@ Several writes in a row wake subscribers once per write. `batch` collapses them
 into a single run:
 
 ```ts
-import { batch } from "@reactive-web-components/rwc";
+import { batch } from "@rwcjs/core";
 
 batch(() => {
   firstName.set("Ada");
@@ -108,7 +108,7 @@ An effect runs immediately and then on every change of what it read.
 Dependencies are collected automatically and re-collected on every run.
 
 ```ts
-import { effect, onCleanup, signal } from "@reactive-web-components/rwc";
+import { effect, onCleanup, signal } from "@rwcjs/core";
 
 const seconds = signal(0);
 
@@ -198,7 +198,7 @@ The usual cure is `peek()` or `update()` — both read without subscribing.
 Two options, both returning a source you can read and pass around.
 
 ```ts
-import { computed, derived } from "@reactive-web-components/rwc";
+import { computed, derived } from "@rwcjs/core";
 
 // Memoises the result, recomputes when dependencies change.
 // Lives on an effect owned by the current component.
@@ -215,7 +215,7 @@ Use `computed` for expensive work and for values read from several places; use
 Also available:
 
 ```ts
-import { combine, rs } from "@reactive-web-components/rwc";
+import { combine, rs } from "@rwcjs/core";
 
 const size = rs`btn btn-${sizeSignal}`;  // reactive string
 const both = combine(width, height);      // tuple of values
@@ -228,7 +228,7 @@ Every tag has a factory. The first argument is an optional config, the rest are
 children.
 
 ```ts
-import { a, button, div, input, span } from "@reactive-web-components/rwc";
+import { a, button, div, input, span } from "@rwcjs/core";
 
 div(
   { class: "card" },
@@ -304,7 +304,7 @@ div({}, "score: ", count, isAdmin() && span("admin"));
 ### Classes
 
 ```ts
-import { cls } from "@reactive-web-components/rwc";
+import { cls } from "@rwcjs/core";
 
 div({ class: "card" });
 div({ class: ["card", "wide"] });
@@ -333,7 +333,7 @@ Conditional rendering. The branch is rebuilt only when the truthiness of the
 condition changes.
 
 ```ts
-import { when } from "@reactive-web-components/rwc";
+import { when } from "@rwcjs/core";
 
 div(
   {},
@@ -361,7 +361,7 @@ Keyed lists that reuse nodes. `renderItem` receives **signals** for the item and
 the index:
 
 ```ts
-import { each } from "@reactive-web-components/rwc";
+import { each } from "@rwcjs/core";
 
 ul(
   {},
@@ -387,7 +387,7 @@ A fully reactive region: rebuilt whenever any signal read directly in its body
 changes.
 
 ```ts
-import { dynamic } from "@reactive-web-components/rwc";
+import { dynamic } from "@rwcjs/core";
 
 div({}, dynamic(() => (user() ? profile(user()) : loginForm())));
 ```
@@ -493,7 +493,7 @@ CSS is declared on the class and parsed once per page — instances share a sing
 `CSSStyleSheet` through `adoptedStyleSheets`:
 
 ```ts
-import { css } from "@reactive-web-components/rwc";
+import { css } from "@rwcjs/core";
 
 class Card extends defineComponent({ props: {} }) {
   static override styles = css`
@@ -586,7 +586,7 @@ data instead of recreating nodes.
 A value available to the whole subtree without threading props through it.
 
 ```ts
-import { createContext } from "@reactive-web-components/rwc";
+import { createContext } from "@rwcjs/core";
 
 export const ThemeKey = createContext<"light" | "dark">("theme", "light");
 ```
@@ -620,7 +620,7 @@ context when they connect to the DOM, which happens after `render()` has returne
 ## Async
 
 ```ts
-import { resource } from "@reactive-web-components/rwc";
+import { resource } from "@rwcjs/core";
 
 class Search extends defineComponent({ props: { query: "" } }) {
   render() {
@@ -649,7 +649,7 @@ When the component disconnects, the request is cancelled.
 There is also a one-shot reaction to the first change:
 
 ```ts
-import { firstUpdate } from "@reactive-web-components/rwc";
+import { firstUpdate } from "@rwcjs/core";
 
 // Skips the initial value, fires once and unsubscribes.
 firstUpdate(this.props.value, (value) => this.events.touched(value));
@@ -661,7 +661,7 @@ A piece of markup that needs neither its own tag, nor a shadow root, nor
 attributes:
 
 ```ts
-import { createComponent } from "@reactive-web-components/rwc";
+import { createComponent } from "@rwcjs/core";
 
 const Card = createComponent<{ title: string }, HTMLElement>((props, ...children) =>
   section(cls`card`, h3(props.title), ...children),
@@ -681,7 +681,7 @@ warns about that. For the entry point, module-level state and tests there is a
 root owner:
 
 ```ts
-import { createRoot } from "@reactive-web-components/rwc";
+import { createRoot } from "@rwcjs/core";
 
 const app = createRoot(() => div({}, header(), counter({ ".value": total })));
 document.getElementById("app")!.append(app);
@@ -703,7 +703,7 @@ const app = createRoot((dispose) => {
 matters, separate the declaration from it:
 
 ```ts
-import { configCustomComponent } from "@reactive-web-components/rwc";
+import { configCustomComponent } from "@rwcjs/core";
 
 export const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
 ```

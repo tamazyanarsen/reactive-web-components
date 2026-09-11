@@ -7,13 +7,13 @@
 Эффекты принадлежат компоненту и умирают вместе с ним.
 
 ```bash
-npm install @reactive-web-components/rwc
+npm install @rwcjs/core
 ```
 
 ## Как выглядит
 
 ```ts
-import { button, cls, css, defineComponent, div, payload, span, useCustomComponent } from "@reactive-web-components/rwc";
+import { button, cls, css, defineComponent, div, payload, span, useCustomComponent } from "@rwcjs/core";
 
 class Counter extends defineComponent({
   props: { value: 0, step: 1 },
