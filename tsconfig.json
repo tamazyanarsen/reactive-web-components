@@ -1,7 +1,7 @@
 {
   // scripts/ и dist/ проверяются отдельно: скрипт верификации импортирует собранный
   // пакет, которого на момент typecheck ещё нет, а dist — это артефакт сборки.
-  "exclude": ["dist", "scripts", "bench", "packages/create/templates/*/vite.config.ts"],
+  "exclude": ["dist", "scripts", "bench", "site", "packages/create/templates/*/vite.config.ts"],
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext", "DOM", "DOM.Iterable"],

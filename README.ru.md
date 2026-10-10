@@ -1,6 +1,6 @@
 # rwc
 
-[English](./README.md) · [Гайд](./docs/ru/guide.md) · [Справочник API](./docs/ru/api.md) · [Рецепты](./docs/ru/recipes.md) · [Фреймворки](./docs/ru/frameworks.md) · [SSR](./docs/ru/ssr.md) · [Экосистема](./docs/ru/ecosystem.md)
+**[Сайт документации](https://tamazyanarsen.github.io/reactive-web-components/ru/)** · [English](./README.md) · [Гайд](./docs/ru/guide.md) · [Справочник API](./docs/ru/api.md) · [Рецепты](./docs/ru/recipes.md) · [Фреймворки](./docs/ru/frameworks.md) · [SSR](./docs/ru/ssr.md) · [Экосистема](./docs/ru/ecosystem.md)
 
 Реактивные веб-компоненты на сигналах. Разметка собирается фабриками тегов — без
 шаблонных строк и без JSX, поэтому весь UI проверяется компилятором TypeScript.

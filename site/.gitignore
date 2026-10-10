@@ -1,0 +1,5 @@
+node_modules
+# собирается из ../docs и README пакетов скриптом prepare-content
+content
+.vitepress/cache
+.vitepress/dist

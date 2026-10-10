@@ -24,6 +24,22 @@ bun run cem              # манифест examples/ — проверка @rwcj
 Пользовательские изменения записываются в `CHANGELOG.md`. Новые возможности
 документируются на двух языках: `docs/en` и `docs/ru` говорят одно и то же.
 
+## Сайт документации
+
+Сайт на VitePress лежит в `site/` и собирается из того же markdown, что читается на
+GitHub: `docs/en`, `docs/ru` и README пакетов. Скрипт `site/scripts/prepare-content.ts`
+раскладывает их в `site/content` и переписывает ссылки; главные страницы — в `site/pages`.
+Живые примеры — модули `site/demos/*.ts`, на странице: `<Demo name="counter" />`.
+
+```bash
+cd site
+bun install
+bun run dev       # http://localhost:5173/reactive-web-components/
+```
+
+Деплой на GitHub Pages — `.github/workflows/docs.yml`, на каждый push в `main`,
+затрагивающий документацию или код.
+
 ## Релиз
 
 Публикуются пакеты, чьей версии ещё нет в npm: корневой `@rwcjs/core` и всё из
