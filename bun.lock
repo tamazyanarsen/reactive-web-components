@@ -50,7 +50,7 @@
       "name": "@rwcjs/ui",
       "version": "0.1.0",
       "peerDependencies": {
-        "@rwcjs/core": "^3.1.0",
+        "@rwcjs/core": "^3.2.0",
       },
     },
   },

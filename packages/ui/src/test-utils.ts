@@ -12,7 +12,7 @@ export type FakeInternals = {
   validity: { valid: boolean; flags: ValidityStateFlags; message: string };
   states: Set<string>;
   setFormValue(value: unknown): void;
-  setValidity(flags?: ValidityStateFlags, message?: string): void;
+  setValidity(flags?: ValidityStateFlags, message?: string, anchor?: Element): void;
   checkValidity(): boolean;
   reportValidity(): boolean;
 };
@@ -34,7 +34,12 @@ if (typeof proto.attachInternals !== "function") {
       setFormValue(value) {
         internals.value = value;
       },
-      setValidity(flags = {}, message = "") {
+      setValidity(flags = {}, message = "", anchor?: Element) {
+        // Как в браузере: якорь подсказки обязан лежать в теневом корне элемента —
+        // иначе NotFoundError. Без этой проверки тесты пропускали вызов до вставки разметки.
+        if (anchor && !host.shadowRoot?.contains(anchor)) {
+          throw new DOMException("anchor is not in the shadow tree", "NotFoundError");
+        }
         const invalid = Object.values(flags).some(Boolean);
         internals.validity = { valid: !invalid, flags, message: invalid ? message : "" };
       },

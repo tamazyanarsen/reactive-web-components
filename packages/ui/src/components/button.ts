@@ -87,7 +87,8 @@ export class Button extends defineComponent({
       :host([variant="danger"]) button {
         background: var(--_danger);
         border-color: var(--_danger);
-        color: #fff;
+        /* Цвет поверхности: белый в светлой схеме, тёмный в тёмной, где danger светлый. */
+        color: var(--_surface);
       }
 
       :host([size="sm"]) button {
