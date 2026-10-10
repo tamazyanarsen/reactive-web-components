@@ -52,15 +52,21 @@ const ruSidebar: DefaultTheme.SidebarItem[] = [
   },
 ];
 
+// GitHub Pages отдаёт сайт из подкаталога с именем репозитория.
+const base = process.env.SITE_BASE ?? "/reactive-web-components/";
+
 export default defineConfig({
   title: "rwc",
   description: "Reactive web components on signals",
   srcDir: "content",
-  // GitHub Pages отдаёт сайт из подкаталога с именем репозитория.
-  base: process.env.SITE_BASE ?? "/reactive-web-components/",
+  base,
   cleanUrls: true,
   lastUpdated: false,
-  head: [["meta", { name: "theme-color", content: "#4f46e5" }]],
+  // head не учитывает base сам: путь к иконке собираем вручную.
+  head: [
+    ["meta", { name: "theme-color", content: "#4f46e5" }],
+    ["link", { rel: "icon", type: "image/svg+xml", href: `${base}favicon.svg` }],
+  ],
 
   themeConfig: {
     socialLinks: [{ icon: "github", link: "https://github.com/tamazyanarsen/reactive-web-components" }],
