@@ -1,0 +1,21 @@
+{
+  "name": "js-framework-benchmark-keyed-rwc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "rwc implementation for js-framework-benchmark (keyed)",
+  "type": "module",
+  "js-framework-benchmark": {
+    "frameworkVersionFromPackage": "@rwcjs/core",
+    "frameworkHomeURL": "https://github.com/tamazyanarsen/reactive-web-components"
+  },
+  "scripts": {
+    "dev": "esbuild src/main.ts --bundle --format=esm --outfile=dist/main.js --watch",
+    "build-prod": "esbuild src/main.ts --bundle --format=esm --minify --outfile=dist/main.js"
+  },
+  "dependencies": {
+    "@rwcjs/core": "^3.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2"
+  }
+}
