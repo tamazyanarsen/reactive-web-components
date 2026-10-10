@@ -32,6 +32,9 @@ const supportsConstructableSheets = (() => {
 export const css = (strings: TemplateStringsArray, ...values: unknown[]) =>
   strings.reduce((acc, chunk, index) => acc + chunk + (index < values.length ? String(values[index]) : ""), "");
 
+/** Исходный текст листа: cssRules в разных DOM-реализациях восстанавливают его неточно. */
+const sheetSource = new WeakMap<CSSStyleSheet, string>();
+
 const toSheet = (source: string) => {
   const cached = sheetCache.get(source);
   if (cached) return cached;
@@ -39,8 +42,13 @@ const toSheet = (source: string) => {
   const sheet = new CSSStyleSheet();
   sheet.replaceSync(source);
   sheetCache.set(source, sheet);
+  sheetSource.set(sheet, source);
   return sheet;
 };
+
+/** CSS-текст листа — для серверного рендера, где лист превращается обратно в <style>. */
+export const styleSheetText = (sheet: CSSStyleSheet): string =>
+  sheetSource.get(sheet) ?? [...sheet.cssRules].map((rule) => rule.cssText).join("\n");
 
 const toList = (styles: ComponentStyles) => (Array.isArray(styles) ? styles : [styles]) as readonly (string | CSSStyleSheet)[];
 
