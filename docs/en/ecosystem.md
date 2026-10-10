@@ -8,6 +8,7 @@ live in `packages/*` (bun workspaces).
 | Package | What it does |
 | --- | --- |
 | [`@rwcjs/core`](../../README.md) | Signals, tag factories, components, SSR |
+| [`@rwcjs/ui`](../../packages/ui/README.md) | UI kit: 22 accessible components (26 tags) (forms, overlays, structure, feedback) themed with CSS variables |
 | [`@rwcjs/cem-plugin`](../../packages/cem-plugin/README.md) | Describes rwc components in a Custom Elements Manifest |
 | [`@rwcjs/router`](../../packages/router/README.md) | Router on signals: typed params from path strings, pages that survive param changes |
 | [`@rwcjs/forms`](../../packages/forms/README.md) | Forms on signals: typed fields, validation, input binding, submit state |

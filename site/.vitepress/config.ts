@@ -7,6 +7,7 @@ const packagesSidebar: DefaultTheme.SidebarItem = {
   text: "Packages",
   items: [
     { text: "@rwcjs/ui", link: "/packages/ui" },
+    { text: "UI kit gallery", link: "/ui-gallery" },
     { text: "@rwcjs/router", link: "/packages/router" },
     { text: "@rwcjs/forms", link: "/packages/forms" },
     { text: "@rwcjs/create", link: "/packages/create" },
@@ -41,7 +42,14 @@ const ruSidebar: DefaultTheme.SidebarItem[] = [
       { text: "Экосистема", link: "/ru/ecosystem" },
     ],
   },
-  { ...packagesSidebar, text: "Пакеты (англ.)" },
+  {
+    text: "Пакеты (англ.)",
+    items: [
+      { text: "@rwcjs/ui", link: "/packages/ui" },
+      { text: "Галерея UI-кита", link: "/ru/ui-gallery" },
+      ...packagesSidebar.items!.filter((item) => item.link?.startsWith("/packages/") && item.link !== "/packages/ui"),
+    ],
+  },
 ];
 
 export default defineConfig({
