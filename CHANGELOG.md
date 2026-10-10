@@ -1,6 +1,6 @@
 # Changelog
 
-## Не выпущено
+## 3.2.0
 
 ### Ядро
 
@@ -9,6 +9,17 @@
   выполняется на микрозадаче; может вернуть уборку, умирает вместе с владельцем.
 - Рецепт «Поле ввода для формы» исправлен: `setValidity` с якорем вызывался до вставки
   разметки, и браузер бросал `NotFoundError`. Теперь проверка ставится в `onMount`.
+
+### Экосистема
+
+- **`@rwcjs/ui` 0.1.0** — UI-кит: 22 компонента (26 тегов) с префиксом `rwc-`. Формы (button, input,
+  textarea, checkbox, switch, select, radio-group — все form-associated), оверлеи (dialog,
+  tooltip, popover, dropdown-menu), структура (tabs, accordion, card, badge, avatar,
+  divider), обратная связь (toast, alert, spinner, progress, skeleton). Клавиатура и ARIA
+  по WAI-ARIA Authoring Practices, темы на CSS-переменных `--rwc-*` со светлой и тёмной
+  схемой, `theme.css` для ручного переключения, Custom Elements Manifest в пакете.
+  Компоненты объявлены через `configCustomComponent`: приложение вызывает `registerAll()`.
+- Галерея UI-кита на сайте документации (`/ui-gallery`): все компоненты вживую.
 
 ## 3.1.1
 
