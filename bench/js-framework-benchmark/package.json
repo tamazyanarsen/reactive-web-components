@@ -15,9 +15,9 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@rwcjs/core": "^3.1.0"
+    "@rwcjs/core": "3.2.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.10"
+    "esbuild": "0.25.12"
   }
 }

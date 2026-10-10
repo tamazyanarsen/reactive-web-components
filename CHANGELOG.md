@@ -1,5 +1,14 @@
 # Changelog
 
+## Не выпущено
+
+### Экосистема
+
+- Реализация для js-framework-benchmark отправлена в апстрим:
+  [krausest/js-framework-benchmark#2121](https://github.com/krausest/js-framework-benchmark/pull/2121).
+  По правилам бенчмарка версии зависимостей зафиксированы, у `tbody` есть `id`,
+  а дымовой прогон, `isKeyed` и `checkCSP` пройдены.
+
 ## 3.2.0
 
 ### Ядро

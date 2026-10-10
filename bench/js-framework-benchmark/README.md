@@ -22,6 +22,9 @@ npm run results                             # table in webdriver-ts-results/
 Compare against `vanillajs` (the floor), `solid` (the closest model: signals, no
 virtual DOM), and `lit` (the closest web-component library).
 
+Status: submitted as [krausest/js-framework-benchmark#2121](https://github.com/krausest/js-framework-benchmark/pull/2121).
+Before submitting, the smoke run, `isKeyed` and `checkCSP` passed locally.
+
 ## Submitting
 
 Open a pull request to `krausest/js-framework-benchmark` that adds
