@@ -10,6 +10,7 @@ live in `packages/*` (bun workspaces).
 | [`@rwcjs/core`](../../README.md) | Signals, tag factories, components, SSR |
 | [`@rwcjs/cem-plugin`](../../packages/cem-plugin/README.md) | Describes rwc components in a Custom Elements Manifest |
 | [`@rwcjs/router`](../../packages/router/README.md) | Router on signals: typed params from path strings, pages that survive param changes |
+| [`@rwcjs/forms`](../../packages/forms/README.md) | Forms on signals: typed fields, validation, input binding, submit state |
 
 ## Custom Elements Manifest
 

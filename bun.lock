@@ -25,6 +25,13 @@
         "@custom-elements-manifest/analyzer": ">=0.9",
       },
     },
+    "packages/forms": {
+      "name": "@rwcjs/forms",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@rwcjs/core": "^3.1.0",
+      },
+    },
     "packages/router": {
       "name": "@rwcjs/router",
       "version": "0.1.0",
@@ -51,6 +58,8 @@
     "@rwcjs/cem-plugin": ["@rwcjs/cem-plugin@workspace:packages/cem-plugin"],
 
     "@rwcjs/core": ["@rwcjs/core@3.1.0", "", { "peerDependencies": { "typescript": "^5" }, "optionalPeers": ["typescript"] }, "sha512-2J/16HfWFNKLPlHHJ7P0JrzNpeLfjfXaJ5UY7tKs5Aq73WNYcBiPwAy98wNGawWz33Culs+j5oghu6TCs2mk4w=="],
+
+    "@rwcjs/forms": ["@rwcjs/forms@workspace:packages/forms"],
 
     "@rwcjs/router": ["@rwcjs/router@workspace:packages/router"],
 

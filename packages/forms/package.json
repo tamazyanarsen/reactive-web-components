@@ -1,0 +1,44 @@
+{
+  "name": "@rwcjs/forms",
+  "version": "0.1.0",
+  "description": "Forms on signals for @rwcjs/core: typed fields from initial values, validation, input binding, submit state",
+  "type": "module",
+  "license": "MIT",
+  "author": "tamazyanarsen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamazyanarsen/reactive-web-components.git",
+    "directory": "packages/forms"
+  },
+  "homepage": "https://github.com/tamazyanarsen/reactive-web-components/tree/main/packages/forms#readme",
+  "keywords": [
+    "forms",
+    "validation",
+    "signals",
+    "web-components",
+    "rwc"
+  ],
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir=dist --target=browser --format=esm --sourcemap=linked --external @rwcjs/core && tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build"
+  },
+  "peerDependencies": {
+    "@rwcjs/core": "^3.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
