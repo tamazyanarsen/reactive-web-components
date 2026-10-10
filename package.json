@@ -1,6 +1,6 @@
 {
   "name": "@rwcjs/core",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Reactive web components on signals: typed tag factories instead of templates, effects that live and die with the component",
   "type": "module",
   "license": "MIT",
