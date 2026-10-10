@@ -1,7 +1,7 @@
 {
   "name": "@rwcjs/core",
   "version": "3.0.1",
-  "description": "Реактивные веб-компоненты на сигналах: фабрики тегов вместо шаблонов, эффекты живут и умирают вместе с компонентом",
+  "description": "Reactive web components on signals: typed tag factories instead of templates, effects that live and die with the component",
   "type": "module",
   "license": "MIT",
   "author": "tamazyanarsen",
@@ -52,9 +52,12 @@
     "build:js": "bun build ./index.ts --outdir=dist --target=browser --format=esm --sourcemap=linked",
     "build": "bun run typecheck && bun run test && bun run build:js && bun run build:types",
     "verify:package": "bun run scripts/verify-package.ts",
-    "prepublishOnly": "bun run build && bun run verify:package"
+    "prepublishOnly": "bun run build && bun run verify:package",
+    "cem": "custom-elements-manifest analyze",
+    "size": "bun run scripts/check-size.ts"
   },
   "devDependencies": {
+    "@custom-elements-manifest/analyzer": "0.10.4",
     "@happy-dom/global-registrator": "^20.14.0",
     "@types/bun": "latest",
     "dts-bundle-generator": "^9.5.1",
@@ -71,5 +74,8 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

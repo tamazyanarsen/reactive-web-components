@@ -1,0 +1,36 @@
+{
+  "name": "@rwcjs/cem-plugin",
+  "version": "0.1.0",
+  "description": "Custom Elements Manifest analyzer plugin for @rwcjs/core components",
+  "type": "module",
+  "license": "MIT",
+  "author": "tamazyanarsen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamazyanarsen/reactive-web-components.git",
+    "directory": "packages/cem-plugin"
+  },
+  "keywords": [
+    "custom-elements-manifest",
+    "cem",
+    "web-components",
+    "rwc"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@custom-elements-manifest/analyzer": ">=0.9"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
