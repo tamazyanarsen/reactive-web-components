@@ -46,21 +46,25 @@ between frameworks measured on one machine usually holds.
 | solid 1.9.3 | 41.8 | 48.7 | 28.1 | 8.3 | 29.5 | 23.9 | 469.3 | 47.1 | 25.2 | 1.09 | 3.34 | 4.5 |
 | svelte 5.42.1 | 42.6 | 48.7 | 28.3 | 10.9 | 30.3 | 24.6 | 477.5 | 47.5 | 23.8 | 1.13 | 3.53 | 9.7 |
 | vue 3.5.39 | 48.2 | 54.8 | 27.5 | 8.7 | 29.7 | 26.1 | 544.6 | 52.4 | 29.5 | 1.19 | 4.57 | 23.3 |
+| **rwc 3.3.0** | 50.7 | 58.6 | 26.2 | 8.3 | 35.6 | 23.4 | 597.0 | 57.6 | 28.3 | **1.23** | 4.18 | 5.1 |
 | lit 3.2.0 | 46.5 | 52.7 | 29.7 | 10.1 | 36.3 | 25.3 | 518.8 | 53.0 | 31.1 | 1.24 | 3.46 | 7.3 |
 | preact-signals 11.0.0 | 53.6 | 62.6 | 26.8 | 9.9 | 32.5 | 25.0 | 602.1 | 57.7 | 35.4 | 1.30 | 5.56 | 8.3 |
-| **rwc 3.2.0** | 57.5 | 72.4 | 27.7 | 8.5 | 37.0 | 26.4 | 637.5 | 65.6 | 41.2 | **1.39** | 5.83 | 4.4 |
 | angular 22.2.0 | 66.1 | 73.4 | 44.1 | 10.7 | 44.9 | 32.3 | 626.1 | 67.3 | 40.4 | 1.60 | 5.26 | 45.5 |
 | react 19.2.0 | 49.0 | 59.5 | 32.5 | 11.3 | 202.2 | 26.0 | 768.4 | 55.3 | 38.4 | 1.68 | 5.09 | 51.4 |
 
-What it says about rwc 3.2.0:
+What it says about rwc 3.3.0:
 
 - **Updates are on par with the fastest.** Update every 10th row, select and remove are
   within a few percent of Solid, thanks to per-row signals and `createSelector`.
-- **Creation and clearing are the weak spot**: 1.4–2× vanillajs on create, replace,
-  append and clear. Every row costs an effect scope, two signals, an anchor comment and
-  several effects, each with its own `Set`s, and clearing disposes and removes rows one
-  by one. Memory per row is high for the same reason.
-- **The bundle is the second smallest** after vanillajs: 4.4 KB gzip.
+- **Creation and clearing caught up in 3.3.0**: compared with 3.2.0 measured in the same
+  session, create 1k went from 55.9 to 50.7 ms, replace from 67.3 to 58.6, append from
+  65.2 to 57.6, clear from 41.4 to 28.3, and run memory from 5.83 to 4.18 MB. Effects
+  allocate their `Set`s lazily, a row's effect scope is a class instead of a bag of
+  closures, `each` creates the index signal only when the render reads it, inserts new
+  rows as one fragment and clears a list that owns its parent with one `textContent`.
+  The CPU geomean moved from 1.39 (between Preact-signals and Angular) to 1.23 (between
+  Vue and Lit).
+- **The bundle is still small**: 5.1 KB gzip, the faster paths cost about 0.5 KB.
 
 ## What the implementation shows
 
