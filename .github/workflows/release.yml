@@ -1,0 +1,36 @@
+name: Release
+
+# Публикация вручную: Actions → Release → Run workflow. Публикуются только пакеты,
+# чьей версии ещё нет в реестре, — поднимите version в package.json, закоммитьте, запустите.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # id-token нужен для npm provenance: реестр покажет, из какого коммита и workflow
+  # собран пакет.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: bun run verify:package
+      - run: bun run size
+
+      - run: bun run scripts/publish-changed.ts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
