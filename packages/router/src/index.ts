@@ -85,27 +85,40 @@ export type Router = {
 
 type CompiledRoute = {
   pattern: string;
-  /** Чем больше, тем приоритетнее: статичный сегмент сильнее параметра, параметр — хвоста. */
-  score: number;
+  /** Маршрут с хвостом "*" — запасной: проигрывает любому маршруту без него. */
+  wildcard: boolean;
+  /** Вес сегментов по порядку: статичный 3, параметр 2, необязательный 1, хвост 0. */
+  ranks: number[];
   match(segments: string[]): Record<string, string> | null;
 };
 
 const splitPath = (path: string) => path.split("/").filter(Boolean);
 
+/**
+ * Порядок проверки: сначала маршруты без хвоста, затем посегментно — у кого раньше
+ * сегмент сильнее, тот специфичнее (/users/new раньше /users/:id), при равенстве
+ * длиннее раньше. Так "/" побеждает "*" на главной, а "/files/:id" — "/files/*".
+ */
+const compareRoutes = (left: CompiledRoute, right: CompiledRoute) => {
+  if (left.wildcard !== right.wildcard) return left.wildcard ? 1 : -1;
+  const length = Math.max(left.ranks.length, right.ranks.length);
+  for (let i = 0; i < length; i++) {
+    const diff = (right.ranks[i] ?? -1) - (left.ranks[i] ?? -1);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+};
+
 const compileRoute = (pattern: string): CompiledRoute => {
   const parts = splitPath(pattern);
-  let score = 0;
-  for (const part of parts) {
-    if (part === "*") score += 1;
-    else if (part.startsWith(":")) score += part.endsWith("?") ? 2 : 3;
-    else score += 4;
-  }
-  // При равных очках длиннее — специфичнее.
-  score = score * 100 + parts.length;
+  const ranks = parts.map((part) =>
+    part === "*" ? 0 : part.startsWith(":") ? (part.endsWith("?") ? 1 : 2) : 3,
+  );
 
   return {
     pattern,
-    score,
+    wildcard: parts.includes("*"),
+    ranks,
     match: (segments) => {
       const params: Record<string, string> = {};
       for (let i = 0; i < parts.length; i++) {
@@ -169,7 +182,7 @@ export const createRouter = <R extends Record<string, unknown>>(
 
   const compiled = Object.keys(routes)
     .map(compileRoute)
-    .sort((left, right) => right.score - left.score);
+    .sort(compareRoutes);
 
   /** Адрес внутри приложения: путь + строка запроса, без base. */
   const readLocation = (): string => {

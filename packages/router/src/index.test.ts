@@ -60,6 +60,26 @@ describe("сопоставление", () => {
     expect(router.route()).toBe("/users/new");
   });
 
+  test("главная не уступает маршруту-заглушке *", () => {
+    const router = createRouter({ "*": () => span("404"), "/": () => span("главная") }, { url: "/" });
+    expect(mount(router).textContent).toBe("главная");
+    router.navigate("/missing");
+    expect(router.route()).toBe("*");
+  });
+
+  test("параметр сильнее хвоста, статичный сегмент — параметра", () => {
+    const router = createRouter(
+      { "/files/*": () => span("хвост"), "/files/:id": () => span("файл"), "/files/readme": () => span("readme") },
+      { url: "/files/42" },
+    );
+    const container = mount(router);
+    expect(container.textContent).toBe("файл");
+    router.navigate("/files/readme");
+    expect(container.textContent).toBe("readme");
+    router.navigate("/files/a/b");
+    expect(container.textContent).toBe("хвост");
+  });
+
   test("необязательный параметр", () => {
     const router = createRouter(
       { "/posts/:page?": ({ params }) => span(() => params().page ?? "первая") },
