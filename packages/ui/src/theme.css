@@ -1,0 +1,69 @@
+/*
+ * Тема @rwcjs/ui. Подключать не обязательно: у компонентов есть значения по умолчанию.
+ * Нужна, чтобы перекрасить кит в одном месте и управлять схемой вручную:
+ *
+ *   import "@rwcjs/ui/theme.css";
+ *   <html data-theme="dark">   — тёмная схема независимо от настроек системы
+ *
+ * Копируйте файл к себе и меняйте значения — это и есть брендирование кита.
+ */
+
+:root,
+[data-theme="light"] {
+  --rwc-accent: #4f46e5;
+  --rwc-accent-hover: #4338ca;
+  --rwc-accent-contrast: #ffffff;
+  --rwc-danger: #dc2626;
+  --rwc-success: #16a34a;
+  --rwc-warning: #d97706;
+  --rwc-surface: #ffffff;
+  --rwc-surface-muted: #f4f4f5;
+  --rwc-text: #18181b;
+  --rwc-text-muted: #71717a;
+  --rwc-border: #d4d4d8;
+  --rwc-overlay: rgb(0 0 0 / 0.4);
+  --rwc-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  --rwc-radius: 8px;
+  --rwc-radius-sm: 4px;
+  --rwc-space: 8px;
+  --rwc-font: system-ui, sans-serif;
+  --rwc-font-size: 0.875rem;
+  --rwc-control-height: 36px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --rwc-accent: #818cf8;
+    --rwc-accent-hover: #a5b4fc;
+    --rwc-accent-contrast: #0b0b0f;
+    --rwc-danger: #f87171;
+    --rwc-success: #4ade80;
+    --rwc-warning: #fbbf24;
+    --rwc-surface: #18181b;
+    --rwc-surface-muted: #27272a;
+    --rwc-text: #fafafa;
+    --rwc-text-muted: #a1a1aa;
+    --rwc-border: #3f3f46;
+    --rwc-overlay: rgb(0 0 0 / 0.6);
+    --rwc-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+[data-theme="dark"] {
+  --rwc-accent: #818cf8;
+  --rwc-accent-hover: #a5b4fc;
+  --rwc-accent-contrast: #0b0b0f;
+  --rwc-danger: #f87171;
+  --rwc-success: #4ade80;
+  --rwc-warning: #fbbf24;
+  --rwc-surface: #18181b;
+  --rwc-surface-muted: #27272a;
+  --rwc-text: #fafafa;
+  --rwc-text-muted: #a1a1aa;
+  --rwc-border: #3f3f46;
+  --rwc-overlay: rgb(0 0 0 / 0.6);
+  --rwc-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
