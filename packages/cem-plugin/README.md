@@ -1,7 +1,7 @@
 # @rwcjs/cem-plugin
 
 A [Custom Elements Manifest](https://custom-elements-manifest.open-wc.org/) analyzer
-plugin for [`@rwcjs/core`](../../README.md) components.
+plugin for [`@rwcjs/core`](https://github.com/tamazyanarsen/reactive-web-components#readme) components.
 
 The stock analyzer sees `class Button extends defineComponent({...})` as a class with an
 unknown base and does not know the tag assigned by `useCustomComponent`. The plugin reads
