@@ -205,3 +205,13 @@ describe("типы", () => {
     expect(() => form.field("emial")).toThrow(/unknown field/);
   });
 });
+
+// Типы bind: подходит input, textarea и select; обработчики в extra типизированы.
+export const bindTypeChecks = async () => {
+  const { textarea, select } = await import("@rwcjs/core");
+  const form = createForm({ initial: { text: "", choice: "a" } });
+  textarea(form.bind("text"));
+  select(form.bind("choice"));
+  textarea({ ...form.bind("text"), ".rows": 5 });
+  input(form.bind("text", { "@keydown": (event) => event.key }));
+};

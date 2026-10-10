@@ -77,7 +77,7 @@ export const signUpForm = useCustomComponent(SignUp, "x-sign-up");
 
 | Member | What it is |
 | --- | --- |
-| `bind(name, extra?)` | Element config for `input`, `textarea` or `select`. `extra` is merged in: `attrs` are combined, and a handler for the same event runs together with the form's handler. |
+| `bind(name, extra?)` | Element config for `input`, `textarea` or `select`. `extra` (any common element config) is merged in: `attrs` are combined, and a handler for the same event runs together with the form's handler. For properties of a specific element, spread the result: `textarea({ ...form.bind("message"), ".rows": 5 })`. |
 | `field(name)` | `{ value, error, visibleError, touched, dirty, touch() }`. All are signals except `touch`. |
 | `values()` | All values as one object. |
 | `errors()` | `{ field: message }` for fields with errors. |

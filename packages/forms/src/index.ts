@@ -2,6 +2,7 @@ import {
   batch,
   computed,
   signal,
+  type AttrMap,
   type ElementOptions,
   type ReactiveSignal,
   type ReadonlySignal,
@@ -45,8 +46,18 @@ export type Field<V> = {
   touch(): void;
 };
 
-/** Конфиг для input/textarea/select: значение, ввод, blur и aria-invalid. */
-export type BindOptions = ElementOptions<HTMLInputElement>;
+/**
+ * Конфиг связывания: значение, ввод, blur и атрибуты. Намеренно не привязан к типу
+ * элемента — подходит и input, и textarea, и select.
+ */
+export type BindOptions = {
+  ".value"?: () => string;
+  ".checked"?: () => boolean;
+  "@input"?: (event: Event) => void;
+  "@change"?: (event: Event) => void;
+  "@blur"?: (event: Event) => void;
+  attrs?: AttrMap;
+};
 
 export type Form<T extends FormValues> = {
   field<K extends keyof T & string>(name: K): Field<T[K]>;
@@ -59,7 +70,7 @@ export type Form<T extends FormValues> = {
    * Второй аргумент — ваш конфиг элемента: атрибуты сливаются, а обработчик того же
    * события вызывается вместе с обработчиком формы.
    */
-  bind<K extends keyof T & string>(name: K, extra?: BindOptions): BindOptions;
+  bind<K extends keyof T & string, X extends ElementOptions<HTMLElement> = {}>(name: K, extra?: X): BindOptions & X;
   values: ReadonlySignal<T>;
   errors: ReadonlySignal<Partial<Record<keyof T, string>>>;
   valid: ReadonlySignal<boolean>;
@@ -88,8 +99,8 @@ const readNumber = (element: HTMLInputElement) => {
 };
 
 /** Сливает конфиг формы с пользовательским: attrs объединяются, обработчики — оба. */
-const mergeOptions = (own: BindOptions, extra: BindOptions | undefined): BindOptions => {
-  if (!extra) return own;
+const mergeOptions = <X extends ElementOptions<HTMLElement>>(own: BindOptions, extra: X | undefined): BindOptions & X => {
+  if (!extra) return own as BindOptions & X;
   const merged: Record<string, unknown> = { ...own };
   for (const [key, value] of Object.entries(extra)) {
     const current = merged[key];
@@ -104,7 +115,7 @@ const mergeOptions = (own: BindOptions, extra: BindOptions | undefined): BindOpt
       merged[key] = value;
     }
   }
-  return merged as BindOptions;
+  return merged as BindOptions & X;
 };
 
 const toList = <F>(value: F | F[] | undefined): F[] => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
@@ -209,7 +220,7 @@ export const createForm = <T extends FormValues>(options: FormOptions<T>): Form<
     return created;
   };
 
-  const bind = <K extends keyof T & string>(name: K, extra?: BindOptions): BindOptions =>
+  const bind = <K extends keyof T & string, X extends ElementOptions<HTMLElement> = {}>(name: K, extra?: X): BindOptions & X =>
     mergeOptions(bindOwn(name), extra);
 
   const bindOwn = <K extends keyof T & string>(name: K): BindOptions => {
