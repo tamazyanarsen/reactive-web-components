@@ -40,11 +40,33 @@ export type SignalOptions<T> = {
   equals?: EqualsFn<T> | false;
 };
 
-export type EffectCb = (() => void) & {
-  /**
-   * Отписки от зависимостей и onCleanup. Сбрасывается перед каждым прогоном:
-   * зависимости пересобираются заново, поэтому старые подписки обязаны уйти.
-   */
+/**
+ * Состояние узла графа: CLEAN — значение актуально, CHECK — изменился кто-то выше по
+ * цепочке computed и надо проверить, дошло ли изменение, DIRTY — пересчитать точно.
+ */
+export type NodeState = 0 | 1 | 2;
+export const CLEAN = 0;
+export const CHECK = 1;
+export const DIRTY = 2;
+
+/** Источник: сигнал или computed. refresh есть только у computed — дотягивает значение. */
+export type SourceNode = {
+  observers: Set<ObserverNode>;
+  refresh?: () => void;
+  /** Последний наблюдатель ушёл — computed может отписаться от своих источников. */
+  unobserved?: () => void;
+};
+
+/** Наблюдатель: эффект или computed. Источники пересобираются на каждом прогоне. */
+export type ObserverNode = {
+  state: NodeState;
+  sources: Set<SourceNode>;
+  notify: (state: typeof CHECK | typeof DIRTY) => void;
+};
+
+export type EffectCb = (() => void) &
+  ObserverNode & {
+  /** onCleanup. Выполняется и сбрасывается перед каждым прогоном и при уничтожении. */
   cleanupSet: Set<() => void>;
   /** Уборка на уничтожение эффекта — переживает все прогоны. См. onDispose. */
   disposeSet: Set<() => void>;

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   batch,
   createComputed,
+  createSelector,
   effect,
   isSignal,
   onCleanup,
@@ -260,5 +261,221 @@ describe("createComputed", () => {
 
     count.set(3);
     expect(quadrupled()).toBe(12);
+  });
+});
+
+describe("ленивый computed", () => {
+  test("не считается, пока его не прочитали", () => {
+    const count = signal(1);
+    let runs = 0;
+    const doubled = createComputed(() => {
+      runs++;
+      return count() * 2;
+    });
+
+    expect(runs).toBe(0);
+    count.set(2);
+    expect(runs).toBe(0);
+    expect(doubled()).toBe(4);
+    expect(runs).toBe(1);
+  });
+
+  test("без записей между чтениями отдаёт запомненное значение", () => {
+    const count = signal(1);
+    let runs = 0;
+    const doubled = createComputed(() => {
+      runs++;
+      return count() * 2;
+    });
+
+    doubled();
+    doubled();
+    expect(runs).toBe(1);
+    count.set(5);
+    expect(doubled()).toBe(10);
+    expect(runs).toBe(2);
+  });
+
+  test("эффект никогда не видит промежуточного состояния", () => {
+    const a = signal(1);
+    const b = createComputed(() => a() * 10);
+    const c = createComputed(() => b() + 1);
+    const seen: string[] = [];
+
+    // Эффект читает и сам сигнал, и computed поверх него — в старом ядре он мог увидеть
+    // новое a рядом со старым c.
+    effect(() => seen.push(`${a()}:${c()}`));
+    a.set(2);
+    expect(seen).toEqual(["1:11", "2:21"]);
+  });
+
+  test("пересчёт в то же значение не будит наблюдателей", () => {
+    const n = signal(1);
+    const parity = createComputed(() => n() % 2);
+    let downstream = 0;
+    const label = createComputed(() => {
+      downstream++;
+      return parity() ? "odd" : "even";
+    });
+    let runs = 0;
+
+    effect(() => {
+      runs++;
+      label();
+    });
+    expect(runs).toBe(1);
+    expect(downstream).toBe(1);
+
+    n.set(3);
+    expect(runs).toBe(1);
+    expect(downstream).toBe(1);
+
+    n.set(4);
+    expect(runs).toBe(2);
+    expect(downstream).toBe(2);
+  });
+
+  test("ромб из computed: нижний пересчитывается один раз", () => {
+    const a = signal(1);
+    const left = createComputed(() => a() + 1);
+    const right = createComputed(() => a() * 2);
+    let bottomRuns = 0;
+    const bottom = createComputed(() => {
+      bottomRuns++;
+      return left() + right();
+    });
+
+    effect(() => bottom());
+    expect(bottomRuns).toBe(1);
+    a.set(5);
+    expect(bottomRuns).toBe(2);
+    expect(bottom()).toBe(16);
+  });
+
+  test("отписывается от источников, когда наблюдателей не осталось", () => {
+    const count = signal(1);
+    let runs = 0;
+    const doubled = createComputed(() => {
+      runs++;
+      return count() * 2;
+    });
+
+    const watcher = effect(() => doubled());
+    expect(runs).toBe(1);
+    watcher.destroy();
+
+    count.set(2);
+    count.set(3);
+    expect(runs).toBe(1);
+    expect(doubled()).toBe(6);
+  });
+
+  test("перезапуск эффекта не выбрасывает запомненное значение", () => {
+    const source = signal(1);
+    const other = signal(0);
+    let runs = 0;
+    const doubled = createComputed(() => {
+      runs++;
+      return source() * 2;
+    });
+
+    effect(() => {
+      other();
+      doubled();
+    });
+    other.set(1);
+    other.set(2);
+    expect(runs).toBe(1);
+  });
+
+  test("внутри batch отдаёт уже актуальное значение", () => {
+    const count = signal(1);
+    const doubled = createComputed(() => count() * 2);
+    effect(() => doubled());
+
+    let inside = 0;
+    batch(() => {
+      count.set(4);
+      inside = doubled();
+    });
+    expect(inside).toBe(8);
+  });
+
+  test("equals задаёт, что считать изменением", () => {
+    const point = signal({ x: 1, y: 1 });
+    const x = createComputed(() => ({ value: point().x }), {
+      equals: (prev, next) => prev.value === next.value,
+    });
+    let runs = 0;
+    effect(() => {
+      runs++;
+      x();
+    });
+
+    point.set({ x: 1, y: 2 });
+    expect(runs).toBe(1);
+    point.set({ x: 2, y: 2 });
+    expect(runs).toBe(2);
+  });
+
+  test("ошибка в вычислении не ломает следующий пересчёт", () => {
+    const fail = signal(true);
+    const value = createComputed(() => {
+      if (fail()) throw new Error("boom");
+      return 1;
+    });
+
+    expect(() => value()).toThrow("boom");
+    fail.set(false);
+    expect(value()).toBe(1);
+  });
+});
+
+describe("createSelector", () => {
+  test("будит только старый и новый выбранный ключ", () => {
+    const selected = signal<number | null>(null);
+    const isSelected = createSelector(selected);
+    const runs = [0, 0, 0, 0];
+    const state: boolean[] = [];
+
+    for (let key = 0; key < 4; key++) {
+      effect(() => {
+        runs[key]!++;
+        state[key] = isSelected(key);
+      });
+    }
+    expect(runs).toEqual([1, 1, 1, 1]);
+
+    selected.set(1);
+    expect(runs).toEqual([1, 2, 1, 1]);
+    expect(state).toEqual([false, true, false, false]);
+
+    selected.set(3);
+    expect(runs).toEqual([1, 3, 1, 2]);
+    expect(state).toEqual([false, false, false, true]);
+  });
+
+  test("своё сравнение", () => {
+    const selected = signal("A");
+    const isSelected = createSelector(selected, (key: string, value) => key.toLowerCase() === value.toLowerCase());
+    let seen = false;
+    effect(() => {
+      seen = isSelected("b");
+    });
+    selected.set("B");
+    expect(seen).toBe(true);
+  });
+
+  test("ключ забывается, когда его перестали читать", () => {
+    const selected = signal(0);
+    const isSelected = createSelector(selected);
+    let runs = 0;
+    const watcher = effect(() => {
+      runs++;
+      isSelected(5);
+    });
+    watcher.destroy();
+    selected.set(5);
+    expect(runs).toBe(1);
   });
 });

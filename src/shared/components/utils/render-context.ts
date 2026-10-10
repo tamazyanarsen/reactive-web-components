@@ -1,9 +1,16 @@
-import { createComputed, effect, untracked, type EffectCb } from "../../signals";
+import { createComputed, effect, untracked, type EffectCb, type SignalOptions } from "../../signals";
+import { setEffectAdopter } from "../../signals/owner";
 
 /** Всё, что умеет владеть эффектами. Структурный тип — чтобы не тянуть сюда BaseElement. */
-export type EffectHost = { addEffect(effectCb: VoidFunction): EffectCb };
+export type EffectHost = {
+  addEffect(effectCb: VoidFunction): EffectCb;
+  /** Забирает уже созданный эффект: так effect() в render() достаётся компоненту. */
+  adoptEffect?(effectCb: EffectCb): void;
+};
 
 let currentHost: EffectHost | null = null;
+
+setEffectAdopter((effectCb) => currentHost?.adoptEffect?.(effectCb));
 
 /**
  * Выполняет fn, считая host владельцем всех созданных внутри эффектов.
@@ -30,7 +37,7 @@ export const getEffectHost = () => currentHost;
 export const hostEffect = (effectCb: VoidFunction): EffectCb => {
   if (!currentHost) {
     console.warn(
-      "эффект создан вне render() веб-компонента — оберните код в createRoot(), иначе его некому уничтожить",
+      "[rwc] effect created outside a component render(); wrap the code in createRoot(), otherwise nothing will dispose it",
       effectCb,
     );
     return effect(effectCb);
@@ -39,13 +46,15 @@ export const hostEffect = (effectCb: VoidFunction): EffectCb => {
 };
 
 /**
- * Производное значение, привязанное к текущему компоненту.
+ * Производное значение с запоминанием: пересчитывается лениво, при чтении, и только
+ * когда источники действительно изменились.
  *
- * В отличие от hostEffect не ругается на отсутствие хозяина: computed на уровне модуля —
- * это нормальное производное состояние, живущее столько же, сколько исходные сигналы.
+ * Владелец ему не нужен: computed подписан на источники, лишь пока его кто-то читает
+ * в эффекте. Умер компонент — умерли его эффекты, и computed сам отписался. Поэтому его
+ * можно объявлять где угодно — в render(), в модуле, в сторе.
  */
-export const computed = <T>(compute: () => T) =>
-  createComputed(compute, currentHost ? (cb) => currentHost!.addEffect(cb) : effect);
+export const computed = <T>(compute: () => T, options?: SignalOptions<T>) =>
+  createComputed(compute, options);
 
 /**
  * Локальный скоуп эффектов: всё, что создано внутри run(), можно уничтожить одним dispose().
@@ -74,6 +83,9 @@ export const createRoot = <T>(fn: (dispose: () => void) => T): T => {
 export const createEffectScope = (): EffectScope => {
   const owned = new Set<EffectCb>();
   const host: EffectHost = {
+    adoptEffect: (effectCb) => {
+      owned.add(effectCb);
+    },
     addEffect: (effectCb) => {
       // untracked: содержимое скоупа может собираться внутри отслеживаемого прогона
       // (так работает dynamic). Без сброса эффект стал бы ребёнком внешнего и умирал
