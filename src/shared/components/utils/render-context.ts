@@ -1,4 +1,4 @@
-import { createComputed, effect, untracked, type EffectCb, type SignalOptions } from "../../signals";
+import { createComputed, effect, onCleanup, untracked, type EffectCb, type SignalOptions } from "../../signals";
 import { setEffectAdopter } from "../../signals/owner";
 
 /** Всё, что умеет владеть эффектами. Структурный тип — чтобы не тянуть сюда BaseElement. */
@@ -53,6 +53,45 @@ export const hostEffect = (effectCb: VoidFunction): EffectCb => {
  * в эффекте. Умер компонент — умерли его эффекты, и computed сам отписался. Поэтому его
  * можно объявлять где угодно — в render(), в модуле, в сторе.
  */
+/**
+ * Код, которому нужна уже вставленная разметка: фокус, измерения, setValidity с якорем,
+ * сторонние библиотеки, которым нужен живой узел.
+ *
+ *   render() {
+ *     const field = input();
+ *     onMount(() => {
+ *       field.focus();
+ *       const observer = new ResizeObserver(...);
+ *       observer.observe(field);
+ *       return () => observer.disconnect();   // уборка — когда владелец умрёт
+ *     });
+ *     return field;
+ *   }
+ *
+ * render() возвращает разметку до того, как компонент вставит её в теневой корень,
+ * поэтому внутри render() узлы ещё не в документе. fn выполняется на микрозадаче —
+ * к этому моменту разметка компонента, ветки when и записи each уже на месте.
+ * Если владелец умер раньше (компонент успели отключить), fn не выполнится вовсе.
+ * Чтения сигналов внутри fn не отслеживаются: это разовый колбэк, а не эффект.
+ */
+export const onMount = (fn: () => void | (() => void)) => {
+  let disposed = false;
+  let cleanup: void | (() => void);
+
+  // Пустой эффект — только чтобы жизнь колбэка была привязана к владельцу:
+  // он ничего не читает, значит не перезапускается, а уничтожается вместе с хозяином.
+  hostEffect(() => {
+    onCleanup(() => {
+      disposed = true;
+      cleanup?.();
+    });
+  });
+
+  queueMicrotask(() => {
+    if (!disposed) cleanup = untracked(fn);
+  });
+};
+
 export const computed = <T>(compute: () => T, options?: SignalOptions<T>) =>
   createComputed(compute, options);
 

@@ -8,7 +8,7 @@ import {
   type CustomTagName,
 } from "../src/shared/components/custom/custom-element";
 import { button, div, span } from "../src/shared/components/html/html-fabric";
-import { computed } from "../src/shared/components/utils/render-context";
+import { computed, onMount } from "../src/shared/components/utils/render-context";
 import { css } from "../src/shared/components/utils/styles";
 import { effect, signal } from "../src/shared/signals";
 
@@ -252,6 +252,52 @@ describe("события", () => {
 });
 
 describe("жизненный цикл", () => {
+  test("onMount видит разметку уже в теневом корне, уборка — при отключении", async () => {
+    const log: string[] = [];
+    class Mounted extends defineComponent({ props: {} }) {
+      render() {
+        const inner = span("x");
+        onMount(() => {
+          log.push(`mounted:${inner.isConnected}:${this.shadowRoot!.contains(inner)}`);
+          return () => log.push("cleanup");
+        });
+        log.push(`render:${inner.isConnected}`);
+        return inner;
+      }
+    }
+    const mounted = useCustomComponent(Mounted, nextTag("on-mount"));
+
+    const element = mount(mounted());
+    expect(log).toEqual(["render:false"]);
+    await flushMicrotasks();
+    expect(log).toEqual(["render:false", "mounted:true:true"]);
+
+    element.remove();
+    await flushMicrotasks();
+    expect(log).toEqual(["render:false", "mounted:true:true", "cleanup"]);
+  });
+
+  test("onMount не вызывается, если компонент отключили до монтирования", async () => {
+    let calls = 0;
+    class Gone extends defineComponent({ props: {} }) {
+      render() {
+        onMount(() => {
+          calls++;
+        });
+        return span();
+      }
+    }
+    const gone = useCustomComponent(Gone, nextTag("gone"));
+
+    const element = mount(gone());
+    // Teardown тоже на микрозадаче, но поставлен в очередь позже onMount, поэтому
+    // проверяем самый жёсткий случай — уничтожение владельца напрямую.
+    element.remove();
+    (element as unknown as { teardown(): void }).teardown();
+    await flushMicrotasks();
+    expect(calls).toBe(0);
+  });
+
   test("обычный effect() в render() принадлежит компоненту", async () => {
     const external = signal(0);
     let runs = 0;

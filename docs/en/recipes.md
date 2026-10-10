@@ -86,13 +86,17 @@ class TextField extends defineComponent({
       "@input": (event) => value.set(event.currentTarget.value),
     });
 
-    this.addEffect(() => {
-      if (required() && !value()) {
-        // The third argument is where the browser points the validation bubble.
-        this.internals.setValidity({ valueMissing: true }, "Please fill in this field", field);
-      } else {
-        this.internals.setValidity({});
-      }
+    // onMount: the third argument of setValidity must already be in the shadow root,
+    // and inside render() the markup is not attached yet — the browser would throw.
+    onMount(() => {
+      this.addEffect(() => {
+        if (required() && !value()) {
+          // The third argument is where the browser points the validation bubble.
+          this.internals.setValidity({ valueMissing: true }, "Please fill in this field", field);
+        } else {
+          this.internals.setValidity({});
+        }
+      });
     });
 
     return field;

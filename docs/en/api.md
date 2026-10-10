@@ -71,6 +71,23 @@ before the parent restarts and together with the parent. An effect created in a
 component's `render()` (or inside `createRoot`, `when`, `each`) belongs to that
 component or scope and is destroyed with it.
 
+### `onMount(fn)`
+
+Runs `fn` once the markup is in the document: focus, measurements, `setValidity` with an
+anchor, third-party libraries that need a live node. Inside `render()` the nodes are not
+attached yet, so `fn` runs on a microtask, after the component, `when` branch or `each`
+item has inserted them. `fn` may return a cleanup that runs when the owner is destroyed.
+If the owner is destroyed before mounting, `fn` never runs. Signal reads inside `fn` are
+not tracked.
+
+```ts
+render() {
+  const field = input();
+  onMount(() => field.focus());
+  return field;
+}
+```
+
 ### `onCleanup(fn)`
 
 Registers cleanup before the current effect's next run and on its destruction.

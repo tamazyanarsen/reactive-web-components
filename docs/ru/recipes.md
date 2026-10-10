@@ -86,13 +86,17 @@ class TextField extends defineComponent({
       "@input": (event) => value.set(event.currentTarget.value),
     });
 
-    this.addEffect(() => {
-      if (required() && !value()) {
-        // Третий аргумент — элемент, к которому браузер привяжет подсказку валидации.
-        this.internals.setValidity({ valueMissing: true }, "Заполните это поле", field);
-      } else {
-        this.internals.setValidity({});
-      }
+    // onMount: третий аргумент setValidity должен уже лежать в теневом корне,
+    // а внутри render() разметка ещё не вставлена — браузер бросил бы NotFoundError.
+    onMount(() => {
+      this.addEffect(() => {
+        if (required() && !value()) {
+          // Третий аргумент — элемент, к которому браузер привяжет подсказку валидации.
+          this.internals.setValidity({ valueMissing: true }, "Заполните это поле", field);
+        } else {
+          this.internals.setValidity({});
+        }
+      });
     });
 
     return field;
