@@ -6,7 +6,7 @@
 // Поднимать порог можно, но осознанно и в том же коммите, что и рост.
 import { brotliCompressSync, gzipSync } from "node:zlib";
 
-const BUDGET = { gzip: 8_800, brotli: 8_000 };
+const BUDGET = { gzip: 9_200, brotli: 8_250 };
 
 const result = await Bun.build({
   entrypoints: ["./index.ts"],

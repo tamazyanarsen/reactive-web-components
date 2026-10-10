@@ -48,8 +48,11 @@ const MAX_FLUSH_STEPS = 100_000;
 /** Подписывает текущего наблюдателя на источник. Повторное чтение ничего не добавляет. */
 const track = (source: SourceNode) => {
   const observer = currObserver;
-  if (!observer || observer.sources.has(source)) return;
-  observer.sources.add(source);
+  if (!observer) return;
+  const sources = observer.sources;
+  if (!sources) observer.sources = new Set([source]);
+  else if (sources.has(source)) return;
+  else sources.add(source);
   source.observers.add(observer);
 };
 
@@ -59,11 +62,13 @@ const track = (source: SourceNode) => {
  * обновлений второй ветки.
  */
 const untrackAll = (observer: ObserverNode) => {
-  for (const source of observer.sources) {
+  const sources = observer.sources;
+  if (!sources || sources.size === 0) return;
+  for (const source of sources) {
     source.observers.delete(observer);
     if (source.observers.size === 0) source.unobserved?.();
   }
-  observer.sources.clear();
+  sources.clear();
 };
 
 /**
@@ -93,10 +98,18 @@ const releaseIfIdle = () => {
  * Set во время обхода нельзя.
  */
 const disposeChildren = (effectCb: EffectCb) => {
-  if (effectCb.children.size === 0) return;
-  const children = [...effectCb.children];
-  effectCb.children.clear();
+  const owned = effectCb.children;
+  if (!owned || owned.size === 0) return;
+  const children = [...owned];
+  owned.clear();
   for (const child of children) child.destroy();
+};
+
+/** Выполняет и сбрасывает набор уборок; набора может и не быть — он ленивый. */
+const runCleanups = (cleanups: Set<() => void> | undefined) => {
+  if (!cleanups || cleanups.size === 0) return;
+  for (const cleanup of cleanups) cleanup();
+  cleanups.clear();
 };
 
 /**
@@ -105,7 +118,7 @@ const disposeChildren = (effectCb: EffectCb) => {
  */
 const confirmDirty = (observer: ObserverNode) => {
   if (observer.state !== CHECK) return observer.state === DIRTY;
-  for (const source of observer.sources) {
+  for (const source of observer.sources ?? []) {
     source.refresh?.();
     if ((observer.state as NodeState) === DIRTY) return true;
   }
@@ -124,8 +137,7 @@ const runEffect = (effectCb: EffectCb) => {
   // Сначала вложенные: их уборка должна пройти до уборки того, кто их создал.
   disposeChildren(effectCb);
 
-  effectCb.cleanupSet.forEach((cleanup) => cleanup());
-  effectCb.cleanupSet.clear();
+  runCleanups(effectCb.cleanupSet);
   untrackAll(effectCb);
 
   const prevObserver = currObserver;
@@ -199,9 +211,9 @@ export const signal = <T>(initValue: T, options?: SignalOptions<T>): ReactiveSig
     currValue = v;
     globalVersion++;
 
-    // Снимок: computed, получив оповещение, не трогает этот набор, но эффект — может,
-    // если его уничтожат из-за оповещения соседа.
-    for (const observer of [...node.observers]) observer.notify(DIRTY);
+    // Без снимка: notify только ставит эффекты в очередь и помечает computed — набор
+    // наблюдателей при этом не меняется, а копия стоила бы аллокацию на каждую запись.
+    for (const observer of node.observers) observer.notify(DIRTY);
 
     // Вне batch запись остаётся синхронной: сразу после set DOM уже обновлён.
     // flushing защищает от повторного входа, когда set вызван из тела эффекта.
@@ -224,24 +236,28 @@ export const signal = <T>(initValue: T, options?: SignalOptions<T>): ReactiveSig
  * при перезапуске родителя и будет создан заново. Так `effect(() => { ... effect(...) })`
  * не копит эффекты с каждым прогоном.
  */
+/**
+ * Общая для всех эффектов реакция на оповещение. Метод, а не замыкание на каждый
+ * эффект: эффектов в разметке тысячи, и лишняя функция на каждый заметна.
+ */
+function notifyEffect(this: EffectCb, state: typeof CHECK | typeof DIRTY) {
+  if (this.state >= state) return;
+  this.state = state;
+  pending.add(this);
+}
+
 export const effect = (cb: VoidFunction): EffectCb => {
   const newEffectCb = cb as EffectCb;
   newEffectCb.state = DIRTY;
-  newEffectCb.sources = new Set();
-  newEffectCb.cleanupSet = new Set();
-  newEffectCb.disposeSet = new Set();
-  newEffectCb.children = new Set();
-
-  newEffectCb.notify = (state) => {
-    if (newEffectCb.state >= state) return;
-    newEffectCb.state = state;
-    pending.add(newEffectCb);
-  };
+  // Наборы источников, уборок и детей создаются при первой надобности: у большинства
+  // эффектов разметки нет ни детей, ни onCleanup, а источник — один.
+  newEffectCb.sources = null;
+  newEffectCb.notify = notifyEffect;
 
   const owner = currEffectCb;
   if (owner) {
     newEffectCb.parent = owner;
-    owner.children.add(newEffectCb);
+    (owner.children ??= new Set()).add(newEffectCb);
   } else {
     // Родительского прогона нет — эффект забирает текущий компонент или скоуп, если мы
     // внутри render(). Иначе effect() в render() пережил бы сам компонент.
@@ -254,15 +270,13 @@ export const effect = (cb: VoidFunction): EffectCb => {
     // Из очереди тоже убираем: с батчингом эффект может ждать прогона.
     pending.delete(newEffectCb);
 
-    newEffectCb.parent?.children.delete(newEffectCb);
+    newEffectCb.parent?.children?.delete(newEffectCb);
     newEffectCb.parent = undefined;
 
     disposeChildren(newEffectCb);
 
-    newEffectCb.cleanupSet.forEach((cleanup) => cleanup());
-    newEffectCb.cleanupSet.clear();
-    newEffectCb.disposeSet.forEach((cleanup) => cleanup());
-    newEffectCb.disposeSet.clear();
+    runCleanups(newEffectCb.cleanupSet);
+    runCleanups(newEffectCb.disposeSet);
     untrackAll(newEffectCb);
     releaseIfIdle();
   };
@@ -295,7 +309,7 @@ export const untracked = <T>(fn: () => T): T => {
  * Сюда вешают то, что создаётся заново на каждом прогоне: таймеры, подписки на DOM.
  */
 export const onCleanup = (fn: VoidFunction) => {
-  currEffectCb?.cleanupSet.add(fn);
+  if (currEffectCb) (currEffectCb.cleanupSet ??= new Set()).add(fn);
 };
 
 /**
@@ -311,7 +325,7 @@ export const onDispose = (fn: VoidFunction) => {
     console.warn("[rwc] onDispose called after the first run; use onCleanup", fn);
     return;
   }
-  currEffectCb.disposeSet.add(fn);
+  (currEffectCb.disposeSet ??= new Set()).add(fn);
 };
 
 /**

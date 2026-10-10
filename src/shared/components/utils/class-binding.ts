@@ -35,34 +35,50 @@ export type ClassOption = Partial<ClassConfig>;
  */
 const tokenCounts = new WeakMap<Element, Map<string, number>>();
 
+/**
+ * Счётчики заводятся только с первым реактивным источником: у элемента с одной статикой
+ * (а таких в разметке большинство) их нет вовсе. Классы, которые уже стоят на элементе
+ * к этому моменту, засчитываются как удерживаемые «кем-то ещё» — реактивный источник
+ * их никогда не снимет, сколько бы раз ни выключался.
+ */
 const countsOf = (element: Element) => {
   const existing = tokenCounts.get(element);
   if (existing) return existing;
   const counts = new Map<string, number>();
+  for (const token of element.classList) counts.set(token, 1);
   tokenCounts.set(element, counts);
   return counts;
 };
 
-const retain = (element: Element, tokens: ReadonlySet<string>) => {
-  const counts = countsOf(element);
-  for (const token of tokens) {
-    const next = (counts.get(token) ?? 0) + 1;
+const retainOne = (element: Element, counts: Map<string, number>, token: string) => {
+  const next = (counts.get(token) ?? 0) + 1;
+  counts.set(token, next);
+  if (next === 1) element.classList.add(token);
+};
+
+const releaseOne = (element: Element, counts: Map<string, number>, token: string) => {
+  const next = (counts.get(token) ?? 1) - 1;
+  if (next > 0) {
     counts.set(token, next);
-    if (next === 1) element.classList.add(token);
+    return;
   }
+  counts.delete(token);
+  element.classList.remove(token);
+};
+
+const retain = (element: Element, tokens: ReadonlySet<string>) => {
+  const counts = tokenCounts.get(element);
+  // Счётчиков ещё нет — значит, реактивных источников нет, и статике учёт не нужен.
+  if (!counts) {
+    for (const token of tokens) element.classList.add(token);
+    return;
+  }
+  for (const token of tokens) retainOne(element, counts, token);
 };
 
 const release = (element: Element, tokens: ReadonlySet<string>) => {
   const counts = countsOf(element);
-  for (const token of tokens) {
-    const next = (counts.get(token) ?? 1) - 1;
-    if (next > 0) {
-      counts.set(token, next);
-      continue;
-    }
-    counts.delete(token);
-    element.classList.remove(token);
-  }
+  for (const token of tokens) releaseOne(element, counts, token);
 };
 
 const WHITESPACE = /\s+/;
@@ -78,7 +94,10 @@ const tokenize = (raw: unknown, into: Set<string>) => {
 
 const isClassConfig = (value: object): value is ClassConfig => CLASS_CONFIG in value;
 
-const walk = (value: ClassValue, statics: Set<string>, sources: ClassGetter[]): void => {
+/** Условие на один токен: { active: () => selected() }. Самый частый реактивный случай. */
+type Toggle = { token: string; condition: () => unknown };
+
+const walk = (value: ClassValue, statics: Set<string>, sources: ClassGetter[], toggles: Toggle[]): void => {
   if (!value) return; // "", false, null, undefined
 
   if (typeof value === "string") {
@@ -93,20 +112,22 @@ const walk = (value: ClassValue, statics: Set<string>, sources: ClassGetter[]): 
   }
 
   if (Array.isArray(value)) {
-    for (const item of value as readonly ClassValue[]) walk(item, statics, sources);
+    for (const item of value as readonly ClassValue[]) walk(item, statics, sources, toggles);
     return;
   }
 
   // Строго раньше ветки условий: у cls`...` есть ключ "class",
   // иначе он стал бы буквальным именем класса.
   if (isClassConfig(value)) {
-    walk(value.class, statics, sources);
+    walk(value.class, statics, sources, toggles);
     return;
   }
 
   for (const [token, condition] of Object.entries(value)) {
     if (typeof condition === "function") {
-      sources.push(() => (condition() ? token : false));
+      // Ключ из одного слова — быстрый путь без разбора строки на каждом прогоне.
+      if (token && !WHITESPACE.test(token)) toggles.push({ token, condition });
+      else sources.push(() => (condition() ? token : false));
       continue;
     }
     if (condition) tokenize(token, statics);
@@ -126,21 +147,43 @@ const bindTokens = (element: Element, read: ClassGetter) => {
 
     // retain до release: токен, живущий в обоих наборах, не покидает classList даже
     // на мгновение — иначе перезапустились бы CSS-transition и animation.
-    retain(element, next);
-    release(element, owned);
+    const counts = countsOf(element);
+    for (const token of next) retainOne(element, counts, token);
+    for (const token of owned) releaseOne(element, counts, token);
     owned = next;
   });
 };
 
+/** Один токен по условию: ставит и снимает его, только когда истинность меняется. */
+const bindToggle = (element: Element, { token, condition }: Toggle) => {
+  let on = false;
+  hostEffect(() => {
+    const next = !!condition();
+    if (next === on) return;
+    on = next;
+    const counts = countsOf(element);
+    if (next) retainOne(element, counts, token);
+    else releaseOne(element, counts, token);
+  });
+};
+
 export const applyClass = (element: Element, value: ClassValue) => {
+  // Строка — самый частый случай (class: "col-md-1"): никаких наборов и эффектов.
+  if (typeof value === "string") {
+    if (value) retain(element, tokenize(value, new Set()));
+    return;
+  }
+
   const statics = new Set<string>();
   const sources: ClassGetter[] = [];
+  const toggles: Toggle[] = [];
 
   // Сначала обходим всё дерево значения и лишь потом создаём эффекты: так они заведомо
   // создаются последовательно, а не один внутри другого (ядро это запрещает).
-  walk(value, statics, sources);
+  walk(value, statics, sources, toggles);
 
   if (statics.size) retain(element, statics);
+  for (const toggle of toggles) bindToggle(element, toggle);
   for (const source of sources) bindTokens(element, source);
 };
 

@@ -144,7 +144,9 @@ const initElement = (element: HTMLElement, options: object) => {
   // show — тоже после: он запоминает инлайновый display, а его выставляет style.
   let showValue: MaybeReactive<boolean> | undefined;
 
-  for (const [key, value] of Object.entries(options)) {
+  // for-in, а не Object.entries: без массива пар на каждый элемент разметки.
+  for (const key in options) {
+    const value = (options as Record<string, unknown>)[key];
     if (value === undefined) continue;
 
     if (key === "class") {

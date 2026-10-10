@@ -119,27 +119,39 @@ export const createRoot = <T>(fn: (dispose: () => void) => T): T => {
   return scope.run(() => fn(() => scope.dispose()));
 };
 
-export const createEffectScope = (): EffectScope => {
-  const owned = new Set<EffectCb>();
-  const host: EffectHost = {
-    adoptEffect: (effectCb) => {
-      owned.add(effectCb);
-    },
-    addEffect: (effectCb) => {
-      // untracked: содержимое скоупа может собираться внутри отслеживаемого прогона
-      // (так работает dynamic). Без сброса эффект стал бы ребёнком внешнего и умирал
-      // бы по его перезапуску, хотя уничтожать его — дело скоупа.
-      const created = untracked(() => effect(effectCb));
-      owned.add(created);
-      return created;
-    },
-  };
+/**
+ * Скоуп — класс с методами на прототипе, а не объект с замыканиями: each заводит его на
+ * каждую запись списка, и на тысяче строк лишние функции и Set заметны.
+ */
+class Scope implements EffectHost, EffectScope {
+  /** Эффекты скоупа. Массив создаётся с первым эффектом: у статичной строки их нет. */
+  private owned: EffectCb[] | null = null;
 
-  return {
-    run: (fn) => withEffectHost(host, fn),
-    dispose: () => {
-      owned.forEach((effectCb) => effectCb.destroy());
-      owned.clear();
-    },
-  };
-};
+  adoptEffect(effectCb: EffectCb) {
+    (this.owned ??= []).push(effectCb);
+  }
+
+  addEffect(effectCb: VoidFunction) {
+    // untracked: содержимое скоупа может собираться внутри отслеживаемого прогона
+    // (так работает dynamic). Без сброса эффект стал бы ребёнком внешнего и умирал
+    // бы по его перезапуску, хотя уничтожать его — дело скоупа.
+    const created = untracked(() => effect(effectCb));
+    // Обычно эффект уже усыновлён этим же скоупом (он текущий хозяин) — второй раз не кладём.
+    const owned = this.owned;
+    if (!owned || owned[owned.length - 1] !== created) this.adoptEffect(created);
+    return created;
+  }
+
+  run<T>(fn: () => T): T {
+    return withEffectHost(this, fn);
+  }
+
+  dispose() {
+    const owned = this.owned;
+    if (!owned) return;
+    this.owned = null;
+    for (const effectCb of owned) effectCb.destroy();
+  }
+}
+
+export const createEffectScope = (): EffectScope => new Scope();

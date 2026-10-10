@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { cls } from "../src/shared/components/utils/class-binding";
+import { applyClass, cls } from "../src/shared/components/utils/class-binding";
 import { div, input, span } from "../src/shared/components/html/html-fabric";
 import { signal } from "../src/shared/signals";
 import { mountScope } from "./helpers";
@@ -74,6 +74,32 @@ describe("class", () => {
 
     on.set(false);
     expect(tokens(element)).toEqual(["busy"]);
+  });
+
+  test("класс, поставленный раньше и снаружи, реактивный источник не снимает", () => {
+    const on = signal(true);
+    const { render } = mount();
+    const element = render(() => {
+      const node = div({ class: "card" });
+      node.classList.add("external");
+      applyClass(node, { card: on, external: on });
+      return node;
+    }).firstElementChild!;
+
+    on.set(false);
+    expect(tokens(element)).toEqual(["card", "external"]);
+  });
+
+  test("условие на один токен переключает его без лишних операций", () => {
+    const on = signal(false);
+    const { render } = mount();
+    const element = render(() => div({ class: { active: on } })).firstElementChild!;
+    expect(tokens(element)).toEqual([]);
+
+    on.set(true);
+    expect(tokens(element)).toEqual(["active"]);
+    on.set(false);
+    expect(tokens(element)).toEqual([]);
   });
 
   test("cls склеивает написанное слитно в один токен", () => {

@@ -60,22 +60,23 @@ export type SourceNode = {
 /** Наблюдатель: эффект или computed. Источники пересобираются на каждом прогоне. */
 export type ObserverNode = {
   state: NodeState;
-  sources: Set<SourceNode>;
+  /** Создаётся при первой подписке: эффект без зависимостей не платит за пустой Set. */
+  sources: Set<SourceNode> | null;
   notify: (state: typeof CHECK | typeof DIRTY) => void;
 };
 
 export type EffectCb = (() => void) &
   ObserverNode & {
-  /** onCleanup. Выполняется и сбрасывается перед каждым прогоном и при уничтожении. */
-  cleanupSet: Set<() => void>;
+  /** onCleanup. Выполняется и сбрасывается перед каждым прогоном и при уничтожении. Ленивый. */
+  cleanupSet?: Set<() => void>;
   /** Уборка на уничтожение эффекта — переживает все прогоны. См. onDispose. */
-  disposeSet: Set<() => void>;
+  disposeSet?: Set<() => void>;
   /**
    * Эффекты, созданные внутри прогона этого. Уничтожаются перед каждым перезапуском
    * и вместе с родителем: вложенный эффект живёт ровно столько, сколько прогон,
    * который его создал.
    */
-  children: Set<EffectCb>;
+  children?: Set<EffectCb>;
   /** Владелец. Нужен, чтобы уничтоженный эффект вычеркнул себя из его children. */
   parent?: EffectCb;
   /** Первый прогон завершён: после него onDispose регистрировать уже нельзя. */

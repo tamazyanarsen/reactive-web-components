@@ -15,7 +15,12 @@ export const buildFragment = (content: FlowContent): DocumentFragment => {
   return fragment;
 };
 
-const buildNodes = (content: FlowContent): Node[] => [...buildFragment(content).childNodes];
+const buildNodes = (content: FlowContent): Node[] => {
+  // Самый частый случай — один элемент (li, tr): без промежуточного фрагмента.
+  // Фрагмент разворачивать нельзя — у него узлы внутри, а не он сам.
+  if (content instanceof Node && content.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) return [content];
+  return [...buildFragment(content).childNodes];
+};
 
 const removeNodes = (nodes: readonly Node[]) => {
   for (const node of nodes) (node as ChildNode).remove();
@@ -199,7 +204,10 @@ const findStablePositions = (oldIndexes: readonly number[]): ReadonlySet<number>
 type ListEntry<T> = {
   key: unknown;
   item: ReturnType<typeof signal<T>>;
-  index: ReturnType<typeof signal<number>>;
+  /** Сигнал индекса — только если рендер его принимает (второй аргумент). */
+  index: ReturnType<typeof signal<number>> | null;
+  /** Позиция в прошлом проходе: по ней считается, кого двигать. */
+  position: number;
   /** Якорь записи. Сами узлы не храним: вложенный when их подменяет, список устарел бы. */
   start: Comment;
   scope: EffectScope;
@@ -257,10 +265,34 @@ export const each = <T>(
     removeNodes(range);
   };
 
+  /**
+   * Сигнал индекса нужен не всем: рендер вида (item) => li(item) его не читает, а на
+   * тысяче строк лишний сигнал — заметная память. Смотрим на число параметров рендера.
+   */
+  const wantsIndex = renderItem.length >= 2;
+  const noIndex = signal(-1) as ReadonlySignal<number>;
+
+  /**
+   * Быстрая очистка: список пустеет, а блок — единственное содержимое родителя (обычный
+   * случай: ul(each(...))). Тогда узлы убираются одним textContent, а не по одному.
+   */
+  const clearFast = (parent: Node) => {
+    if (startAnchor.previousSibling !== null || endAnchor.nextSibling !== null) return false;
+    for (const entry of entries) entry.scope.dispose();
+    entries = [];
+    parent.textContent = "";
+    parent.appendChild(startAnchor);
+    parent.appendChild(endAnchor);
+    return true;
+  };
+
   hostEffect(() => {
     const list = source();
 
     untracked(() => {
+      const liveParent = startAnchor.parentNode;
+      if (list.length === 0 && entries.length > 0 && liveParent && clearFast(liveParent)) return;
+
       const ranges = collectRanges();
       const previous = new Map<unknown, ListEntry<T>>();
       for (const entry of entries) previous.set(entry.key, entry);
@@ -289,23 +321,23 @@ export const each = <T>(
         const reused = previous.get(key);
         if (reused) {
           previous.delete(key);
-          // Читаем до записи нового значения: сигнал индекса и хранит позицию прошлого прохода.
-          oldIndexes.push(reused.index());
+          oldIndexes.push(reused.position);
+          reused.position = index;
           reused.item.set(value);
-          reused.index.set(index);
+          reused.index?.set(index);
           next.push(reused);
           return;
         }
 
         const scope = createEffectScope();
         const item = signal(value);
-        const indexSignal = signal(index);
+        const indexSignal = wantsIndex ? signal(index) : null;
         const start = document.createComment("item");
-        const nodes = scope.run(() => buildNodes(renderItem(item, indexSignal)));
+        const nodes = scope.run(() => buildNodes(renderItem(item, indexSignal ?? noIndex)));
 
         ranges.set(start, [start, ...nodes]);
         oldIndexes.push(-1);
-        next.push({ key, item, index: indexSignal, start, scope });
+        next.push({ key, item, index: indexSignal, position: index, start, scope });
       });
 
       // Всё, что не переиспользовали, — уничтожаем вместе с его эффектами.
@@ -323,8 +355,30 @@ export const each = <T>(
       const stable = findStablePositions(oldIndexes);
       let anchor: Node = endAnchor;
 
+      // Новые записи подряд собираются во фрагмент и вставляются одной операцией —
+      // тысяча строк не превращается в тысячи вставок в живой DOM. Существующие записи
+      // двигаются поштучно: moveBefore сохраняет им состояние, а фрагмент бы его сбросил.
+      let batch: ListEntry<T>[] = [];
+      let batchAnchor: Node = endAnchor;
+      const flushBatch = () => {
+        if (batch.length === 0) return;
+        const fragment = document.createDocumentFragment();
+        for (let k = batch.length - 1; k >= 0; k--) {
+          for (const node of ranges.get(batch[k]!.start) ?? [batch[k]!.start]) fragment.appendChild(node);
+        }
+        parent.insertBefore(fragment, batchAnchor);
+        batch = [];
+      };
+
       for (let i = entries.length - 1; i >= 0; i--) {
         const entry = entries[i]!;
+        if (!stable.has(i) && oldIndexes[i]! < 0) {
+          if (batch.length === 0) batchAnchor = anchor;
+          batch.push(entry);
+          anchor = entry.start;
+          continue;
+        }
+        flushBatch();
         if (!stable.has(i)) {
           // Узлы вставляются по одному перед общим якорем, поэтому их порядок сохраняется.
           for (const node of ranges.get(entry.start) ?? [entry.start]) {
@@ -333,6 +387,7 @@ export const each = <T>(
         }
         anchor = entry.start;
       }
+      flushBatch();
     });
 
     if (isFirstRun) {

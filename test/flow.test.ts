@@ -192,6 +192,73 @@ describe("each", () => {
     expect(after[2]).toBe(before[1]!);
   });
 
+  test("новые записи вперемешку со старыми встают по порядку, старые узлы переиспользуются", () => {
+    const items = signal([1, 2, 3]);
+    const { container, render } = mount();
+    render(() => div({}, each(items, (item) => li({}, () => String(item())))));
+
+    const list = container.firstElementChild!;
+    const [one, two, three] = [...list.querySelectorAll("li")];
+    items.set([0, 1, 4, 5, 2, 3, 6]);
+    expect(childrenOf(list)).toEqual(["0", "1", "4", "5", "2", "3", "6"]);
+
+    const after = [...list.querySelectorAll("li")];
+    expect(after[1]).toBe(one!);
+    expect(after[4]).toBe(two!);
+    expect(after[5]).toBe(three!);
+  });
+
+  test("полная очистка единственного списка в родителе убирает узлы и эффекты", () => {
+    const items = signal(["a", "b", "c"]);
+    let runs = 0;
+    const external = signal(0);
+    const { container, render } = mount();
+    render(() =>
+      div(
+        {},
+        each(items, (item) =>
+          li({}, () => {
+            external();
+            runs++;
+            return item();
+          }),
+        ),
+      ),
+    );
+
+    const list = container.firstElementChild!;
+    expect(runs).toBe(3);
+    items.set([]);
+    expect(childrenOf(list)).toEqual([]);
+
+    external.set(1);
+    expect(runs).toBe(3);
+
+    // Блок продолжает работать после быстрой очистки.
+    items.set(["d"]);
+    expect(childrenOf(list)).toEqual(["d"]);
+  });
+
+  test("очистка списка с соседями не трогает соседей", () => {
+    const items = signal(["a", "b"]);
+    const { container, render } = mount();
+    render(() => div({}, span("до"), each(items, (item) => li({}, item)), span("после")));
+
+    const list = container.firstElementChild!;
+    items.set([]);
+    expect(childrenOf(list)).toEqual(["до", "после"]);
+  });
+
+  test("индекс приходит, когда рендер его принимает", () => {
+    const items = signal(["a", "b"]);
+    const { container, render } = mount();
+    render(() => div({}, each(items, (item, index) => li({}, () => `${index()}:${item()}`))));
+
+    const list = container.firstElementChild!;
+    items.set(["b", "a"]);
+    expect(childrenOf(list)).toEqual(["0:b", "1:a"]);
+  });
+
   test("перестановка идёт через moveBefore, если он есть", () => {
     const proto = Element.prototype as Element & { moveBefore?: (node: Node, child: Node | null) => void };
     const moved: Node[] = [];
