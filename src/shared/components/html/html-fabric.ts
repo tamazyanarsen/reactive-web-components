@@ -23,6 +23,10 @@ export const header = tagFactory("header");
 export const footer = tagFactory("footer");
 export const main = tagFactory("main");
 export const slot = tagFactory("slot");
+export const address = tagFactory("address");
+export const hgroup = tagFactory("hgroup");
+export const dialog = tagFactory("dialog");
+export const template = tagFactory("template");
 
 // Текст
 export const p = tagFactory("p");
@@ -50,6 +54,15 @@ export const pre = tagFactory("pre");
 export const code = tagFactory("code");
 export const br = tagFactory("br");
 export const hr = tagFactory("hr");
+export const abbr = tagFactory("abbr");
+export const dfn = tagFactory("dfn");
+export const q = tagFactory("q");
+export const kbd = tagFactory("kbd");
+export const samp = tagFactory("samp");
+export const time = tagFactory("time");
+export const bdi = tagFactory("bdi");
+export const bdo = tagFactory("bdo");
+export const wbr = tagFactory("wbr");
 
 // Формы
 export const form = tagFactory("form");
@@ -61,6 +74,11 @@ export const select = tagFactory("select");
 export const option = tagFactory("option");
 export const progress = tagFactory("progress");
 export const meter = tagFactory("meter");
+export const fieldset = tagFactory("fieldset");
+export const legend = tagFactory("legend");
+export const optgroup = tagFactory("optgroup");
+export const datalist = tagFactory("datalist");
+export const output = tagFactory("output");
 
 // Списки и таблицы
 export const ul = tagFactory("ul");
@@ -70,6 +88,16 @@ export const table = tagFactory("table");
 export const tr = tagFactory("tr");
 export const td = tagFactory("td");
 export const th = tagFactory("th");
+export const thead = tagFactory("thead");
+export const tbody = tagFactory("tbody");
+export const tfoot = tagFactory("tfoot");
+export const caption = tagFactory("caption");
+export const colgroup = tagFactory("colgroup");
+export const col = tagFactory("col");
+export const dl = tagFactory("dl");
+export const dt = tagFactory("dt");
+export const dd = tagFactory("dd");
+export const menu = tagFactory("menu");
 
 // Медиа и прочее
 export const a = tagFactory("a");
@@ -81,3 +109,9 @@ export const figure = tagFactory("figure");
 export const figcaption = tagFactory("figcaption");
 export const details = tagFactory("details");
 export const summary = tagFactory("summary");
+export const picture = tagFactory("picture");
+export const source = tagFactory("source");
+export const track = tagFactory("track");
+export const iframe = tagFactory("iframe");
+export const embed = tagFactory("embed");
+export const area = tagFactory("area");

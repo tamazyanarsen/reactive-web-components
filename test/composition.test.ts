@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { flushMicrotasks } from "./helpers";
 import {
   configCustomComponent,
   defineComponent,
@@ -158,7 +159,7 @@ describe("createComponent", () => {
     expect(element.style.getPropertyValue("display")).toBe("none");
   });
 
-  test("реактивность внутри принадлежит вызывающему компоненту", () => {
+  test("реактивность внутри принадлежит вызывающему компоненту", async () => {
     const source = signal(0);
     let runs = 0;
 
@@ -184,6 +185,7 @@ describe("createComponent", () => {
     expect(runs).toBe(2);
 
     element.remove();
+    await flushMicrotasks();
     source.set(2);
     expect(runs).toBe(2);
   });
@@ -228,7 +230,7 @@ describe("configCustomComponent", () => {
     }
     const [early] = configCustomComponent(Early, nextTag("early"));
 
-    expect(() => early()).toThrow(/не зарегистрирован/);
+    expect(() => early()).toThrow(/is not registered/);
   });
 
   test("повторная регистрация тем же тегом безопасна", () => {

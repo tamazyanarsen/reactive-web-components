@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { flushMicrotasks } from "./helpers";
 import {
   defineComponent,
   payload,
@@ -156,7 +157,7 @@ describe("scoped-слоты", () => {
     expect(element.shadowRoot!.textContent).toBe("допосле");
   });
 
-  test("эффекты внутри шаблона слота умирают вместе с компонентом", () => {
+  test("эффекты внутри шаблона слота умирают вместе с компонентом", async () => {
     class Holder extends defineComponent({
       props: {},
       slots: { body: payload<void>() },
@@ -185,6 +186,7 @@ describe("scoped-слоты", () => {
     expect(runs).toBe(2);
 
     element.remove();
+    await flushMicrotasks();
     external.set(2);
     expect(runs).toBe(2);
   });

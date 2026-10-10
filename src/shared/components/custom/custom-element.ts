@@ -25,7 +25,7 @@ import {
 } from "../utils/attr-binding";
 import { applyClass, type ClassOption, type ClassValue } from "../utils/class-binding";
 import { camelToKebab, kebabToCamel } from "../utils/case";
-import { parseValue } from "../utils/parse-value";
+import { parseAttribute, serializeAttribute } from "../utils/parse-value";
 import { hostEffect, withEffectHost } from "../utils/render-context";
 import { adoptStyles, type ComponentStyles } from "../utils/styles";
 import { injectFrom, provideOn, type ContextKey } from "../utils/context";
@@ -70,11 +70,28 @@ export abstract class BaseElement extends HTMLElement {
   /** Узлы стилей запасного пути: их нужно вставлять заново при каждом подключении. */
   private readonly styleNodes: Node[];
 
+  /**
+   * Пропсы, которые зеркалятся в атрибуты: true — атрибут есть, false/null — его нет,
+   * строки и числа — как есть. Нужно для стилей вида `:host([disabled])`.
+   */
+  static reflect?: readonly string[];
+
+  /** Компонент участвует в формах: попадает в FormData, валидацию и сброс формы. */
+  static formAssociated?: boolean;
+
+  private readonly elementInternals: ElementInternals | null = null;
+
+  /** Форма или fieldset выше по дереву отключены — приходит из formDisabledCallback. */
+  readonly formDisabled = signal(false);
+
   constructor() {
     super();
     const ctor = this.constructor as typeof BaseElement;
     this.shadow = this.attachShadow(ctor.shadowOptions);
     this.styleNodes = adoptStyles(this.shadow, ctor.styles);
+    // attachInternals разрешён ровно один раз, поэтому зовём его сами, а наружу отдаём
+    // готовый объект: setValidity, states, labels и form доступны как обычно.
+    if (ctor.formAssociated) this.elementInternals = this.attachInternals();
     // render() здесь вызывать нельзя: props и events — поля наследника,
     // их инициализаторы отработают только после выхода из super().
   }
@@ -117,6 +134,10 @@ export abstract class BaseElement extends HTMLElement {
     return created;
   }
 
+  public adoptEffect(effectCb: EffectCb) {
+    this.componentEffectList.add(effectCb);
+  }
+
   /**
    * Кладёт значение в контекст для всего поддерева — и в теневом DOM, и в светлом.
    * Вызывать в render() или до него: потомки читают контекст, когда подключаются к DOM,
@@ -141,14 +162,97 @@ export abstract class BaseElement extends HTMLElement {
       );
   }
 
+  /**
+   * ElementInternals form-associated компонента (`defineComponent({ form: true })`):
+   * валидация через setValidity, кастомные состояния через states, доступ к form и labels.
+   */
+  get internals(): ElementInternals {
+    if (!this.elementInternals) {
+      throw new Error(
+        `[rwc] <${this.localName}> is not form-associated: pass form: true to defineComponent`,
+      );
+    }
+    return this.elementInternals;
+  }
+
+  /**
+   * Значение, которое компонент отдаёт форме. Источник может быть сигналом или функцией —
+   * тогда FormData обновляется вместе с ним:
+   *
+   *   render() {
+   *     this.setFormValue(this.props.value);
+   *     ...
+   *   }
+   */
+  public setFormValue(value: MaybeReactive<FormValue>) {
+    const internals = this.internals;
+    if (typeof value === "function") {
+      hostEffect(() => internals.setFormValue(value()));
+      return;
+    }
+    internals.setFormValue(value);
+  }
+
+  /** Сброс формы: по умолчанию пропсы возвращаются к начальным значениям. */
+  protected formReset() {
+    for (const [key, propSignal] of Object.entries(this.props)) {
+      propSignal.set(this.initialProps[key]);
+    }
+  }
+
+  formResetCallback() {
+    this.formReset();
+  }
+
+  formDisabledCallback(disabled: boolean) {
+    this.formDisabled.set(disabled);
+  }
+
   attributeChangedCallback(name: string, _oldValue: string | null, newValue: string | null) {
     const propName = kebabToCamel(name);
     const propSignal = this.props[propName];
     if (!propSignal) return;
-    propSignal.set(newValue === null ? this.initialProps[propName] : parseValue(newValue));
+    propSignal.set(parseAttribute(newValue, this.initialProps[propName]));
   }
 
+  /**
+   * Отражение пропсов в атрибуты. Запускается на подключении, а не в конструкторе:
+   * элементу из document.createElement запрещено обзаводиться атрибутами до вставки.
+   * Петли нет: атрибут разбирается обратно в то же значение, и сигнал его отбрасывает.
+   */
+  private startReflection() {
+    const reflected = (this.constructor as typeof BaseElement).reflect;
+    if (!reflected?.length) return;
+
+    for (const propName of reflected) {
+      const propSignal = this.props[propName];
+      if (!propSignal) continue;
+      const attrName = camelToKebab(propName);
+      this.addEffect(() => {
+        const next = serializeAttribute(propSignal());
+        if (next === this.getAttribute(attrName)) return;
+        if (next === null) this.removeAttribute(attrName);
+        else this.setAttribute(attrName, next);
+      });
+    }
+  }
+
+  /** Разметка собрана и эффекты живы. Сбрасывается только настоящим teardown. */
+  private rendered = false;
+
+  /** disconnect уже был, а уборка ждёт микрозадачу — вдруг это перемещение. */
+  private teardownScheduled = false;
+
   connectedCallback() {
+    // Перемещение по DOM (insertBefore, перестановка в each, перенос в портал) — это
+    // disconnect и сразу connect. Уборка ещё не прошла: отменяем её и ничего не трогаем,
+    // иначе компонент потерял бы фокус, введённый текст и скролл.
+    this.teardownScheduled = false;
+    if (this.rendered) return;
+    this.rendered = true;
+
+    this.startReflection();
+
     // withEffectHost: пока идёт render(), все эффекты (в том числе созданные внутри el()
     // для детей-сигналов) регистрируются на этом компоненте и умрут вместе с ним.
     // replaceChildren, а не append: при повторном подключении элемента в DOM
@@ -161,11 +265,32 @@ export abstract class BaseElement extends HTMLElement {
     );
   }
 
+  /**
+   * Атомарное перемещение через Element.moveBefore(): браузер зовёт этот колбэк вместо
+   * пары disconnect/connect. Делать ничего не нужно — компонент остаётся как был.
+   */
+  connectedMoveCallback() {}
+
   disconnectedCallback() {
+    if (this.teardownScheduled) return;
+    this.teardownScheduled = true;
+    // Уборка на микрозадаче: если элемент вставили обратно в том же такте, это было
+    // перемещение, и connectedCallback уже отменил её.
+    queueMicrotask(() => {
+      if (!this.teardownScheduled) return;
+      this.teardownScheduled = false;
+      if (!this.isConnected) this.teardown();
+    });
+  }
+
+  /**
+   * Уничтожает эффекты и разметку. Симметричен connectedCallback: эффекты мертвы, значит
+   * разметка, которую они обновляли, больше не живая — при повторном connect рендерим заново.
+   */
+  private teardown() {
+    this.rendered = false;
     this.componentEffectList.forEach((effectCb) => effectCb.destroy());
     this.componentEffectList.clear();
-    // Teardown симметричен connectedCallback: эффекты уничтожены, значит разметка,
-    // которую они обновляли, больше не живая — при повторном connect рендерим заново.
     this.shadow.replaceChildren();
   }
 
@@ -175,6 +300,9 @@ export abstract class BaseElement extends HTMLElement {
    */
   abstract render(): FlowContent;
 }
+
+/** Что принимает ElementInternals.setFormValue. */
+export type FormValue = File | string | FormData | null;
 
 export type PropsInit = Record<string, unknown>;
 export type EventsInit = Record<string, unknown>;
@@ -195,6 +323,13 @@ export type ComponentConfig<P extends PropsInit, E extends EventsInit, S extends
   shadow?: ShadowRootMode | ShadowRootInit;
   /** CSS компонента; то же самое можно объявить как `static styles` на классе. */
   styles?: ComponentStyles;
+  /** Пропсы, которые отражаются в атрибуты хоста — для `:host([disabled])` и селекторов снаружи. */
+  reflect?: readonly (keyof P & string)[];
+  /**
+   * Компонент участвует в формах: значение уходит в FormData (см. setFormValue),
+   * работают валидация, сброс формы и disabled у fieldset.
+   */
+  form?: boolean;
 };
 
 /**
@@ -213,13 +348,20 @@ export interface ComponentBase<P extends PropsInit, E extends EventsInit, S exte
   slots: { [K in keyof S]: S[K] };
 }
 
+/** DOM-свойства пропсов: всё, что не конфликтует с членами BaseElement и HTMLElement. */
+export type PropAccessors<P extends PropsInit> = {
+  -readonly [K in keyof P as K extends keyof BaseElement ? never : K]: P[K];
+};
+
 /** Конструктор, который отдаёт defineComponent: абстрактный — render пишет наследник. */
 export type ComponentClass<
   P extends PropsInit,
   E extends EventsInit,
   S extends SlotsInit,
-> = (abstract new () => ComponentBase<P, E, S>) & {
+> = (abstract new () => ComponentBase<P, E, S> & PropAccessors<P>) & {
   readonly observedAttributes: string[];
+  reflect?: readonly string[];
+  formAssociated?: boolean;
   shadowOptions: ShadowRootInit;
   styles?: ComponentStyles;
   renderTagName?: CustomTagName;
@@ -247,6 +389,10 @@ export const defineComponent = <
 
     static override styles = config.styles;
 
+    static override reflect = config.reflect;
+
+    static override formAssociated = config.form ?? false;
+
     protected override initialProps = config.props;
 
     props = Object.fromEntries(
@@ -262,9 +408,42 @@ export const defineComponent = <
 
     // Только тип: значения слотов не нужны, шаблоны лежат в slotTemplates.
     declare slots: { [K in keyof S]: S[K] };
+
+    constructor() {
+      super();
+      // Элемент мог получить свойства до регистрации класса: React, Vue и обычный код
+      // пишут `el.value = x` в ещё не обновлённый элемент. Тогда значение лежит
+      // собственным полем экземпляра и заслоняет аксессор — переносим его в сигнал.
+      for (const key of accessorKeys) {
+        if (!Object.prototype.hasOwnProperty.call(this, key)) continue;
+        const value = (this as Record<string, unknown>)[key];
+        delete (this as Record<string, unknown>)[key];
+        this.props[key as keyof P].set(value as P[keyof P]);
+      }
+    }
   }
 
-  return Component;
+  /**
+   * DOM-свойства для пропсов: `el.value = 5` пишет в сигнал, `el.value` читает его.
+   * Так компонент управляется из любого фреймворка и из обычного JS, а не только через
+   * фабрику. Имена, которые уже есть у HTMLElement или BaseElement (title, hidden, props),
+   * не перекрываем — нативное поведение важнее.
+   */
+  const accessorKeys = Object.keys(config.props).filter((key) => !(key in Component.prototype));
+  for (const key of accessorKeys) {
+    Object.defineProperty(Component.prototype, key, {
+      configurable: true,
+      enumerable: true,
+      get(this: Component) {
+        return this.props[key]!.peek();
+      },
+      set(this: Component, value: unknown) {
+        this.props[key as keyof P].set(value as P[keyof P]);
+      },
+    });
+  }
+
+  return Component as unknown as ComponentClass<P, E, S>;
 };
 
 export type CustomTagName = `${string}-${string}`;
@@ -310,7 +489,7 @@ const bindProp = (element: BaseElement, tagName: CustomTagName, key: string, val
   const propSignal = element.props[propName];
 
   if (!propSignal) {
-    console.warn(`у <${tagName}> нет пропса "${propName}" — значение проигнорировано`);
+    console.warn(`[rwc] <${tagName}> has no prop "${propName}"; the value is ignored`);
     return;
   }
 
@@ -431,7 +610,7 @@ export const configCustomComponent = <B extends BaseElement>(
     if (tagName) {
       if (tagName !== nextTag) {
         console.error(
-          `${component.name} уже зарегистрирован как <${tagName}>, повторная регистрация как <${nextTag}> невозможна`,
+          `[rwc] ${component.name} is already registered as <${tagName}> and cannot be registered again as <${nextTag}>`,
         );
       }
       return tagName;
@@ -439,7 +618,7 @@ export const configCustomComponent = <B extends BaseElement>(
 
     const occupied = customElements.get(nextTag);
     if (occupied && occupied !== component) {
-      console.error(`тег ${nextTag} занят другим компонентом, ${component.name} не зарегистрирован`);
+      console.error(`[rwc] <${nextTag}> is taken by another component; ${component.name} was not registered`);
       return nextTag;
     }
 
@@ -453,7 +632,7 @@ export const configCustomComponent = <B extends BaseElement>(
   const factory: ComponentFactory<B> = (configOrChild, ...rest) => {
     if (!tagName) {
       throw new Error(
-        `${component.name} не зарегистрирован — вызовите register() до создания компонента`,
+        `[rwc] ${component.name} is not registered: call register() before creating the component`,
       );
     }
 

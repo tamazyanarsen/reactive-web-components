@@ -192,6 +192,28 @@ describe("each", () => {
     expect(after[2]).toBe(before[1]!);
   });
 
+  test("перестановка идёт через moveBefore, если он есть", () => {
+    const proto = Element.prototype as Element & { moveBefore?: (node: Node, child: Node | null) => void };
+    const moved: Node[] = [];
+    proto.moveBefore = function (this: Element, node: Node, child: Node | null) {
+      moved.push(node);
+      this.insertBefore(node, child);
+    };
+
+    try {
+      const items = signal([1, 2, 3]);
+      const { container, render } = mount();
+      render(() => div({}, each(items, (item) => li({}, () => String(item())))));
+
+      const list = container.firstElementChild!;
+      items.set([3, 1, 2]);
+      expect(childrenOf(list)).toEqual(["3", "1", "2"]);
+      expect(moved.length).toBeGreaterThan(0);
+    } finally {
+      delete proto.moveBefore;
+    }
+  });
+
   test("перестановка двух соседей двигает минимум узлов", () => {
     const items = signal([1, 2, 3, 4, 5]);
     const { container, render } = mount();

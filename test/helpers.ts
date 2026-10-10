@@ -32,3 +32,9 @@ export const childrenOf = (element: Element) =>
   [...element.childNodes]
     .filter((node) => node.nodeType !== Node.COMMENT_NODE)
     .map((node) => node.textContent ?? "");
+
+/**
+ * Ждёт микрозадачи: уборка отключённого компонента отложена на них, чтобы перемещение
+ * по DOM не пересоздавало компонент.
+ */
+export const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0));

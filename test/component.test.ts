@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { flushMicrotasks } from "./helpers";
 import {
   BaseElement,
   defineComponent,
@@ -9,7 +10,7 @@ import {
 import { button, div, span } from "../src/shared/components/html/html-fabric";
 import { computed } from "../src/shared/components/utils/render-context";
 import { css } from "../src/shared/components/utils/styles";
-import { signal } from "../src/shared/signals";
+import { effect, signal } from "../src/shared/signals";
 
 /** Теги регистрируются глобально и навсегда — каждому тесту нужен свой. */
 let tagCounter = 0;
@@ -127,6 +128,52 @@ describe("defineComponent", () => {
     expect(shadowOf(element).textContent).toBe("10");
   });
 
+  test("булев атрибут работает как в HTML: наличие — true, удаление — false", () => {
+    class Flag extends defineComponent({ props: { disabled: false } }) {
+      render() {
+        return span(() => String(this.props.disabled()));
+      }
+    }
+    const flag = useCustomComponent(Flag, nextTag("flag"));
+
+    const element = mount(flag());
+    element.setAttribute("disabled", "");
+    expect(shadowOf(element).textContent).toBe("true");
+
+    element.setAttribute("disabled", "false");
+    expect(shadowOf(element).textContent).toBe("false");
+
+    element.setAttribute("disabled", "disabled");
+    element.removeAttribute("disabled");
+    expect(shadowOf(element).textContent).toBe("false");
+  });
+
+  test("строковый проп получает строку, даже если она похожа на число", () => {
+    class Label extends defineComponent({ props: { label: "" } }) {
+      render() {
+        return span(() => typeof this.props.label());
+      }
+    }
+    const label = useCustomComponent(Label, nextTag("label"));
+
+    const element = mount(label());
+    element.setAttribute("label", "42");
+    expect(shadowOf(element).textContent).toBe("string");
+  });
+
+  test("нечисло в числовом атрибуте откатывается к начальному значению", () => {
+    class Size extends defineComponent({ props: { size: 10 } }) {
+      render() {
+        return span(() => String(this.props.size()));
+      }
+    }
+    const size = useCustomComponent(Size, nextTag("size"));
+
+    const element = mount(size());
+    element.setAttribute("size", "abc");
+    expect(shadowOf(element).textContent).toBe("10");
+  });
+
   test("неизвестный проп предупреждает и не ломает создание", () => {
     class Empty extends defineComponent({ props: {} }) {
       render() {
@@ -205,7 +252,68 @@ describe("события", () => {
 });
 
 describe("жизненный цикл", () => {
-  test("эффекты render принадлежат компоненту и умирают с ним", () => {
+  test("обычный effect() в render() принадлежит компоненту", async () => {
+    const external = signal(0);
+    let runs = 0;
+    class Plain extends defineComponent({ props: {} }) {
+      render() {
+        effect(() => {
+          external();
+          runs++;
+        });
+        return span("x");
+      }
+    }
+    const plain = useCustomComponent(Plain, nextTag("plain-effect"));
+
+    const element = mount(plain());
+    external.set(1);
+    expect(runs).toBe(2);
+
+    element.remove();
+    await flushMicrotasks();
+    external.set(2);
+    expect(runs).toBe(2);
+  });
+
+  test("перемещение по DOM не пересоздаёт разметку и не убивает эффекты", async () => {
+    const external = signal(0);
+    class Movable extends defineComponent({ props: {} }) {
+      render() {
+        return span(external);
+      }
+    }
+    const movable = useCustomComponent(Movable, nextTag("movable"));
+
+    const first = mount(div());
+    const second = mount(div());
+    const element = movable();
+    first.append(element);
+    const rendered = shadowOf(element).firstChild;
+
+    second.append(element);
+    await flushMicrotasks();
+
+    expect(shadowOf(element).firstChild).toBe(rendered);
+    external.set(1);
+    expect(shadowOf(element).textContent).toBe("1");
+  });
+
+  test("connectedMoveCallback оставляет компонент как есть", () => {
+    class Atomic extends defineComponent({ props: {} }) {
+      render() {
+        return span("x");
+      }
+    }
+    const atomic = useCustomComponent(Atomic, nextTag("atomic"));
+    const element = mount(atomic());
+    const rendered = shadowOf(element).firstChild;
+
+    (element as unknown as { connectedMoveCallback(): void }).connectedMoveCallback();
+    expect(shadowOf(element).firstChild).toBe(rendered);
+  });
+
+  test("эффекты render принадлежат компоненту и умирают с ним", async () => {
     const external = signal(0);
     let runs = 0;
 
@@ -226,11 +334,12 @@ describe("жизненный цикл", () => {
     expect(runs).toBe(2);
 
     element.remove();
+    await flushMicrotasks();
     external.set(2);
     expect(runs).toBe(2);
   });
 
-  test("повторное подключение рендерит заново, без дублей", () => {
+  test("повторное подключение рендерит заново, без дублей", async () => {
     class Again extends defineComponent({ props: {} }) {
       render() {
         return div("тут");
@@ -242,6 +351,7 @@ describe("жизненный цикл", () => {
     expect(shadowOf(element).textContent).toBe("тут");
 
     element.remove();
+    await flushMicrotasks();
     expect(shadowOf(element).textContent).toBe("");
 
     document.body.append(element);

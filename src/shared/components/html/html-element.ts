@@ -95,7 +95,7 @@ const createReactiveText = (source: () => unknown) => {
   hostEffect(() => {
     const value = source();
     if (value instanceof Node) {
-      console.warn("функция-ребёнок вернула узел — для реактивной разметки нужен dynamic()", source);
+      console.warn("[rwc] a function child returned a node; use dynamic() for reactive markup", source);
     }
     textNode.textContent = toText(value);
   });
@@ -190,7 +190,7 @@ const initElement = (element: HTMLElement, options: object) => {
 
   if (".className" in options) {
     console.warn(
-      '"class" вместе с ".className": .className пишет атрибут целиком и стирает токены class',
+      '[rwc] "class" together with ".className": .className overwrites the whole attribute and erases class tokens',
       element,
     );
   }

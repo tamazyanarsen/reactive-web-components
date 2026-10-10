@@ -29,7 +29,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 export class Counter extends defineComponent({
   // Значения по умолчанию задают и типы пропсов, и список observedAttributes:
-  // <x-counter max="5"> пройдёт через parseValue и станет числом.
+  // <x-counter max="5"> разберётся по типу начального значения и станет числом.
   props: { value: 0, step: 1, min: Number.NEGATIVE_INFINITY, max: Number.POSITIVE_INFINITY },
   events: { change: payload<number>() },
   // Массив стилей: сначала общая база галереи, потом собственные правила.

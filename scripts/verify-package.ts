@@ -73,6 +73,8 @@ if (shadow.adoptedStyleSheets.length !== 1) fail("static styles не попал�
 ok("стили компонента подключены");
 
 host.remove();
+// Уборка отложена на микрозадачу: так перемещение по DOM не пересоздаёт компонент.
+await new Promise((resolve) => setTimeout(resolve, 0));
 expectText("", "при отключении компонент не убрал за собой разметку");
 
 name.set("после отключения");

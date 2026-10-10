@@ -21,6 +21,27 @@ const removeNodes = (nodes: readonly Node[]) => {
   for (const node of nodes) (node as ChildNode).remove();
 };
 
+type MovableParent = ParentNode & { moveBefore?: (node: Node, child: Node | null) => void };
+
+/**
+ * Переставляет узел внутри живого дерева. Element.moveBefore() двигает атомарно: у
+ * веб-компонентов не срабатывает пара disconnect/connect, у iframe и видео не сбрасывается
+ * состояние, фокус остаётся на месте. Где его нет или он отказал (узел вне документа,
+ * разные деревья) — обычный insertBefore.
+ */
+const moveNode = (parent: Node, node: Node, before: Node | null) => {
+  const movable = parent as MovableParent;
+  if (movable.moveBefore && parent.isConnected && node.isConnected) {
+    try {
+      movable.moveBefore(node, before);
+      return;
+    } catch {
+      // Падаем на insertBefore ниже.
+    }
+  }
+  parent.insertBefore(node, before);
+};
+
 /**
  * Вставляет узлы сразу после якоря.
  * Пока якорь не в DOM (первый прогон внутри render()), вставлять некуда — вернём false,
@@ -256,7 +277,7 @@ export const each = <T>(
           if (!warnedAboutKeys) {
             warnedAboutKeys = true;
             console.warn(
-              "each: ключ повторяется, такие элементы пересоздаются на каждое обновление — передайте getKey",
+              "[rwc] each: duplicate key, such items are recreated on every update; pass getKey",
               key,
             );
           }
@@ -307,7 +328,7 @@ export const each = <T>(
         if (!stable.has(i)) {
           // Узлы вставляются по одному перед общим якорем, поэтому их порядок сохраняется.
           for (const node of ranges.get(entry.start) ?? [entry.start]) {
-            parent.insertBefore(node, anchor);
+            moveNode(parent, node, anchor);
           }
         }
         anchor = entry.start;

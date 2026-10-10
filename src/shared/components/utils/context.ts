@@ -74,7 +74,7 @@ export const injectFrom = <T>(node: Node, key: ContextKey<T>): ReadonlySignal<T>
     if (!warned && key.defaultValue === undefined) {
       warned = true;
       console.warn(
-        `контекст "${key.name}" не найден вверх по дереву и не имеет значения по умолчанию`,
+        `[rwc] context "${key.name}" has no provider up the tree and no default value`,
         node,
       );
     }
