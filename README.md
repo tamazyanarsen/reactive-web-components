@@ -8,6 +8,8 @@ compiler. Effects belong to a component and die together with it.
 
 ```bash
 npm install @rwcjs/core
+# or start a new project: an app with router and forms, or a component library
+npm create @rwcjs@latest my-app
 ```
 
 ## What it looks like

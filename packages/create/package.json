@@ -1,0 +1,24 @@
+{
+  "name": "@rwcjs/create",
+  "version": "0.1.0",
+  "description": "Scaffold an app or a component library on @rwcjs/core: npm create @rwcjs",
+  "type": "module",
+  "license": "MIT",
+  "author": "tamazyanarsen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamazyanarsen/reactive-web-components.git",
+    "directory": "packages/create"
+  },
+  "keywords": ["rwc", "web-components", "signals", "scaffold", "create"],
+  "bin": {
+    "create": "./index.js"
+  },
+  "files": ["index.js", "templates", "README.md"],
+  "engines": {
+    "node": ">=18.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

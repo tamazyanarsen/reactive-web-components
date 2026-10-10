@@ -1,0 +1,21 @@
+{
+  "name": "rwc-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rwcjs/core": "^3.1.0",
+    "@rwcjs/forms": "^0.1.0",
+    "@rwcjs/router": "^0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4"
+  }
+}

@@ -11,6 +11,7 @@ live in `packages/*` (bun workspaces).
 | [`@rwcjs/cem-plugin`](../../packages/cem-plugin/README.md) | Describes rwc components in a Custom Elements Manifest |
 | [`@rwcjs/router`](../../packages/router/README.md) | Router on signals: typed params from path strings, pages that survive param changes |
 | [`@rwcjs/forms`](../../packages/forms/README.md) | Forms on signals: typed fields, validation, input binding, submit state |
+| [`@rwcjs/create`](../../packages/create/README.md) | Project generator: `npm create @rwcjs@latest` with an app or a component library template |
 
 ## Custom Elements Manifest
 

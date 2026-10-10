@@ -1,0 +1,33 @@
+{
+  "name": "rwc-components",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Web components built with rwc",
+  "files": ["dist", "custom-elements.json"],
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "customElements": "custom-elements.json",
+  "sideEffects": false,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc -p tsconfig.build.json && npm run manifest",
+    "manifest": "custom-elements-manifest analyze",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@rwcjs/core": "^3.1.0"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.11.0",
+    "@rwcjs/cem-plugin": "^0.1.0",
+    "@rwcjs/core": "^3.1.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4"
+  }
+}

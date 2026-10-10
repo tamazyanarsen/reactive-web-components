@@ -11,6 +11,7 @@
 | [`@rwcjs/cem-plugin`](../../packages/cem-plugin/README.md) | Описывает компоненты rwc в Custom Elements Manifest |
 | [`@rwcjs/router`](../../packages/router/README.md) | Роутер на сигналах: типизированные параметры из строки пути, страница переживает смену параметров |
 | [`@rwcjs/forms`](../../packages/forms/README.md) | Формы на сигналах: типизированные поля, проверки, связывание с инпутами, состояние отправки |
+| [`@rwcjs/create`](../../packages/create/README.md) | Генератор проектов: `npm create @rwcjs@latest` с шаблоном приложения или библиотеки компонентов |
 
 ## Custom Elements Manifest
 

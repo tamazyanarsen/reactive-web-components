@@ -12,7 +12,7 @@
         "happy-dom": "^20.14.0",
       },
       "peerDependencies": {
-        "typescript": "^5",
+        "typescript": ">=5",
       },
       "optionalPeers": [
         "typescript",
@@ -23,6 +23,13 @@
       "version": "0.1.0",
       "peerDependencies": {
         "@custom-elements-manifest/analyzer": ">=0.9",
+      },
+    },
+    "packages/create": {
+      "name": "@rwcjs/create",
+      "version": "0.1.0",
+      "bin": {
+        "create": "./index.js",
       },
     },
     "packages/forms": {
@@ -58,6 +65,8 @@
     "@rwcjs/cem-plugin": ["@rwcjs/cem-plugin@workspace:packages/cem-plugin"],
 
     "@rwcjs/core": ["@rwcjs/core@3.1.0", "", { "peerDependencies": { "typescript": "^5" }, "optionalPeers": ["typescript"] }, "sha512-2J/16HfWFNKLPlHHJ7P0JrzNpeLfjfXaJ5UY7tKs5Aq73WNYcBiPwAy98wNGawWz33Culs+j5oghu6TCs2mk4w=="],
+
+    "@rwcjs/create": ["@rwcjs/create@workspace:packages/create"],
 
     "@rwcjs/forms": ["@rwcjs/forms@workspace:packages/forms"],
 

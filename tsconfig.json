@@ -1,7 +1,7 @@
 {
   // scripts/ и dist/ проверяются отдельно: скрипт верификации импортирует собранный
   // пакет, которого на момент typecheck ещё нет, а dist — это артефакт сборки.
-  "exclude": ["dist", "scripts", "bench"],
+  "exclude": ["dist", "scripts", "bench", "packages/create/templates/*/vite.config.ts"],
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
@@ -16,7 +16,12 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     // Пакеты из packages/* импортируют ядро по имени — в репозитории это исходники.
-    "paths": { "@rwcjs/core": ["./index.ts"] },
+    "paths": {
+      "@rwcjs/core": ["./index.ts"],
+      "@rwcjs/router": ["./packages/router/src/index.ts"],
+      "@rwcjs/forms": ["./packages/forms/src/index.ts"],
+      "@rwcjs/cem-plugin": ["./packages/cem-plugin/index.js"]
+    },
     "verbatimModuleSyntax": true,
     "noEmit": true,
 

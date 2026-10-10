@@ -8,6 +8,8 @@
 
 ```bash
 npm install @rwcjs/core
+# или новый проект: приложение с роутером и формами либо библиотека компонентов
+npm create @rwcjs@latest my-app
 ```
 
 ## Как выглядит

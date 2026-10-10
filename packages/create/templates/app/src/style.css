@@ -1,0 +1,45 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  --accent: #4f46e5;
+}
+
+body {
+  margin: 0;
+}
+
+.layout {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+nav a {
+  color: inherit;
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+nav a.active {
+  border-color: var(--accent);
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+  max-width: 320px;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.875rem;
+}
