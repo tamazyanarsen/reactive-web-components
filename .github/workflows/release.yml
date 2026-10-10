@@ -29,6 +29,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run build
       - run: bun run verify:package
+      # Пакеты из packages/* — после ядра: им нужны его собранные типы.
+      - run: bun run build:packages
       - run: bun run size
 
       - run: bun run scripts/publish-changed.ts

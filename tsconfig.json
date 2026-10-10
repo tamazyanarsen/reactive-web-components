@@ -15,6 +15,8 @@
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    // Пакеты из packages/* импортируют ядро по имени — в репозитории это исходники.
+    "paths": { "@rwcjs/core": ["./index.ts"] },
     "verbatimModuleSyntax": true,
     "noEmit": true,
 

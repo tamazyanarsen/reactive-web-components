@@ -25,6 +25,13 @@
         "@custom-elements-manifest/analyzer": ">=0.9",
       },
     },
+    "packages/router": {
+      "name": "@rwcjs/router",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "@rwcjs/core": "^3.1.0",
+      },
+    },
   },
   "packages": {
     "@custom-elements-manifest/analyzer": ["@custom-elements-manifest/analyzer@0.10.4", "", { "dependencies": { "@custom-elements-manifest/find-dependencies": "^0.0.5", "@github/catalyst": "^1.6.0", "@web/config-loader": "0.1.3", "chokidar": "3.5.2", "command-line-args": "5.1.2", "comment-parser": "1.2.4", "custom-elements-manifest": "1.0.0", "debounce": "1.2.1", "globby": "11.0.4", "typescript": "~5.4.2" }, "bin": { "cem": "cem.js", "custom-elements-manifest": "cem.js" } }, "sha512-hse8o20Jd82BwWank29/J9OC4PmSTwUoEmll3LEjDF3WLY/Lc8g3TUYSib/3GARCS8Q5myT2RPqEWfRa+6bkIg=="],
@@ -42,6 +49,10 @@
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
     "@rwcjs/cem-plugin": ["@rwcjs/cem-plugin@workspace:packages/cem-plugin"],
+
+    "@rwcjs/core": ["@rwcjs/core@3.1.0", "", { "peerDependencies": { "typescript": "^5" }, "optionalPeers": ["typescript"] }, "sha512-2J/16HfWFNKLPlHHJ7P0JrzNpeLfjfXaJ5UY7tKs5Aq73WNYcBiPwAy98wNGawWz33Culs+j5oghu6TCs2mk4w=="],
+
+    "@rwcjs/router": ["@rwcjs/router@workspace:packages/router"],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 

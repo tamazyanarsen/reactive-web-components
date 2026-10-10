@@ -1,0 +1,44 @@
+{
+  "name": "@rwcjs/router",
+  "version": "0.1.0",
+  "description": "Signal-based router for @rwcjs/core: typed params from path strings, pages that survive param changes",
+  "type": "module",
+  "license": "MIT",
+  "author": "tamazyanarsen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamazyanarsen/reactive-web-components.git",
+    "directory": "packages/router"
+  },
+  "homepage": "https://github.com/tamazyanarsen/reactive-web-components/tree/main/packages/router#readme",
+  "keywords": [
+    "router",
+    "signals",
+    "web-components",
+    "rwc",
+    "spa"
+  ],
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir=dist --target=browser --format=esm --sourcemap=linked --external @rwcjs/core && tsc -p tsconfig.build.json",
+    "prepublishOnly": "bun run build"
+  },
+  "peerDependencies": {
+    "@rwcjs/core": "^3.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

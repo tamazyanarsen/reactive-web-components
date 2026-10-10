@@ -9,6 +9,7 @@
 | --- | --- |
 | [`@rwcjs/core`](../../README.ru.md) | Сигналы, фабрики тегов, компоненты, SSR |
 | [`@rwcjs/cem-plugin`](../../packages/cem-plugin/README.md) | Описывает компоненты rwc в Custom Elements Manifest |
+| [`@rwcjs/router`](../../packages/router/README.md) | Роутер на сигналах: типизированные параметры из строки пути, страница переживает смену параметров |
 
 ## Custom Elements Manifest
 

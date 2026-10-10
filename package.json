@@ -54,7 +54,8 @@
     "verify:package": "bun run scripts/verify-package.ts",
     "prepublishOnly": "bun run build && bun run verify:package",
     "cem": "custom-elements-manifest analyze",
-    "size": "bun run scripts/check-size.ts"
+    "size": "bun run scripts/check-size.ts",
+    "build:packages": "bun run --filter '@rwcjs/router' build"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "0.10.4",

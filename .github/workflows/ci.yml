@@ -28,6 +28,8 @@ jobs:
       # так, как его увидит потребитель.
       - run: bun run build
       - run: bun run verify:package
+      # Пакеты из packages/* — после ядра: им нужны его собранные типы.
+      - run: bun run build:packages
       - run: bun run size
 
       # Манифест примеров: плагин не должен падать на живых компонентах.
