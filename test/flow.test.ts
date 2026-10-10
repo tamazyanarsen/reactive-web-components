@@ -210,7 +210,8 @@ describe("each", () => {
       expect(childrenOf(list)).toEqual(["3", "1", "2"]);
       expect(moved.length).toBeGreaterThan(0);
     } finally {
-      delete proto.moveBefore;
+      // Reflect: в lib новых версий TypeScript moveBefore у Element обязательный.
+      Reflect.deleteProperty(proto, "moveBefore");
     }
   });
 

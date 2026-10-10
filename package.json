@@ -65,7 +65,7 @@
     "happy-dom": "^20.14.0"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": ">=5"
   },
   "peerDependenciesMeta": {
     "typescript": {
