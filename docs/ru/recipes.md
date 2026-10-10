@@ -1,8 +1,9 @@
 # Рецепты
 
-[English](../en/recipes.md) · [Гайд](./guide.md) · [Справочник API](./api.md)
+[English](../en/recipes.md) · [Гайд](./guide.md) · [Справочник API](./api.md) · [Фреймворки](./frameworks.md) · [SSR](./ssr.md)
 
 - [Поле ввода с валидацией](#поле-ввода-с-валидацией)
+- [Поле ввода для формы](#поле-ввода-для-формы)
 - [Поиск с дебаунсом и отменой](#поиск-с-дебаунсом-и-отменой)
 - [Тема через контекст](#тема-через-контекст)
 - [Таблица с шаблоном строки](#таблица-с-шаблоном-строки)
@@ -57,6 +58,69 @@ class EmailField extends defineComponent({
   }
 }
 ```
+
+## Поле ввода для формы
+
+С `form: true` компонент ведёт себя как нативное поле: значение попадает в
+`FormData`, `required` не даёт отправить форму, а кнопка сброса формы его очищает.
+
+```ts
+class TextField extends defineComponent({
+  props: { value: "", required: false },
+  form: true,
+  reflect: ["required"],
+  styles: css`
+    :host { display: inline-block }
+    :host(:invalid) input { border-color: #c00 }
+  `,
+}) {
+  render() {
+    const { value, required } = this.props;
+
+    // FormData следует за сигналом: вручную синхронизировать на каждый ввод не нужно.
+    this.setFormValue(value);
+
+    const field = input({
+      ".value": value,
+      ".disabled": this.formDisabled,
+      "@input": (event) => value.set(event.currentTarget.value),
+    });
+
+    this.addEffect(() => {
+      if (required() && !value()) {
+        // Третий аргумент — элемент, к которому браузер привяжет подсказку валидации.
+        this.internals.setValidity({ valueMissing: true }, "Заполните это поле", field);
+      } else {
+        this.internals.setValidity({});
+      }
+    });
+
+    return field;
+  }
+}
+
+export const textField = useCustomComponent(TextField, "x-text-field");
+```
+
+В форме он используется как обычный input; имя поля — привычный атрибут `name`:
+
+```ts
+const signup = form(
+  {
+    "@submit": (event) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      console.log(data.get("email"));
+    },
+  },
+  textField({ attrs: { name: "email", required: true } }),
+  button({ ".type": "submit" }, "Зарегистрироваться"),
+  button({ ".type": "reset" }, "Очистить"),
+);
+```
+
+Сброс возвращает все пропсы к начальным значениям — так работает `formReset()` по
+умолчанию. Отключённый `fieldset` вокруг компонента переключает `this.formDisabled`.
 
 ## Поиск с дебаунсом и отменой
 
@@ -295,7 +359,7 @@ GlobalRegistrator.register();
 let counter = 0;
 const nextTag = () => `test-counter-${counter++}` as const;
 
-test("кнопка увеличивает счётчик и шлёт событие", () => {
+test("кнопка увеличивает счётчик и шлёт событие", async () => {
   const counterFactory = useCustomComponent(Counter, nextTag());
 
   const seen: number[] = [];
@@ -309,13 +373,17 @@ test("кнопка увеличивает счётчик и шлёт событ�
   expect(element.shadowRoot!.textContent).toContain("2");
   expect(seen).toEqual([2]);
 
-  element.remove(); // эффекты компонента уничтожаются здесь
+  element.remove();
+  // Уборка отложена на микрозадачу — вдруг элемент просто перемещают.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(element.shadowRoot!.textContent).toBe(""); // эффекты уничтожены, разметка очищена
 });
 ```
 
 Реактивность синхронная: после `dispatchEvent` и после `signal.set` разметка уже
-обновлена, ждать микрозадач не нужно. Исключение — `resource`: ответ приходит
-через промис, поэтому там понадобится `await`.
+обновлена, ждать микрозадач не нужно. Исключений два. `resource`: ответ приходит
+через промис. И отключение: после `remove()` компонент убирается на микрозадаче,
+поэтому перед проверкой уборки нужен `await`.
 
 ## Что выбрать: when, show или dynamic
 

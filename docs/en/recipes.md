@@ -1,8 +1,9 @@
 # Recipes
 
-[Русский](../ru/recipes.md) · [Guide](./guide.md) · [API reference](./api.md)
+[Русский](../ru/recipes.md) · [Guide](./guide.md) · [API reference](./api.md) · [Frameworks](./frameworks.md) · [SSR](./ssr.md)
 
 - [An input field with validation](#an-input-field-with-validation)
+- [A form-associated input](#a-form-associated-input)
 - [Search with debounce and cancellation](#search-with-debounce-and-cancellation)
 - [Theming through context](#theming-through-context)
 - [A table with a row template](#a-table-with-a-row-template)
@@ -57,6 +58,70 @@ class EmailField extends defineComponent({
   }
 }
 ```
+
+## A form-associated input
+
+With `form: true` the component behaves like a native field: its value goes into
+`FormData`, `required` blocks submission, and the form's reset button clears it.
+
+```ts
+class TextField extends defineComponent({
+  props: { value: "", required: false },
+  form: true,
+  reflect: ["required"],
+  styles: css`
+    :host { display: inline-block }
+    :host(:invalid) input { border-color: #c00 }
+  `,
+}) {
+  render() {
+    const { value, required } = this.props;
+
+    // FormData follows the signal: no manual sync on every keystroke.
+    this.setFormValue(value);
+
+    const field = input({
+      ".value": value,
+      ".disabled": this.formDisabled,
+      "@input": (event) => value.set(event.currentTarget.value),
+    });
+
+    this.addEffect(() => {
+      if (required() && !value()) {
+        // The third argument is where the browser points the validation bubble.
+        this.internals.setValidity({ valueMissing: true }, "Please fill in this field", field);
+      } else {
+        this.internals.setValidity({});
+      }
+    });
+
+    return field;
+  }
+}
+
+export const textField = useCustomComponent(TextField, "x-text-field");
+```
+
+In a form it is used like any input; the field name comes from the usual `name`
+attribute:
+
+```ts
+const signup = form(
+  {
+    "@submit": (event) => {
+      event.preventDefault();
+      const data = new FormData(event.currentTarget);
+      console.log(data.get("email"));
+    },
+  },
+  textField({ attrs: { name: "email", required: true } }),
+  button({ ".type": "submit" }, "Sign up"),
+  button({ ".type": "reset" }, "Clear"),
+);
+```
+
+Reset returns every prop to its initial value — that is the default `formReset()`.
+A `disabled` `fieldset` around the component flips `this.formDisabled`.
 
 ## Search with debounce and cancellation
 
@@ -295,7 +360,7 @@ GlobalRegistrator.register();
 let counter = 0;
 const nextTag = () => `test-counter-${counter++}` as const;
 
-test("the button increments the counter and emits an event", () => {
+test("the button increments the counter and emits an event", async () => {
   const counterFactory = useCustomComponent(Counter, nextTag());
 
   const seen: number[] = [];
@@ -309,13 +374,17 @@ test("the button increments the counter and emits an event", () => {
   expect(element.shadowRoot!.textContent).toContain("2");
   expect(seen).toEqual([2]);
 
-  element.remove(); // the component's effects are destroyed here
+  element.remove();
+  // Teardown is deferred to a microtask, in case the element is just being moved.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(element.shadowRoot!.textContent).toBe(""); // effects destroyed, markup cleared
 });
 ```
 
 Reactivity is synchronous: after `dispatchEvent` and after `signal.set` the markup
-is already updated, no microtasks to await. The exception is `resource`: its
-response arrives through a promise, so there you will need `await`.
+is already updated, no microtasks to await. There are two exceptions. `resource`:
+its response arrives through a promise. And disconnection: after `remove()` the
+component is torn down on a microtask, so await before checking it.
 
 ## Choosing between when, show and dynamic
 

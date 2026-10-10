@@ -1,6 +1,6 @@
 # rwc
 
-[Русский](./README.ru.md) · [Guide](./docs/en/guide.md) · [API reference](./docs/en/api.md) · [Recipes](./docs/en/recipes.md)
+[Русский](./README.ru.md) · [Guide](./docs/en/guide.md) · [API reference](./docs/en/api.md) · [Recipes](./docs/en/recipes.md) · [Frameworks](./docs/en/frameworks.md) · [SSR](./docs/en/ssr.md) · [Ecosystem](./docs/en/ecosystem.md)
 
 Reactive web components built on signals. Markup is assembled by tag factories —
 no template strings, no JSX — so the whole UI is checked by the TypeScript
@@ -51,8 +51,11 @@ counter({ ".value": 5, ".step": 2, "@change": (event) => console.log(event.detai
 
 **Signals.** `signal`, `effect`, `computed`, `derived`, `batch`, `untracked`,
 `onCleanup`, `onDispose`. Updates are synchronous: right after `set` the markup
-is already current. A diamond dependency runs once, not twice. Nested effects are
-allowed — a nested effect lives exactly as long as the run that created it.
+is already current. `computed` is lazy and glitch-free: it recomputes on read and
+only when a source really changed, an equal result wakes nobody, and effects never
+see an intermediate state. It needs no owner, so it can live in a module or a store.
+Nested effects are allowed — a nested effect lives exactly as long as the run that
+created it.
 
 **Markup without templates.** `div`, `button`, `input`, ... — factories with a
 typed config: `.properties`, `@events`, `class`, `attrs`, `style`, `show`.
@@ -61,10 +64,15 @@ Property names, events and their payloads are checked at compile time.
 **Flow control.** `when` for conditional rendering, `each` for keyed lists that
 reuse nodes, `dynamic` for a fully reactive region, `show` to toggle visibility
 without tearing down the DOM. None of them wrap content in an extra element.
+Reordering uses `moveBefore()` where available.
 
 **Components.** `defineComponent({ props, events, slots, shadow, styles })`
 infers the types of props, events and slots. Styles are parsed once and shared
-between instances through a single `CSSStyleSheet`.
+between instances through a single `CSSStyleSheet`. Attributes are parsed by the
+prop's type (`<x-switch disabled>` is `true`), `reflect` mirrors props back to
+attributes for `:host([disabled])`, and `form: true` makes a form-associated
+component with `FormData`, validation and reset. Moving a component around the
+DOM does not re-render it: focus, input text and scroll survive.
 
 **Context.** `createContext` plus `provide`/`inject`: the value is found by
 walking up the tree across shadow boundaries and arrives as a signal.
@@ -99,7 +107,11 @@ bun test
 bun run typecheck
 bun run build          # types, tests, dist
 bun run verify:package # checks the built package the way a consumer sees it
+bun run size           # size budget of the bundled library
 ```
+
+CI checks and the release process are described in [CONTRIBUTING.md](./CONTRIBUTING.md)
+(in Russian).
 
 The `examples/` gallery holds finished components; each file contains both the
 component itself and its demo for the page:

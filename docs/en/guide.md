@@ -1,6 +1,6 @@
 # Guide
 
-[Русский](../ru/guide.md) · [API reference](./api.md) · [Recipes](./recipes.md)
+[Русский](../ru/guide.md) · [API reference](./api.md) · [Recipes](./recipes.md) · [Frameworks](./frameworks.md) · [SSR](./ssr.md)
 
 - [Installation](#installation)
 - [Your first component](#your-first-component)
@@ -99,8 +99,8 @@ batch(() => {
 }); // subscribers of both signals run here, once
 ```
 
-Inside `batch` derived values are not recomputed yet — that is the price of
-grouping.
+A `computed` read inside `batch` is already up to date: it recomputes on read,
+without waiting for the group to end.
 
 ## Effects
 
@@ -188,7 +188,7 @@ throws instead of hanging the page:
 
 ```ts
 effect(() => count.set(count() + 1));
-// Error: infinite loop in effects
+// Error: [rwc] infinite loop in effects: an effect writes to a signal it depends on
 ```
 
 The usual cure is `peek()` or `update()` — both read without subscribing.
@@ -200,17 +200,34 @@ Two options, both returning a source you can read and pass around.
 ```ts
 import { computed, derived } from "@rwcjs/core";
 
-// Memoises the result, recomputes when dependencies change.
-// Lives on an effect owned by the current component.
+// Lazy and memoised: computes on read, recomputes only
+// when dependencies have actually changed.
 const total = computed(() => price() * quantity());
 
 // No memoisation: compute runs on every read.
-// No effect and no owner — nothing to leak.
 const label = derived(() => `${price()} USD`);
 ```
 
 Use `computed` for expensive work and for values read from several places; use
-`derived` for cheap expressions and for code outside components.
+`derived` for cheap expressions.
+
+`computed` is lazy: until someone reads it, it computes nothing. A write to a
+source only marks it stale; the value is recomputed on the next read and only if
+a source has really changed. If the new value is equal to the old one
+(`Object.is` or the `equals` option), observers are not woken:
+
+```ts
+const isAdult = computed(() => age() >= 18);
+effect(() => console.log(isAdult())); // does not rerun when age goes 30 → 31
+```
+
+Effects never see an intermediate state. In the diamond `a → (b, c) → d` the
+effect on `d` runs once and sees `b` and `c` already consistent, however many
+levels of `computed` lie in between.
+
+`computed` subscribes to its sources only while some effect reads it. It needs no
+owner and does not leak, so it can be declared anywhere — in `render()`, at
+module level, in a store.
 
 Also available:
 
@@ -375,7 +392,9 @@ ul(
 
 When the list updates, nodes are reused: new data changes the contents of the
 signals rather than recreating markup. Reordering moves as few nodes as possible —
-items already in the right relative order stay put.
+items already in the right relative order stay put. Where the browser has
+`Element.moveBefore()`, the move is atomic: components are not disconnected,
+and focus and the state of `iframe` and `video` survive.
 
 The default key is the item itself, which suits primitives. For objects pass
 `getKey`, otherwise entries are recreated on every update (the library warns
@@ -435,12 +454,21 @@ Two ways to write:
 
 ```ts
 field({ ".value": "text" });             // straight into the signal: any type, no serialisation
-element.setAttribute("value", "text");   // through an attribute: parsed with JSON.parse
+element.setAttribute("value", "text");   // through an attribute: parsed by the prop's type
 ```
 
-An attribute is parsed as JSON, and whatever fails to parse stays a string: `"5"`
-becomes a number, `"true"` a boolean, `"hello"` a string. Removing the attribute
-returns the prop to its initial value.
+An attribute is always a string, so it is parsed by the type of the prop's
+initial value:
+
+- `boolean` — as in HTML: the attribute is present, so `true`
+  (`<x-switch disabled>`); `"false"` and a removed attribute give `false`;
+- `number` — `Number()`; a non-number or an empty string falls back to the
+  initial value;
+- `string` — the string as is: `label="42"` stays `"42"`;
+- anything else (objects, arrays, `null`) — JSON, and whatever fails to parse
+  stays a string.
+
+Removing the attribute returns a non-boolean prop to its initial value.
 
 A reactive prop links parent to child:
 
@@ -467,12 +495,74 @@ field({ "@valueChange": (event) => console.log(event.detail) }); // detail is ty
 element.addEventListener("value-change", handler);
 ```
 
+### Reflecting props to attributes
+
+Styles often depend on state: `:host([disabled])`. `reflect` mirrors props to
+host attributes:
+
+```ts
+class Chip extends defineComponent({
+  props: { disabled: false, variant: "plain" },
+  reflect: ["disabled", "variant"],
+  styles: css`:host([disabled]) { opacity: 0.5 }`,
+}) { ... }
+```
+
+`true` becomes an empty attribute, `false`/`null`/`undefined` remove it, strings
+and numbers are written as is, objects as JSON. Reflection starts when the
+element connects, not in the constructor. Attribute and prop do not loop: the
+attribute parses back into the same value. On the class the same is
+`static reflect`.
+
+### Forms
+
+`form: true` makes the component form-associated: its value goes into
+`FormData`, and validation, form reset and `disabled` on a `fieldset` work.
+
+```ts
+class Rating extends defineComponent({ props: { value: 0 }, form: true }) {
+  render() {
+    this.setFormValue(() => String(this.props.value()));
+    return button(
+      { ".disabled": this.formDisabled, "@click": () => this.props.value.update((n) => n + 1) },
+      this.props.value,
+    );
+  }
+}
+```
+
+- `setFormValue(value)` — given a signal or a function, keeps `FormData` in
+  sync; call it in `render()`.
+- `internals` — the `ElementInternals`: `setValidity`, `states`, `form`,
+  `labels`. Without `form: true` it throws.
+- `formDisabled` — a signal, `true` while a `fieldset` or form above is disabled.
+- `formReset()` — a protected hook for form reset; by default returns every prop
+  to its initial value. Override it if the reset should do something else.
+
+A full example is in the [recipes](./recipes.md#a-form-associated-input).
+
 ### Lifecycle
 
 `render()` is called when the element connects to the DOM. Every effect created
 during the render — reactive children, properties, attributes, classes,
-`computed`, `resource` — belongs to the component and is destroyed together with
-the markup when it disconnects. On reconnection the component renders again.
+`resource` — belongs to the component and is destroyed together with the markup
+when it disconnects. A `computed` is not owned by anyone: when the component's
+effects die, it simply stops being subscribed to its sources. On reconnection
+the component renders again.
+
+Teardown runs on a microtask rather than inside `disconnectedCallback`. If the
+element is inserted back within the same task — moved with `insertBefore`,
+reordered by `each`, transferred into a portal — nothing is re-rendered: focus,
+input text and scroll stay. Atomic moves through `moveBefore()` are handled by
+`connectedMoveCallback` and do not disconnect the component at all.
+
+In tests this means teardown is not visible right after `remove()`:
+
+```ts
+element.remove();
+await new Promise((resolve) => setTimeout(resolve, 0));
+expect(element.shadowRoot!.textContent).toBe(""); // teardown has run
+```
 
 No manual cleanup is needed: timers and subscriptions go on `onCleanup` inside an
 effect and leave with it.
@@ -739,6 +829,12 @@ inside is destroyed together with the branch or the list entry.
 **The queue.** Writing to a signal puts its subscribers into a queue and drains it
 right away. The queue is a set, so an effect reachable by two paths runs once.
 `batch` postpones draining until the group is left.
+
+**Lazy computed (push-pull).** A write does not recompute anything: it marks the
+`computed` nodes downstream as possibly stale and queues the effects behind them.
+Before running, an effect pulls its `computed` sources; if none of them actually
+changed value, the effect is skipped. That is why there are no glitches and no
+wasted runs.
 
 **The effect tree.** A nested effect is a child of the one whose run created it.
 Before every restart the parent destroys its children, and on destruction it takes

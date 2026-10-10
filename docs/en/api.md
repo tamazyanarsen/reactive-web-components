@@ -1,6 +1,6 @@
 # API reference
 
-[Русский](../ru/api.md) · [Guide](./guide.md) · [Recipes](./recipes.md)
+[Русский](../ru/api.md) · [Guide](./guide.md) · [Recipes](./recipes.md) · [Frameworks](./frameworks.md) · [SSR](./ssr.md)
 
 Everything is imported from the package root:
 
@@ -46,7 +46,8 @@ const items = signal<string[]>([], { equals: false });
 ### `batch(fn)`
 
 Groups writes: subscribers run once on exit. Returns the result of `fn`. Nested
-`batch` calls are drained when the outermost one exits.
+`batch` calls are drained when the outermost one exits. A `computed` read inside
+`batch` is already up to date: it recomputes on read.
 
 ### `untracked(fn)`
 
@@ -66,7 +67,9 @@ Runs `fn` immediately and on every change of what it read. Returns a handle with
 a `destroy()` method.
 
 An effect created during another effect's run becomes its child: it is destroyed
-before the parent restarts and together with the parent.
+before the parent restarts and together with the parent. An effect created in a
+component's `render()` (or inside `createRoot`, `when`, `each`) belongs to that
+component or scope and is destroyed with it.
 
 ### `onCleanup(fn)`
 
@@ -78,22 +81,43 @@ Outside an effect it does nothing.
 Registers cleanup for destruction only. Works on the first run only; a later call
 logs a warning.
 
+### `createSelector(source, equals?)`
+
+Returns `isSelected(key)`, an O(1) check of whether `key` matches `source()`. Every key
+gets its own source, so when the selection changes, only the effects that read the old
+and the new key wake up, not every reader:
+
+```ts
+const isSelected = createSelector(selectedId);
+each(rows, (row) => tr({ class: { active: () => isSelected(row.peek().id) } }, ...));
+```
+
+`equals(key, value)` defaults to `Object.is`. A key's source lives while someone reads it.
+
 ## Derived values
 
-### `computed(fn)`
+### `computed(fn, options?)`
 
-A memoised derived value. The recomputation lives on an effect owned by the
-current component (or by itself outside a component).
+A lazy memoised derived value. It computes on read, caches the result and
+recomputes only when its sources have actually changed. A recomputation that
+yields an equal value (`Object.is` or `options.equals`) does not wake observers.
+Effects never see an inconsistent intermediate state: in the diamond
+`a → (b, c) → d` the effect on `d` sees `b` and `c` in agreement.
+
+`computed` subscribes to its sources only while some effect reads it, so it
+needs no owner and does not leak: declare it anywhere — in `render()`, at
+module level, in a store.
 
 ### `derived(fn)`
 
 A derived value with no memoisation and no effect: `fn` runs on every read.
 Cheaper than `computed` for short expressions and requires no teardown.
 
-### `createComputed(compute, createEffect?)`
+### `createComputed(compute, options?)`
 
-The low-level constructor: lets you decide who creates the recomputation effect.
-Application code uses `computed`.
+The low-level constructor behind `computed`; application code uses `computed`.
+The second argument used to be an effect factory; a function passed there is now
+ignored for compatibility.
 
 ### ``rs`string` ``
 
@@ -117,8 +141,12 @@ Named factories: `div`, `span`, `section`, `article`, `aside`, `nav`, `header`,
 `footer`, `main`, `slot`, `p`, `h1`–`h6`, `strong`, `em`, `b`, `i`, `u`, `s`,
 `small`, `mark`, `sub`, `sup`, `del`, `ins`, `blockquote`, `cite`, `pre`, `code`,
 `br`, `hr`, `form`, `input`, `textarea`, `button`, `label`, `select`, `option`,
-`progress`, `meter`, `ul`, `ol`, `li`, `table`, `tr`, `td`, `th`, `a`, `img`,
-`audio`, `video`, `canvas`, `figure`, `figcaption`, `details`, `summary`.
+`progress`, `meter`, `fieldset`, `legend`, `optgroup`, `datalist`, `output`, `ul`,
+`ol`, `li`, `dl`, `dt`, `dd`, `menu`, `table`, `thead`, `tbody`, `tfoot`, `caption`,
+`colgroup`, `col`, `tr`, `td`, `th`, `address`, `hgroup`, `dialog`, `template`, `abbr`,
+`dfn`, `q`, `kbd`, `samp`, `time`, `bdi`, `bdo`, `wbr`, `a`, `img`, `picture`, `source`,
+`track`, `iframe`, `embed`, `area`, `audio`, `video`, `canvas`, `figure`, `figcaption`,
+`details`, `summary`.
 
 ```ts
 div(config?, ...children)
@@ -206,6 +234,8 @@ dependencies.
 Keyed list rendering with node reuse. `renderItem` receives signals for the item
 and the index. The default key is the item itself; pass `getKey` for objects.
 Duplicate keys produce a warning, and such entries are recreated on every update.
+Reordering uses `Element.moveBefore()` where the browser has it: the move is
+atomic, and components, `iframe` and `video` keep their state.
 
 The blocks do not wrap content in an extra element.
 
@@ -224,11 +254,38 @@ a fragment, an array of nodes or nothing; a root wrapper is not required.
 | `slots` | `Record<string, unknown>` | slots; the value defines the context type |
 | `shadow` | `"open" \| "closed" \| ShadowRootInit` | shadow root mode, `open` by default |
 | `styles` | `ComponentStyles` | the component's CSS |
+| `reflect` | `(keyof props)[]` | props mirrored to host attributes |
+| `form` | `boolean` | a form-associated component |
 
 Attribute and event names are the kebab-case form of the key: `maxCount` →
-`max-count`, `valueChange` → `value-change`. An attribute value is parsed with
-`JSON.parse`, and whatever fails to parse stays a string. Removing the attribute
-returns the prop to its initial value.
+`max-count`, `valueChange` → `value-change`. An attribute value is parsed by the
+type of the prop's initial value:
+
+| Initial value | Attribute → prop |
+| --- | --- |
+| `boolean` | as in HTML: present → `true`, `"false"` → `false`, removed → `false` |
+| `number` | `Number()`; a non-number or an empty string falls back to the initial value |
+| `string` | the raw string: `label="42"` stays `"42"` |
+| anything else (objects, arrays, `null`) | `JSON.parse`; whatever fails to parse stays a string |
+
+Removing the attribute returns a non-boolean prop to its initial value.
+
+**reflect.** Props from the list are mirrored to host attributes: `true` → an
+empty attribute, `false`/`null`/`undefined` → no attribute, strings and numbers
+as is, objects as JSON. Needed for `:host([disabled])` and outside selectors.
+Reflection starts on connection, not in the constructor; the attribute parses
+back into the same value, so there is no loop. Also available as `static reflect`.
+
+```ts
+class Chip extends defineComponent({
+  props: { disabled: false, variant: "plain" },
+  reflect: ["disabled", "variant"],
+}) { ... }
+```
+
+**form.** `form: true` sets `static formAssociated = true` and calls
+`attachInternals()` in the constructor: the component's value goes into
+`FormData`, and validation, form reset and `disabled` on a `fieldset` work.
 
 ### `payload<T>()`
 
@@ -245,10 +302,22 @@ creates nothing at runtime.
 | `provide(key, value)` | puts a value into the subtree's context |
 | `inject(key)` | takes a value from the nearest provider |
 | `addEffect(fn)` | creates an effect owned by the component |
+| `internals` | `ElementInternals`; throws `[rwc] <tag> is not form-associated...` without `form: true` |
+| `setFormValue(value)` | the value for the form; given a signal or a function, keeps `FormData` in sync — call it in `render()` |
+| `formDisabled` | a signal: a `fieldset` or form above is disabled (from `formDisabledCallback`) |
+| `formReset()` | a `protected` hook called on form reset; by default returns all props to their initial values |
 | `shadow` | the shadow root (`protected`) |
 | `static styles` | the component's CSS |
 | `static shadowOptions` | shadow root options |
+| `static reflect` | props mirrored to attributes |
+| `static formAssociated` | the component participates in forms |
 | `static renderTagName` | the tag the component is registered under |
+
+**Disconnection.** Teardown (destroying effects and clearing the shadow root) is
+deferred to a microtask. If the element is inserted back within the same task —
+a move via `insertBefore`, a reorder in `each`, a transfer into a portal —
+nothing is re-rendered: focus, input text and scroll are preserved. Components
+also implement `connectedMoveCallback` for atomic `moveBefore()` moves.
 
 ### `useCustomComponent(component, tagName)`
 
@@ -359,6 +428,15 @@ everything created inside.
 Low-level ownership primitives. `hostEffect` creates an effect and hands it to the
 current owner; without an owner it warns and creates a standalone effect.
 
+## Server rendering
+
+### `renderToString(build, options?)`
+
+Renders markup on a server-side DOM (happy-dom, linkedom) into an HTML string. Shadow
+roots are emitted as Declarative Shadow DOM with the component styles; anchor comments
+are dropped unless `{ comments: true }`. Effects are destroyed before returning. See
+[Server rendering](./ssr.md).
+
 ## Types
 
 | Type | Description |
@@ -379,4 +457,5 @@ current owner; without an owner it warns and creates a standalone effect.
 | `ContextKey<T>` | a context key |
 | `Resource<T>` | the result of `resource` |
 | `ComponentStyles` | a component's CSS |
+| `FormValue` | `File \| string \| FormData \| null` — what `setFormValue` accepts |
 | `CustomTagName` | `` `${string}-${string}` `` |
