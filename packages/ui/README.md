@@ -92,6 +92,10 @@ code stay the same:
 registerAll({ postfix: "v2" }); // <rwc-button-v2>, <rwc-dialog-v2>, ...
 ```
 
+Name the postfix after the kit version: modules on the same version then share one set of
+tags. See [UI kit versions in microfrontends](../../docs/en/microfrontends.md) for the
+full setup.
+
 ## Theming
 
 Components read public `--rwc-*` variables and fall back to built-in values for the light

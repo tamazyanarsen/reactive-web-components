@@ -313,41 +313,17 @@ class Stopwatch extends defineComponent({
 
 ## Две версии UI-кита на одной странице
 
-В ките компонент объявляется без немедленной регистрации:
+Компоненты кита объявляются через `configCustomComponent`, регистрируются с постфиксом по
+версии кита, а в коде модулей вызываются фабрики:
 
 ```ts
-// @acme/ui-kit
-export const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
-export const [UiModal, registerUiModal] = configCustomComponent(Modal, "ui-modal");
-
-export const registerAll = (options?: { postfix?: string }) => {
-  registerUiButton(options);
-  registerUiModal(options);
-};
-```
-
-Каждый бизнес-модуль регистрирует свой набор тегов:
-
-```ts
-// модуль A, кит 1.7
-import { registerAll, UiButton } from "@acme/ui-kit-1.7";
-registerAll({ postfix: "moduleA" });   // <ui-button-modulea>
-
-// модуль B, кит 1.8
 import { registerAll, UiButton } from "@acme/ui-kit-1.8";
-registerAll({ postfix: "moduleB" });   // <ui-button-moduleb>
+registerAll({ postfix: "v1-8" });               // <ui-button-v1-8>
+UiButton({ ".variant": "primary" }, "Сохранить"); // одинаково во всех модулях
 ```
 
-Прикладной код в обоих модулях одинаковый — он идёт через фабрику, а не через
-имя тега:
-
-```ts
-UiButton({ ".type": "primary" }, "Сохранить");
-```
-
-Так модули обновляются по одному. Условие: разные версии должны быть разными
-сборками — один класс `customElements` разрешает зарегистрировать только под
-одним тегом.
+Полная схема, правила для авторов кита и сравнение со scoped custom element registries — на
+отдельной странице: [Версии UI-кита в микрофронтендах](./microfrontends.md).
 
 ## Тестирование компонента
 

@@ -314,41 +314,17 @@ the very signal it writes to and loop.
 
 ## Two versions of a UI kit on one page
 
-In the kit, a component is declared without registering it right away:
+Declare kit components with `configCustomComponent`, register them with a postfix named
+after the kit version, and call factories in module code:
 
 ```ts
-// @acme/ui-kit
-export const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
-export const [UiModal, registerUiModal] = configCustomComponent(Modal, "ui-modal");
-
-export const registerAll = (options?: { postfix?: string }) => {
-  registerUiButton(options);
-  registerUiModal(options);
-};
-```
-
-Each business module registers its own set of tags:
-
-```ts
-// module A, kit 1.7
-import { registerAll, UiButton } from "@acme/ui-kit-1.7";
-registerAll({ postfix: "moduleA" });   // <ui-button-modulea>
-
-// module B, kit 1.8
 import { registerAll, UiButton } from "@acme/ui-kit-1.8";
-registerAll({ postfix: "moduleB" });   // <ui-button-moduleb>
+registerAll({ postfix: "v1-8" });          // <ui-button-v1-8>
+UiButton({ ".variant": "primary" }, "Save"); // the same call in every module
 ```
 
-Application code is identical in both modules — it goes through the factory, not
-through a tag name:
-
-```ts
-UiButton({ ".type": "primary" }, "Save");
-```
-
-That is how modules are upgraded one at a time. The condition: different versions
-have to be different builds, because `customElements` allows a single class to be
-registered under one tag only.
+The full setup, rules for kit authors and a comparison with scoped custom element
+registries are on a separate page: [UI kit versions in microfrontends](./microfrontends.md).
 
 ## Testing a component
 
