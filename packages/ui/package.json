@@ -1,6 +1,6 @@
 {
   "name": "@rwcjs/ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "UI kit on @rwcjs/core: accessible web components themed with CSS custom properties, light and dark out of the box",
   "type": "module",
   "license": "MIT",
