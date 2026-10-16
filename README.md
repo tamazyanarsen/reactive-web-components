@@ -2,9 +2,11 @@
 
 **[Documentation site](https://tamazyanarsen.github.io/reactive-web-components/)** · [Русский](./README.ru.md) · [Guide](./docs/en/guide.md) · [API reference](./docs/en/api.md) · [Recipes](./docs/en/recipes.md) · [Microfrontends](./docs/en/microfrontends.md) · [Frameworks](./docs/en/frameworks.md) · [SSR](./docs/en/ssr.md) · [Ecosystem](./docs/en/ecosystem.md)
 
-Reactive web components built on signals. Markup is assembled by tag factories —
-no template strings, no JSX — so the whole UI is checked by the TypeScript
-compiler. Effects belong to a component and die together with it.
+rwc is a 5 KB library for web components — design systems, widgets, whole apps — that
+work in any framework or none. Markup is written as typed TypeScript functions instead of
+HTML strings or JSX, so the compiler checks every prop and event. State lives in signals
+that update exactly the DOM node that reads them. And a component's tag is chosen when it
+is registered, so [two versions of one UI kit can run on the same page](#several-versions-of-a-ui-kit-on-one-page).
 
 ```bash
 npm install @rwcjs/core
@@ -57,29 +59,43 @@ defined. In rwc a component is declared once and registered under a tag chosen b
 loads it, while markup calls the factory, not the tag:
 
 ```ts
-// billing, still on kit 1.7
+// billing/main.ts — still on kit 1.7
 import { registerAll, UiButton } from "@acme/ui-kit-1.7";
-registerAll({ postfix: "v1-7" });            // <ui-button-v1-7>
-
-// profile, already on kit 1.8
-import { registerAll, UiButton } from "@acme/ui-kit-1.8";
-registerAll({ postfix: "v1-8" });            // <ui-button-v1-8>
-
-// module code is identical in both
+registerAll({ postfix: "v1-7" });             // <ui-button-v1-7>
 UiButton({ ".variant": "primary" }, "Save");
+```
+
+```ts
+// profile/main.ts — already on kit 1.8
+import { registerAll, UiButton } from "@acme/ui-kit-1.8";
+registerAll({ postfix: "v1-8" });             // <ui-button-v1-8>
+UiButton({ ".variant": "primary" }, "Save");  // the same call
 ```
 
 Modules move to a new kit one at a time, and a module on one version can be nested inside
 a module on another. It works in every browser with custom elements, without scoped
-registries. [Live demo, rules for kit authors and a comparison with scoped registries →](./docs/en/microfrontends.md)
+registries. [Live demo](https://tamazyanarsen.github.io/reactive-web-components/microfrontends) · [rules for kit authors and a comparison with scoped registries](./docs/en/microfrontends.md)
 
 ## Performance
 
 In [js-framework-benchmark](./bench/js-framework-benchmark/README.md#local-results)
-(local run, Chrome 154) rwc 3.3.0 is 1.23× slower than hand-written vanilla JS: on par
-with Lit (1.24), ahead of Preact with signals (1.30), Angular (1.60) and React (1.68),
-behind Vue (1.19), Svelte (1.13) and Solid (1.09). The library weighs 5.1 KB gzip in
-that app, against 7.3 KB for Lit.
+(local run, Chrome 154; the official run is pending) rwc 3.3.0 is 1.23× slower than
+hand-written vanilla JS by the CPU geometric mean: on par with Lit (1.24), ahead of Preact
+with signals (1.30), Angular (1.60) and React (1.68), behind Vue (1.19), Svelte (1.13) and
+Solid (1.09). Against Lit, rwc is faster on updates and slower at creating large lists. The
+library weighs 5.1 KB gzip in that app, against 7.3 KB for Lit.
+
+## Compared to Lit, Stencil and Solid
+
+| | Lit | Stencil | Solid | rwc |
+| --- | --- | --- | --- | --- |
+| Markup | `html` tagged templates | JSX + compiler | JSX + compiler | typed TypeScript functions, no compiler |
+| Updates | re-renders the template on a property change | virtual DOM | fine-grained signals | fine-grained signals |
+| Output | custom elements | custom elements | its own components | custom elements |
+| Several kit versions on one page | by hand | by hand | — | built in |
+
+If you want HTML-like templates or a large ecosystem, Lit is the safer choice. rwc is for
+those who want markup the compiler checks and signals inside standard custom elements.
 
 ## What's inside
 

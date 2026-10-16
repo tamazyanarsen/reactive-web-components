@@ -30,7 +30,7 @@ features:
     link: /microfrontends
     linkText: How it works
   - title: On par with Lit
-    details: 1.23× vanilla JS in js-framework-benchmark, next to Lit's 1.24 and ahead of React and Angular, at 5.1 KB gzip.
+    details: "1.23× vanilla JS in js-framework-benchmark (CPU geomean, local run), next to Lit's 1.24: faster updates, slower creation of large lists. Ahead of React and Angular, at 5.1 KB gzip."
     link: https://github.com/tamazyanarsen/reactive-web-components/blob/main/bench/js-framework-benchmark/README.md#local-results
     linkText: Benchmark results
 ---
@@ -40,7 +40,7 @@ features:
 <Demo name="counter" />
 
 ```ts
-import { button, defineComponent, payload, span, useCustomComponent } from "@rwcjs/core";
+import { button, defineComponent, div, p, payload, signal, span, useCustomComponent } from "@rwcjs/core";
 
 class Counter extends defineComponent({
   props: { value: 0, step: 1 },
@@ -57,6 +57,13 @@ class Counter extends defineComponent({
 }
 
 export const counter = useCustomComponent(Counter, "x-counter");
+
+// The demo above: a parent signal bound to the prop and updated from the event.
+const total = signal(3);
+div(
+  counter({ ".value": total, "@change": (event) => total.set(event.detail) }),
+  p(() => `Twice the value: ${total() * 2}`),
+);
 ```
 
 ## Start a project

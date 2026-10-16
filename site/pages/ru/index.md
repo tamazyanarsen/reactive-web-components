@@ -30,7 +30,7 @@ features:
     link: /ru/microfrontends
     linkText: Как это устроено
   - title: На уровне Lit
-    details: 1,23× от vanilla JS в js-framework-benchmark — рядом с Lit (1,24), быстрее React и Angular, при 5,1 КБ gzip.
+    details: "1,23× от vanilla JS в js-framework-benchmark (среднее CPU, локальный прогон), рядом с Lit (1,24): быстрее на обновлениях, медленнее на создании больших списков. Быстрее React и Angular, при 5,1 КБ gzip."
     link: https://github.com/tamazyanarsen/reactive-web-components/blob/main/bench/js-framework-benchmark/README.md#local-results
     linkText: Результаты бенчмарка
 ---
@@ -40,7 +40,7 @@ features:
 <Demo name="counter" />
 
 ```ts
-import { button, defineComponent, payload, span, useCustomComponent } from "@rwcjs/core";
+import { button, defineComponent, div, p, payload, signal, span, useCustomComponent } from "@rwcjs/core";
 
 class Counter extends defineComponent({
   props: { value: 0, step: 1 },
@@ -57,6 +57,13 @@ class Counter extends defineComponent({
 }
 
 export const counter = useCustomComponent(Counter, "x-counter");
+
+// Демо выше: сигнал родителя привязан к пропсу и обновляется из события.
+const total = signal(3);
+div(
+  counter({ ".value": total, "@change": (event) => total.set(event.detail) }),
+  p(() => `Twice the value: ${total() * 2}`),
+);
 ```
 
 ## Новый проект

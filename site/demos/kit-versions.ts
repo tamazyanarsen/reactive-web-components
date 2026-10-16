@@ -32,14 +32,15 @@ const module = (title: string, version: string, kit: Kit) => {
 export default () =>
   div(
     { attrs: { "data-demo": "kit-versions" }, style: { display: "grid", gap: "16px" } },
-    module("Shell", "kit (current)", kitNext),
+    module("Shell", "kit from the repository", kitNext),
     // В настоящей платформе каждый модуль импортирует свой кит, и общей функции на две
     // версии нет. Здесь она общая ради наглядности, а типы версий номинально разные
     // (private-поля классов), отсюда приведение.
     module("Legacy module", "kit 0.1.0", kitOld as unknown as Kit),
     p(
       { style: { margin: "0", fontSize: "13px" } },
-      "Different classes on one page: ",
-      code(String(kitOld.Button !== kitNext.Button)),
+      kitOld.Button !== kitNext.Button
+        ? "The two Save buttons are instances of different classes, one from each kit build."
+        : "Both kits resolved to the same build.",
     ),
   );

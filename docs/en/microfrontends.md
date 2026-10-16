@@ -13,7 +13,7 @@ through a factory, not through a tag name.
 
 <Demo name="kit-versions" />
 
-The demo on the [documentation site](https://tamazyanarsen.github.io/reactive-web-components/microfrontends)
+The [live demo](https://tamazyanarsen.github.io/reactive-web-components/microfrontends)
 loads two real builds of [`@rwcjs/ui`](../../packages/ui/README.md) on one page: 0.1.0
 from npm and the current one from the repository. Both modules are built by the same
 function; only the kit object passed to it differs.

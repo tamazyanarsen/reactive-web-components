@@ -350,8 +350,8 @@ counter({ ".value": 5, "@change": (e) => e.detail }, "children");
 Returns `[factory, register]`. The factory throws if called before registration.
 
 ```ts
-const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
-registerUwcButton({ postfix: "moduleA" }); // <uwc-button-modulea>, returns the tag name
+const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
+registerUiButton({ postfix: "v1-8" }); // <ui-button-v1-8>, returns the tag name
 ```
 
 The postfix is lowercased. Registering the same tag again is safe; trying to

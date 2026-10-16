@@ -574,7 +574,7 @@ export type ComponentFactory<B extends BaseElement> = (
 
 export type RegisterOptions = {
   /**
-   * Суффикс тега: uwc-button + postfix "moduleA" -> uwc-button-modulea.
+   * Суффикс тега: ui-button + postfix "v1-8" -> ui-button-v1-8.
    * Позволяет двум версиям UI-кита ужиться на одной странице — JS-код при этом
    * не меняется, потому что вызовы идут через фабрику, а не через имя тега.
    */
@@ -587,10 +587,10 @@ export type RegisterComponent = (options?: RegisterOptions) => CustomTagName;
 /**
  * Разделяет объявление компонента и его регистрацию:
  *
- *   export const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
+ *   export const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
  *   // в приложении:
- *   registerUwcButton({ postfix: "moduleA" });   // тег uwc-button-modulea
- *   UwcButton({ ".type": "primary" }, "Нажми");  // вызов не меняется
+ *   registerUiButton({ postfix: "v1-8" });   // тег ui-button-v1-8
+ *   UiButton({ ".type": "primary" }, "Нажми");  // вызов не меняется
  *
  * Один класс можно зарегистрировать только под одним тегом — таково правило
  * customElements. Несколько версий на странице получаются из разных сборок кита,

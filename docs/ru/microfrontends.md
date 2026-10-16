@@ -14,7 +14,7 @@ rwc снимает это ограничение, не трогая код мо�
 
 <Demo name="kit-versions" />
 
-В демо на [сайте документации](https://tamazyanarsen.github.io/reactive-web-components/ru/microfrontends)
+В [живом демо](https://tamazyanarsen.github.io/reactive-web-components/ru/microfrontends)
 на одной странице загружены две настоящие сборки [`@rwcjs/ui`](../../packages/ui/README.md):
 0.1.0 из npm и текущая из репозитория. Оба модуля строит одна и та же функция, разный только
 объект кита, который ей передают.

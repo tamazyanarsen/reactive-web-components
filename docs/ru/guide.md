@@ -23,6 +23,8 @@
 
 ```bash
 npm install @rwcjs/core
+# или готовый проект с Vite, роутером и формами
+npm create @rwcjs@latest my-app
 ```
 
 Пакет — ESM. Собирается любым бандлером (Vite, Rspack, webpack, esbuild, bun).
@@ -56,6 +58,17 @@ export const hello = useCustomComponent(Hello, "x-hello");
 document.body.append(hello({ ".name": "rwc" }));
 // <x-hello> с shadow root внутри
 ```
+
+Реактивная разметка вне компонента — например, корень приложения — оборачивается в
+`createRoot`, который владеет её эффектами; иначе rwc предупредит, что их некому убрать:
+
+```ts
+import { createRoot, div } from "@rwcjs/core";
+
+document.querySelector("#app")!.append(createRoot(() => div({}, hello({ ".name": "rwc" }))));
+```
+
+Подробнее — в разделе [Код вне компонентов](#код-вне-компонентов).
 
 ## Сигналы
 
@@ -790,26 +803,27 @@ const app = createRoot((dispose) => {
 ```ts
 import { configCustomComponent } from "@rwcjs/core";
 
-export const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
+export const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
 ```
 
 Приложение решает, под каким тегом компонент появится:
 
 ```ts
-registerUwcButton();                       // <uwc-button>
-registerUwcButton({ postfix: "moduleA" }); // <uwc-button-modulea>
+registerUiButton();                       // <ui-button>
+registerUiButton({ postfix: "v1-8" }); // <ui-button-v1-8>
 ```
 
 Вызовы фабрики при этом не меняются:
 
 ```ts
-UwcButton({ ".type": "primary" }, "Нажми");
+UiButton({ ".type": "primary" }, "Нажми");
 ```
 
 Так две версии UI-кита уживаются на одной странице: каждая сборка регистрирует
 свои теги со своим постфиксом, а прикладной код остаётся прежним. Один класс
 можно зарегистрировать только под одним тегом — это правило `customElements`,
-поэтому разные версии обязаны быть разными сборками.
+поэтому разные версии обязаны быть разными сборками. Полная схема — на отдельной
+странице: [Версии UI-кита в микрофронтендах](./microfrontends.md).
 
 ## Как это устроено
 

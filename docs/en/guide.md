@@ -23,6 +23,8 @@
 
 ```bash
 npm install @rwcjs/core
+# or a ready project with Vite, router and forms
+npm create @rwcjs@latest my-app
 ```
 
 The package is ESM. Any bundler works (Vite, Rspack, webpack, esbuild, bun). No
@@ -55,6 +57,17 @@ for instance) or an array of nodes — a root wrapper is not required.
 document.body.append(hello({ ".name": "rwc" }));
 // <x-hello> with a shadow root inside
 ```
+
+Reactive markup outside a component — the app's root, for example — goes inside
+`createRoot`, which owns its effects; otherwise rwc warns that nothing will dispose them:
+
+```ts
+import { createRoot, div } from "@rwcjs/core";
+
+document.querySelector("#app")!.append(createRoot(() => div({}, hello({ ".name": "rwc" }))));
+```
+
+More in [Code outside components](#code-outside-components).
 
 ## Signals
 
@@ -795,26 +808,27 @@ matters, separate the declaration from it:
 ```ts
 import { configCustomComponent } from "@rwcjs/core";
 
-export const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
+export const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
 ```
 
 The application decides which tag the component appears under:
 
 ```ts
-registerUwcButton();                       // <uwc-button>
-registerUwcButton({ postfix: "moduleA" }); // <uwc-button-modulea>
+registerUiButton();                       // <ui-button>
+registerUiButton({ postfix: "v1-8" }); // <ui-button-v1-8>
 ```
 
 Factory calls do not change:
 
 ```ts
-UwcButton({ ".type": "primary" }, "Press");
+UiButton({ ".type": "primary" }, "Press");
 ```
 
 That is how two versions of a UI kit coexist on one page: each build registers its
 own tags with its own postfix while application code stays the same. A single
 class can be registered under one tag only — that is a `customElements` rule, so
-different versions have to be different builds.
+different versions have to be different builds. The full setup is on a separate page:
+[UI kit versions in microfrontends](./microfrontends.md).
 
 ## How it works
 

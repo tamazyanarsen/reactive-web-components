@@ -352,8 +352,8 @@ counter({ ".value": 5, "@change": (e) => e.detail }, "дети");
 Возвращает `[factory, register]`. Фабрика до регистрации бросает ошибку.
 
 ```ts
-const [UwcButton, registerUwcButton] = configCustomComponent(Button, "uwc-button");
-registerUwcButton({ postfix: "moduleA" }); // <uwc-button-modulea>, возвращает имя тега
+const [UiButton, registerUiButton] = configCustomComponent(Button, "ui-button");
+registerUiButton({ postfix: "v1-8" }); // <ui-button-v1-8>, возвращает имя тега
 ```
 
 Постфикс приводится к нижнему регистру. Повторная регистрация тем же тегом

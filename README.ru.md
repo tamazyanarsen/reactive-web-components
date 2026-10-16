@@ -2,9 +2,12 @@
 
 **[Сайт документации](https://tamazyanarsen.github.io/reactive-web-components/ru/)** · [English](./README.md) · [Гайд](./docs/ru/guide.md) · [Справочник API](./docs/ru/api.md) · [Рецепты](./docs/ru/recipes.md) · [Микрофронтенды](./docs/ru/microfrontends.md) · [Фреймворки](./docs/ru/frameworks.md) · [SSR](./docs/ru/ssr.md) · [Экосистема](./docs/ru/ecosystem.md)
 
-Реактивные веб-компоненты на сигналах. Разметка собирается фабриками тегов — без
-шаблонных строк и без JSX, поэтому весь UI проверяется компилятором TypeScript.
-Эффекты принадлежат компоненту и умирают вместе с ним.
+rwc — библиотека на 5 КБ для веб-компонентов: дизайн-систем, виджетов, целых приложений,
+которые работают в любом фреймворке или без него. Разметка пишется типизированными
+функциями TypeScript вместо HTML-строк и JSX, поэтому компилятор проверяет каждый пропс и
+событие. Состояние живёт в сигналах, которые обновляют ровно тот узел DOM, что их читает. А
+тег компонента выбирается при регистрации, поэтому [две версии одного UI-кита могут работать
+на одной странице](#несколько-версий-ui-кита-на-одной-странице).
 
 ```bash
 npm install @rwcjs/core
@@ -57,29 +60,44 @@ counter({ ".value": 5, ".step": 2, "@change": (event) => console.log(event.detai
 а разметка вызывает фабрику, а не тег:
 
 ```ts
-// биллинг, ещё на ките 1.7
+// billing/main.ts — ещё на ките 1.7
 import { registerAll, UiButton } from "@acme/ui-kit-1.7";
-registerAll({ postfix: "v1-7" });                 // <ui-button-v1-7>
-
-// профиль, уже на ките 1.8
-import { registerAll, UiButton } from "@acme/ui-kit-1.8";
-registerAll({ postfix: "v1-8" });                 // <ui-button-v1-8>
-
-// код модулей одинаковый
+registerAll({ postfix: "v1-7" });                  // <ui-button-v1-7>
 UiButton({ ".variant": "primary" }, "Сохранить");
+```
+
+```ts
+// profile/main.ts — уже на ките 1.8
+import { registerAll, UiButton } from "@acme/ui-kit-1.8";
+registerAll({ postfix: "v1-8" });                  // <ui-button-v1-8>
+UiButton({ ".variant": "primary" }, "Сохранить");  // тот же вызов
 ```
 
 Модули переезжают на новый кит по одному, а модуль на одной версии можно вложить в модуль на
 другой. Работает во всех браузерах с custom elements, без scoped registries.
-[Живое демо, правила для авторов кита и сравнение со scoped registries →](./docs/ru/microfrontends.md)
+[Живое демо](https://tamazyanarsen.github.io/reactive-web-components/ru/microfrontends) · [правила для авторов кита и сравнение со scoped registries](./docs/ru/microfrontends.md)
 
 ## Производительность
 
 В [js-framework-benchmark](./bench/js-framework-benchmark/README.md#local-results)
-(локальный прогон, Chrome 154) rwc 3.3.0 в 1,23 раза медленнее ручного vanilla JS: на уровне
-Lit (1,24), быстрее Preact с сигналами (1,30), Angular (1,60) и React (1,68), медленнее Vue
-(1,19), Svelte (1,13) и Solid (1,09). Библиотека в этом приложении весит 5,1 КБ gzip, Lit —
-7,3 КБ.
+(локальный прогон, Chrome 154; официальный ещё впереди) rwc 3.3.0 в 1,23 раза медленнее
+ручного vanilla JS по среднему геометрическому CPU-тестов: на уровне Lit (1,24), быстрее Preact
+с сигналами (1,30), Angular (1,60) и React (1,68), медленнее Vue (1,19), Svelte (1,13) и Solid
+(1,09). Против Lit rwc быстрее на обновлениях и медленнее на создании больших списков.
+Библиотека в этом приложении весит 5,1 КБ gzip, Lit — 7,3 КБ.
+
+## Сравнение с Lit, Stencil и Solid
+
+| | Lit | Stencil | Solid | rwc |
+| --- | --- | --- | --- | --- |
+| Разметка | шаблоны `html` | JSX + компилятор | JSX + компилятор | типизированные функции TypeScript, без компилятора |
+| Обновления | перерисовка шаблона при смене свойства | виртуальный DOM | точечные сигналы | точечные сигналы |
+| Результат | custom elements | custom elements | свои компоненты | custom elements |
+| Несколько версий кита на странице | вручную | вручную | — | из коробки |
+
+Если нужны шаблоны, похожие на HTML, или большая экосистема, надёжнее выбрать Lit. rwc — для
+тех, кто хочет разметку, которую проверяет компилятор, и сигналы внутри стандартных custom
+elements.
 
 ## Что внутри
 
