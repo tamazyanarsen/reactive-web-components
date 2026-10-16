@@ -48,11 +48,19 @@ bun run dev       # http://localhost:5173/reactive-web-components/
 1. Поднимите `version` в `package.json` нужных пакетов и допишите `CHANGELOG.md`.
 2. Закоммитьте и отправьте в `main`.
 3. Опубликуйте одним из способов:
-   - **через GitHub Actions** (рекомендуется): Actions → Release → Run workflow.
-     Нужен секрет репозитория `NPM_TOKEN` (automation-токен npm). Пакеты получают
+   - **через GitHub Actions** (рекомендуется): Actions → Release → Run workflow или
+     `gh workflow run release.yml`. Токенов и секретов нет: npm доверяет workflow через
+     [Trusted Publishing](https://docs.npmjs.com/trusted-publishers). У каждого пакета на
+     npmjs.com в Settings → Trusted Publisher указаны GitHub Actions, репозиторий
+     `tamazyanarsen/reactive-web-components` и файл `release.yml`. Пакеты получают
      [provenance](https://docs.npmjs.com/generating-provenance-statements) — реестр
      показывает, из какого коммита они собраны;
-   - **локально**: `npm login`, затем `bun run build && bun run verify:package` и
-     `bun run scripts/publish-changed.ts --no-provenance`. Проверить, что уйдёт в реестр,
-     можно флагом `--dry-run`.
-4. Поставьте тег: `git tag v<версия> && git push --tags`.
+   - **локально**: `bun run build && bun run verify:package`, проверить список через
+     `bun run scripts/publish-changed.ts --dry-run`, затем в каталоге каждого пакета из
+     списка `npm publish --access public`. На аккаунте 2FA: npm откроет браузер для
+     подтверждения, поэтому скрипт публикации локально не подходит — он не интерактивный.
+4. Поставьте тег: `git tag v<версия> && git push --tags` для ядра,
+   `<пакет>-v<версия>` (например, `ui-v0.1.1`) для остальных.
+
+Новый пакет публикуется первый раз локально: Trusted Publisher настраивается только для
+пакета, который уже есть в реестре.

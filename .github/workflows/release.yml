@@ -2,13 +2,17 @@ name: Release
 
 # Публикация вручную: Actions → Release → Run workflow. Публикуются только пакеты,
 # чьей версии ещё нет в реестре, — поднимите version в package.json, закоммитьте, запустите.
+#
+# Токенов нет: npm доверяет этому workflow через Trusted Publishing (OIDC). У каждого
+# пакета на npmjs.com в Settings → Trusted Publisher указан этот репозиторий и файл
+# release.yml. Если имя файла или репозитория разойдётся, npm ответит E404.
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
-  # id-token нужен для npm provenance: реестр покажет, из какого коммита и workflow
-  # собран пакет.
+  # OIDC-токен GitHub: им npm проверяет, что публикует именно этот workflow, и им же
+  # подписывается provenance — реестр покажет, из какого коммита собран пакет.
   id-token: write
 
 jobs:
@@ -21,10 +25,13 @@ jobs:
         with:
           bun-version: 1.4.0
 
+      # Trusted Publishing требует npm 11.5.1+, он идёт в комплекте с Node 24.
+      # registry-url не задаём: setup-node записал бы в .npmrc пустой токен.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
+          node-version: 24
+
+      - run: npm --version
 
       - run: bun install --frozen-lockfile
       - run: bun run build
@@ -34,5 +41,3 @@ jobs:
       - run: bun run size
 
       - run: bun run scripts/publish-changed.ts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
