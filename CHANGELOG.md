@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.3.1; @rwcjs/ui 0.1.2; router, forms, create, cem-plugin 0.1.1
+
+Код пакетов не менялся. Все пакеты теперь публикуются из GitHub Actions через
+Trusted Publishing и получают provenance: npm показывает, из какого коммита и
+workflow собрана версия.
+
+- `@rwcjs/core`: на странице пакета в npm — обновлённый README (несколько версий
+  UI-кита на одной странице, цифры бенчмарка, сравнение с Lit, Stencil и Solid),
+  описание, ключевые слова и ссылка на сайт документации.
+
 ## @rwcjs/ui 0.1.1
 
 ### @rwcjs/ui

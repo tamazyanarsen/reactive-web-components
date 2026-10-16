@@ -1,6 +1,6 @@
 {
   "name": "@rwcjs/cem-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Custom Elements Manifest analyzer plugin for @rwcjs/core components",
   "type": "module",
   "license": "MIT",

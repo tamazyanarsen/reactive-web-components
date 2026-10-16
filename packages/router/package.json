@@ -1,6 +1,6 @@
 {
   "name": "@rwcjs/router",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Signal-based router for @rwcjs/core: typed params from path strings, pages that survive param changes",
   "type": "module",
   "license": "MIT",

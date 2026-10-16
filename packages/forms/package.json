@@ -1,6 +1,6 @@
 {
   "name": "@rwcjs/forms",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Forms on signals for @rwcjs/core: typed fields from initial values, validation, input binding, submit state",
   "type": "module",
   "license": "MIT",
