@@ -25,6 +25,14 @@ features:
     details: Props are DOM properties and attributes, events are DOM events. Use the components from React, Vue, Angular, Svelte or plain HTML.
   - title: Batteries included
     details: Router, forms, a themable UI kit, server rendering with Declarative Shadow DOM, and a Custom Elements Manifest plugin.
+  - title: UI kit versions side by side
+    details: Tags are chosen at registration, markup calls factories. Microfrontends upgrade the shared kit one at a time, with two versions on one page.
+    link: /microfrontends
+    linkText: How it works
+  - title: On par with Lit
+    details: 1.23× vanilla JS in js-framework-benchmark, next to Lit's 1.24 and ahead of React and Angular, at 5.1 KB gzip.
+    link: https://github.com/tamazyanarsen/reactive-web-components/blob/main/bench/js-framework-benchmark/README.md#local-results
+    linkText: Benchmark results
 ---
 
 ## Try it

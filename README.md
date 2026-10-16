@@ -1,6 +1,6 @@
 # rwc
 
-**[Documentation site](https://tamazyanarsen.github.io/reactive-web-components/)** · [Русский](./README.ru.md) · [Guide](./docs/en/guide.md) · [API reference](./docs/en/api.md) · [Recipes](./docs/en/recipes.md) · [Frameworks](./docs/en/frameworks.md) · [SSR](./docs/en/ssr.md) · [Ecosystem](./docs/en/ecosystem.md)
+**[Documentation site](https://tamazyanarsen.github.io/reactive-web-components/)** · [Русский](./README.ru.md) · [Guide](./docs/en/guide.md) · [API reference](./docs/en/api.md) · [Recipes](./docs/en/recipes.md) · [Microfrontends](./docs/en/microfrontends.md) · [Frameworks](./docs/en/frameworks.md) · [SSR](./docs/en/ssr.md) · [Ecosystem](./docs/en/ecosystem.md)
 
 Reactive web components built on signals. Markup is assembled by tag factories —
 no template strings, no JSX — so the whole UI is checked by the TypeScript
@@ -49,6 +49,38 @@ export const counter = useCustomComponent(Counter, "x-counter");
 counter({ ".value": 5, ".step": 2, "@change": (event) => console.log(event.detail) });
 ```
 
+## Several versions of a UI kit on one page
+
+In a microfrontend platform every module would like to upgrade the shared UI kit on its
+own schedule, but custom element tags are global: a second `<ui-button>` cannot be
+defined. In rwc a component is declared once and registered under a tag chosen by whoever
+loads it, while markup calls the factory, not the tag:
+
+```ts
+// billing, still on kit 1.7
+import { registerAll, UiButton } from "@acme/ui-kit-1.7";
+registerAll({ postfix: "v1-7" });            // <ui-button-v1-7>
+
+// profile, already on kit 1.8
+import { registerAll, UiButton } from "@acme/ui-kit-1.8";
+registerAll({ postfix: "v1-8" });            // <ui-button-v1-8>
+
+// module code is identical in both
+UiButton({ ".variant": "primary" }, "Save");
+```
+
+Modules move to a new kit one at a time, and a module on one version can be nested inside
+a module on another. It works in every browser with custom elements, without scoped
+registries. [Live demo, rules for kit authors and a comparison with scoped registries →](./docs/en/microfrontends.md)
+
+## Performance
+
+In [js-framework-benchmark](./bench/js-framework-benchmark/README.md#local-results)
+(local run, Chrome 154) rwc 3.3.0 is 1.23× slower than hand-written vanilla JS: on par
+with Lit (1.24), ahead of Preact with signals (1.30), Angular (1.60) and React (1.68),
+behind Vue (1.19), Svelte (1.13) and Solid (1.09). The library weighs 5.1 KB gzip in
+that app, against 7.3 KB for Lit.
+
 ## What's inside
 
 **Signals.** `signal`, `effect`, `computed`, `derived`, `batch`, `untracked`,
@@ -84,6 +116,7 @@ when dependencies change and cancels the stale request.
 
 **Versioning.** `configCustomComponent` separates declaration from registration —
 several versions of a UI kit coexist on one page while factory calls stay the same.
+See [above](#several-versions-of-a-ui-kit-on-one-page).
 
 ## Why factories instead of templates
 

@@ -25,6 +25,14 @@ features:
     details: Пропсы — это DOM-свойства и атрибуты, события — DOM-события. Компоненты работают в React, Vue, Angular, Svelte и в обычном HTML.
   - title: Всё нужное рядом
     details: Роутер, формы, UI-кит с темами, серверный рендер с Declarative Shadow DOM и плагин для Custom Elements Manifest.
+  - title: Версии UI-кита рядом
+    details: Тег выбирается при регистрации, разметка вызывает фабрики. Микрофронтенды обновляют общий кит по одному, две версии живут на одной странице.
+    link: /ru/microfrontends
+    linkText: Как это устроено
+  - title: На уровне Lit
+    details: 1,23× от vanilla JS в js-framework-benchmark — рядом с Lit (1,24), быстрее React и Angular, при 5,1 КБ gzip.
+    link: https://github.com/tamazyanarsen/reactive-web-components/blob/main/bench/js-framework-benchmark/README.md#local-results
+    linkText: Результаты бенчмарка
 ---
 
 ## Попробуйте

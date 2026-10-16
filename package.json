@@ -1,7 +1,7 @@
 {
   "name": "@rwcjs/core",
   "version": "3.3.0",
-  "description": "Reactive web components on signals: typed tag factories instead of templates, effects that live and die with the component",
+  "description": "Reactive web components on signals: typed tag factories instead of templates, effects that live and die with the component, UI kit versions side by side for microfrontends",
   "type": "module",
   "license": "MIT",
   "author": "tamazyanarsen",
@@ -9,7 +9,7 @@
     "type": "git",
     "url": "git+https://github.com/tamazyanarsen/reactive-web-components.git"
   },
-  "homepage": "https://github.com/tamazyanarsen/reactive-web-components#readme",
+  "homepage": "https://tamazyanarsen.github.io/reactive-web-components/",
   "bugs": {
     "url": "https://github.com/tamazyanarsen/reactive-web-components/issues"
   },
@@ -22,7 +22,10 @@
     "frontend",
     "ui",
     "no-jsx",
-    "fine-grained-reactivity"
+    "fine-grained-reactivity",
+    "microfrontends",
+    "micro-frontends",
+    "design-system"
   ],
   "sideEffects": false,
   "types": "./dist/index.d.ts",

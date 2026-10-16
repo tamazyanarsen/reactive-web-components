@@ -16,6 +16,7 @@
     "components",
     "web-components",
     "design-system",
+    "microfrontends",
     "rwc",
     "custom-elements"
   ],

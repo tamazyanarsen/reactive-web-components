@@ -1,6 +1,6 @@
 # rwc
 
-**[Сайт документации](https://tamazyanarsen.github.io/reactive-web-components/ru/)** · [English](./README.md) · [Гайд](./docs/ru/guide.md) · [Справочник API](./docs/ru/api.md) · [Рецепты](./docs/ru/recipes.md) · [Фреймворки](./docs/ru/frameworks.md) · [SSR](./docs/ru/ssr.md) · [Экосистема](./docs/ru/ecosystem.md)
+**[Сайт документации](https://tamazyanarsen.github.io/reactive-web-components/ru/)** · [English](./README.md) · [Гайд](./docs/ru/guide.md) · [Справочник API](./docs/ru/api.md) · [Рецепты](./docs/ru/recipes.md) · [Микрофронтенды](./docs/ru/microfrontends.md) · [Фреймворки](./docs/ru/frameworks.md) · [SSR](./docs/ru/ssr.md) · [Экосистема](./docs/ru/ecosystem.md)
 
 Реактивные веб-компоненты на сигналах. Разметка собирается фабриками тегов — без
 шаблонных строк и без JSX, поэтому весь UI проверяется компилятором TypeScript.
@@ -49,6 +49,38 @@ export const counter = useCustomComponent(Counter, "x-counter");
 counter({ ".value": 5, ".step": 2, "@change": (event) => console.log(event.detail) });
 ```
 
+## Несколько версий UI-кита на одной странице
+
+На платформе микрофронтендов каждый модуль хочет обновлять общий UI-кит в своём темпе, но
+теги custom elements глобальные: второй `<ui-button>` определить нельзя. В rwc компонент
+объявляется один раз и регистрируется под тегом, который выбирает тот, кто его подключает,
+а разметка вызывает фабрику, а не тег:
+
+```ts
+// биллинг, ещё на ките 1.7
+import { registerAll, UiButton } from "@acme/ui-kit-1.7";
+registerAll({ postfix: "v1-7" });                 // <ui-button-v1-7>
+
+// профиль, уже на ките 1.8
+import { registerAll, UiButton } from "@acme/ui-kit-1.8";
+registerAll({ postfix: "v1-8" });                 // <ui-button-v1-8>
+
+// код модулей одинаковый
+UiButton({ ".variant": "primary" }, "Сохранить");
+```
+
+Модули переезжают на новый кит по одному, а модуль на одной версии можно вложить в модуль на
+другой. Работает во всех браузерах с custom elements, без scoped registries.
+[Живое демо, правила для авторов кита и сравнение со scoped registries →](./docs/ru/microfrontends.md)
+
+## Производительность
+
+В [js-framework-benchmark](./bench/js-framework-benchmark/README.md#local-results)
+(локальный прогон, Chrome 154) rwc 3.3.0 в 1,23 раза медленнее ручного vanilla JS: на уровне
+Lit (1,24), быстрее Preact с сигналами (1,30), Angular (1,60) и React (1,68), медленнее Vue
+(1,19), Svelte (1,13) и Solid (1,09). Библиотека в этом приложении весит 5,1 КБ gzip, Lit —
+7,3 КБ.
+
 ## Что внутри
 
 **Сигналы.** `signal`, `effect`, `computed`, `derived`, `batch`, `untracked`,
@@ -85,6 +117,7 @@ counter({ ".value": 5, ".step": 2, "@change": (event) => console.log(event.detai
 
 **Версионирование.** `configCustomComponent` разделяет объявление и регистрацию —
 несколько версий UI-кита уживаются на одной странице, а вызовы фабрики не меняются.
+Подробнее — [выше](#несколько-версий-ui-кита-на-одной-странице).
 
 ## Почему фабрики, а не шаблоны
 
