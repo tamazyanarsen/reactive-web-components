@@ -18,9 +18,13 @@ export type TabsOrientation = "horizontal" | "vertical";
 
 let idCounter = 0;
 
-/** id нужен для aria-controls/aria-labelledby; свой id, заданный автором, не трогаем. */
-const ensureId = (element: HTMLElement, prefix: string) => {
-  if (!element.id) element.id = `${prefix}-${++idCounter}`;
+/**
+ * id нужен для aria-controls/aria-labelledby; свой id, заданный автором, не трогаем.
+ * Префикс — имя тега: у двух версий кита на странице теги разные (rwc-tab и rwc-tab-v2),
+ * а счётчики у каждой копии свои и начинаются с нуля — без префикса id совпали бы.
+ */
+const ensureId = (element: HTMLElement) => {
+  if (!element.id) element.id = `${element.localName}-${++idCounter}`;
   return element.id;
 };
 
@@ -87,7 +91,7 @@ export class Tab extends defineComponent({
     // Вкладка сама уходит в слот шапки rwc-tabs — писать slot="tab" руками не нужно.
     if (!this.hasAttribute("slot")) this.slot = "tab";
     if (!this.hasAttribute("role")) this.setAttribute("role", "tab");
-    ensureId(this, "rwc-tab");
+    ensureId(this);
     super.connectedCallback();
   }
 
@@ -127,7 +131,7 @@ export class TabPanel extends defineComponent({
     if (!this.hasAttribute("role")) this.setAttribute("role", "tabpanel");
     // По APG панель фокусируема: Tab из списка вкладок ведёт в её содержимое.
     if (!this.hasAttribute("tabindex")) this.tabIndex = 0;
-    ensureId(this, "rwc-tab-panel");
+    ensureId(this);
     super.connectedCallback();
   }
 

@@ -27,8 +27,9 @@ describe("rwc-tooltip", () => {
   test("текст из слота content связан с триггером через aria-describedby", () => {
     const content = span({ attrs: { slot: "content" } }, "Горячая клавиша ", "Ctrl+C");
     const trigger = button("⧉");
-    mount(rwcTooltip({}, trigger, content));
-    expect(content.id).not.toBe("");
+    const element = mount(rwcTooltip({}, trigger, content));
+    // Префикс — тег с постфиксом: так id не совпадут у двух версий кита на странице.
+    expect(content.id.startsWith(`${element.localName}-`)).toBe(true);
     expect(content.getAttribute("role")).toBe("tooltip");
     expect(trigger.getAttribute("aria-describedby")).toBe(content.id);
     expect(trigger.hasAttribute("aria-description")).toBe(false);

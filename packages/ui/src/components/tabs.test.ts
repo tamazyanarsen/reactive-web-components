@@ -35,6 +35,10 @@ describe("rwc-tabs", () => {
     expect(tabs.map((tab) => tab.tabIndex)).toEqual([0, -1, -1]);
     expect(tabs[0]!.hasAttribute("selected")).toBe(true);
 
+    // Префикс id — тег с постфиксом: у двух версий кита на странице id не совпадут.
+    expect(tabs[0]!.id.startsWith(`${tabs[0]!.localName}-`)).toBe(true);
+    expect(panels[0]!.id.startsWith(`${panels[0]!.localName}-`)).toBe(true);
+
     tabs.forEach((tab, index) => {
       expect(tab.getAttribute("aria-controls")).toBe(panels[index]!.id);
       expect(panels[index]!.getAttribute("aria-labelledby")).toBe(tab.id);

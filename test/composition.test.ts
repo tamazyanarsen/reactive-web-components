@@ -233,6 +233,62 @@ describe("configCustomComponent", () => {
     expect(() => early()).toThrow(/is not registered/);
   });
 
+  test("две сборки одного кита уживаются на странице, вызовы фабрик одинаковые", () => {
+    // Сборка кита: свои классы, внутренняя композиция идёт через фабрики, а не через имена тегов.
+    const buildKit = (version: string) => {
+      class Button extends defineComponent({ props: { label: "" } }) {
+        render() {
+          return span(`${version}:`, this.props.label);
+        }
+      }
+      class Card extends defineComponent({ props: { title: "" } }) {
+        render() {
+          return div(h3(this.props.title), kitButton({ ".label": "ok" }));
+        }
+      }
+      const [kitButton, registerButton] = configCustomComponent(Button, buttonTag);
+      const [kitCard, registerCard] = configCustomComponent(Card, cardTag);
+      const registerAll = (options?: { postfix?: string }) => [registerButton(options), registerCard(options)];
+      return { kitCard, registerAll };
+    };
+    const buttonTag = nextTag("kit-button");
+    const cardTag = nextTag("kit-card");
+
+    const kit1 = buildKit("1.7");
+    const kit2 = buildKit("1.8");
+    expect(kit1.registerAll({ postfix: "v1-7" })).toEqual([`${buttonTag}-v1-7`, `${cardTag}-v1-7`] as CustomTagName[]);
+    expect(kit2.registerAll({ postfix: "v1-8" })).toEqual([`${buttonTag}-v1-8`, `${cardTag}-v1-8`] as CustomTagName[]);
+
+    // Модуль на ките 1.8 встроен в модуль на ките 1.7.
+    const inner = kit2.kitCard({ ".title": "B" });
+    const outer = mountElement(kit1.kitCard({ ".title": "A" }, inner));
+
+    const innerButton = inner.shadowRoot!.querySelector(`${buttonTag}-v1-8`)!;
+    const outerButton = outer.shadowRoot!.querySelector(`${buttonTag}-v1-7`)!;
+    expect(innerButton.shadowRoot!.textContent).toBe("1.8:ok");
+    expect(outerButton.shadowRoot!.textContent).toBe("1.7:ok");
+  });
+
+  test("постфикс по версии кита: общий экземпляр кита регистрируют два модуля без ошибок", () => {
+    class Shared extends defineComponent({ props: {} }) {
+      render() {
+        return div();
+      }
+    }
+    const base = nextTag("shared");
+    const [, register] = configCustomComponent(Shared, base);
+    const errors: unknown[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => errors.push(args);
+    try {
+      expect(register({ postfix: "v2" })).toBe(`${base}-v2` as CustomTagName);
+      expect(register({ postfix: "v2" })).toBe(`${base}-v2` as CustomTagName);
+    } finally {
+      console.error = original;
+    }
+    expect(errors).toEqual([]);
+  });
+
   test("повторная регистрация тем же тегом безопасна", () => {
     class Twice extends defineComponent({ props: {} }) {
       render() {

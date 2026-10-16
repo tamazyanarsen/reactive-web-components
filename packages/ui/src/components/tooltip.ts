@@ -162,7 +162,8 @@ export class Tooltip extends defineComponent({
       if (!target) return;
       const described = slotted();
       if (described) {
-        if (!described.id) described.id = `rwc-tooltip-${++tooltipCounter}`;
+        // Префикс — тег подсказки, чтобы id не совпали у двух версий кита на одной странице.
+        if (!described.id) described.id = `${this.localName}-${++tooltipCounter}`;
         if (!described.hasAttribute("role")) described.setAttribute("role", "tooltip");
         target.setAttribute("aria-describedby", described.id);
         onCleanup(() => target.removeAttribute("aria-describedby"));
