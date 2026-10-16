@@ -14,6 +14,25 @@ live in `packages/*` (bun workspaces).
 | [`@rwcjs/forms`](../../packages/forms/README.md) | Forms on signals: typed fields, validation, input binding, submit state |
 | [`@rwcjs/create`](../../packages/create/README.md) | Project generator: `npm create @rwcjs@latest` with an app or a component library template |
 
+## Package versions
+
+Companion packages are versioned on their own while they are below 1.0, so their numbers
+do not match the core. Which core they work with is stated in their `peerDependencies`,
+and npm warns about a mismatch. `npm create @rwcjs` always installs a compatible set.
+
+| Package | Current line | Requires `@rwcjs/core` |
+| --- | --- | --- |
+| `@rwcjs/core` | 3.x | — |
+| `@rwcjs/ui` | 0.1.x | `^3.2.0` |
+| `@rwcjs/router` | 0.1.x | `^3.1.0` |
+| `@rwcjs/forms` | 0.1.x | `^3.1.0` |
+| `@rwcjs/cem-plugin` | 0.1.x | — |
+| `@rwcjs/create` | 0.1.x | — |
+
+Once the companion packages reach a stable API, they will join the core's major version:
+every package will share the major, and it will change for all of them at once. "Everything
+on 4.x" will then mean "everything is compatible".
+
 ## Custom Elements Manifest
 
 A [Custom Elements Manifest](https://custom-elements-manifest.open-wc.org/) is a JSON file

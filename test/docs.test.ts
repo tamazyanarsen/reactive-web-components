@@ -404,3 +404,27 @@ describe("Гайд: функциональные компоненты и createR
     expect(runs).toBe(2);
   });
 });
+
+describe("Экосистема: таблица версий пакетов", () => {
+  // Таблица живёт в двух языках и устаревает молча — сверяем её с package.json.
+  const manifests = [
+    "package.json",
+    ...["ui", "router", "forms", "cem-plugin", "create"].map((name) => `packages/${name}/package.json`),
+  ].map((path) => require(`../${path}`) as { name: string; version: string; peerDependencies?: Record<string, string> });
+
+  for (const lang of ["en", "ru"]) {
+    test(`docs/${lang}/ecosystem.md совпадает с package.json`, async () => {
+      const markdown = await Bun.file(`${import.meta.dir}/../docs/${lang}/ecosystem.md`).text();
+      for (const { name, version, peerDependencies } of manifests) {
+        // Строка таблицы: | `@rwcjs/ui` | 0.1.x | `^3.2.0` |
+        const row = markdown.split("\n").find((text) => text.startsWith(`| \`${name}\` |`));
+        expect(row, `${name} нет в таблице`).toBeDefined();
+        const [, , line = "", core = ""] = row!.split("|").map((cell) => cell.trim());
+        // Линия "0.1.x" или "3.x" — префикс текущей версии.
+        expect(version.startsWith(line.replace(/x$/, ""))).toBe(true);
+        const range = peerDependencies?.["@rwcjs/core"];
+        expect(core).toBe(range ? `\`${range}\`` : "—");
+      }
+    });
+  }
+});
